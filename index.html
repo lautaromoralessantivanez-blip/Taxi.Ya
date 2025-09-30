@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="es">
 <head>
@@ -593,7 +594,6 @@ function stopSearchingUI(){
   clearTimeout(searchTimeout); searchTimeout=null;
 }
 function assignDriver(){
-  // éxito
   const top=$("#rideMapTop");
   top.textContent="✅ Conductor asignado";
   top.classList.add("show");
@@ -652,21 +652,28 @@ $("#btnStartRoute").addEventListener("click", ()=> toast("Recorrido iniciado"));
 $("#btnPauseRoute").addEventListener("click", ()=> toast("Recorrido en pausa"));
 $("#btnStopRoute").addEventListener("click", ()=> toast("Recorrido terminado"));
 
-/* ===== Verificación (Ajustes) ===== */
-function plateValid(p){ return /^[A-Z]{2}\d{3}[A-Z]{2}$/.test(p) || /^[A-Z]{3}\d{3}$/.test(p); }
+/* ===== Verificación (Ajustes) — MODO LIBRE ===== */
+/* Aprueba al usuario como conductor sin validar nada */
 function kycStatusText(s){ return s==="approved"?"Aprobado": s==="pending"?"Pendiente":"No solicitado"; }
-function paintKycUI(){ const st=currentUser?.kyc?.status||"none"; const pill=$("#drvKycStatus"); if(!pill) return; pill.textContent=kycStatusText(st); pill.className="pill "+(st==="approved"?"ok":"warn"); $("#btnToggleOnline").disabled = st!=="approved"; }
-function showKycMsg(t,cls){ const m=$("#verifyMsg"); m.textContent=t; m.className=`pill ${cls}`; m.classList.remove("hide"); }
-$("#btnVerifySubmit").addEventListener("click", async ()=>{
+function paintKycUI(){
+  const st=currentUser?.kyc?.status||"none";
+  const pill=$("#drvKycStatus");
+  if(!pill) return;
+  pill.textContent=kycStatusText(st);
+  pill.className="pill "+(st==="approved"?"ok":"warn");
+  const toggle=$("#btnToggleOnline");
+  if(toggle) toggle.disabled = st!=="approved";
+}
+function showKycMsg(t,cls){ const m=$("#verifyMsg"); if(!m) return; m.textContent=t; m.className=`pill ${cls}`; m.classList.remove("hide"); }
+$("#btnVerifySubmit").addEventListener("click", ()=>{
   if(!currentUser) return toast("Iniciá sesión");
-  const p=$("#vPlate").value.trim().toUpperCase(), y=parseInt($("#vYear").value,10), m=$("#vModel").value.trim(), c=$("#vCard").value.trim();
-  if(!plateValid(p)) return showKycMsg("Patente inválida.","error");
-  if(!(y>=1995&&y<=2100)) return showKycMsg("Año inválido.","error");
-  if(!m||!c) return showKycMsg("Completá modelo y cédula.","error");
+  // Aprobar directo
   currentUser.role="driver";
-  currentUser.kyc={status:"approved", submittedAt:Date.now(), data:{p,y,m,c}};
+  currentUser.kyc={status:"approved", submittedAt:Date.now(), data:{freeApproval:true}};
   const db=loadUsers(); db[normEmail(currentUser.email)]=currentUser; saveUsers(db); saveSession(currentUser);
-  paintKycUI(); refreshTabVisibility(); setActiveTab("driver"); initDriverMapOnce(); toast("✅ Verificación aprobada");
+  paintKycUI(); refreshTabVisibility(); setActiveTab("driver"); initDriverMapOnce();
+  showKycMsg("Aprobado en modo pruebas (sin validaciones).","ok");
+  toast("✅ Verificación aprobada (pruebas)");
 });
 
 /* ===== Perfil / Sesión ===== */
@@ -774,3 +781,4 @@ window.addEventListener("focus", ()=>{ resizeMap(mapRide); resizeMap(driverMap);
 </script>
 </body>
 </html>
+```
