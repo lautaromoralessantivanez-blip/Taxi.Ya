@@ -258,8 +258,13 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:poin
       </div>
     </div>
 
-    <div class="row" style="margin-top:8px">
-      <button class="btn" id="btnSimIncoming" type="button" disabled>Simular viaje entrante</button>
+    <div class="item" style="margin-top:10px">
+      <h4>Viajes disponibles</h4>
+      <div id="driverAvailable" class="list"></div>
+    </div>
+    <div class="item" style="margin-top:10px">
+      <h4>Mis viajes activos</h4>
+      <div id="driverMyActive" class="list"></div>
     </div>
 
     <div id="mapDriver" class="map" style="margin-top:8px" aria-label="Mapa del conductor"></div>
@@ -333,29 +338,47 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:poin
 
 <div id="toast" class="toast hide"></div>
 
+<!-- Leaflet -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Firebase (Compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
 <script type="module">
-/* ===== Helpers & storage ===== */
+/* ========================= Firebase ========================= */
+const firebaseConfig = {
+  /* TODO: pegá tu config de Firebase aquí */
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_AUTH_DOMAIN",
+  projectId: "TU_PROJECT_ID",
+  storageBucket: "TU_BUCKET",
+  messagingSenderId: "TU_SENDER_ID",
+  appId: "TU_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+const usersCol = db.collection("users");
+const ridesCol = db.collection("rides");
+
+/* ========================= Helpers & storage (local UI) ========================= */
 const $=s=>document.querySelector(s);
 const $$=s=>Array.from(document.querySelectorAll(s));
-const normEmail=e=>(e||"").trim().toLowerCase();
 const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n||0);
 const toRad=d=>d*Math.PI/180;
 const km2=(a,b)=>{const R=6371,dLat=toRad(b.lat-a.lat),dLon=toRad(b.lng-a.lng);const la1=toRad(a.lat),la2=toRad(b.lat);const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(h));};
-const storeKey="taxiya_users_by_email", sessionKey="taxiya_session";
-const riderHistKey=e=>`taxiya_rider_history_${e}`;
-const ratingKey=e=>`taxiya_ratings_${e}`;
-const loadUsers=()=>{ try{return JSON.parse(localStorage.getItem(storeKey)||"{}");}catch(_){return{};} };
-const saveUsers=db=>localStorage.setItem(storeKey,JSON.stringify(db));
-const saveSession=u=>localStorage.setItem(sessionKey,JSON.stringify(u));
-const loadSession=()=>{ try{return JSON.parse(localStorage.getItem(sessionKey)||"null");}catch(_){return null;} };
-const clearSession=()=>localStorage.removeItem(sessionKey);
-const loadArr=k=>{ try{return JSON.parse(localStorage.getItem(k)||"[]");}catch(_){return[];} };
-const saveArr=(k,arr)=>localStorage.setItem(k,JSON.stringify(arr));
 function toast(msg,ms=1700){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hide"); setTimeout(()=>t.classList.add("hide"),ms); }
 
-/* ===== Tabs ===== */
-let currentUser=null;
+/* ========================= Estado global ========================= */
+let currentUser=null;         // perfil users/{uid}
+let riderActiveUnsub=null;    // listener viaje activo pasajero
+let driverAvailUnsub=null;    // listener viajes disponibles
+let driverMineUnsub=null;     // listener viajes del conductor
+
+/* ========================= Tabs ========================= */
 const tabsCfg={
   access:{btn:$("#tab-access"), panel:$("#panel-access")},
   ride:{btn:$("#tab-ride"), panel:$("#panel-ride")},
@@ -373,24 +396,26 @@ function setActiveTab(name){
   if(name==="driver"){ initDriverMapOnce(); requestAnimationFrame(()=> resizeMap(driverMap)); }
   if(name==="settings"){ paintProfile(); paintKycUI(); renderRatings(); }
 }
+Object.values(tabsCfg).forEach(({btn})=> btn.addEventListener("click", ()=> setActiveTab(btn.dataset.tab), {passive:true}));
+
 function refreshTabVisibility(){
   const logged=!!currentUser;
   tabsCfg.access.btn.classList.toggle("hide", logged);
   tabsCfg.ride.btn.classList.toggle("hide", !logged);
   tabsCfg.history.btn.classList.toggle("hide", !logged);
-  const kycOk = logged && currentUser.kyc?.status==="approved";
+  const kycOk = logged && currentUser.approved===true;
   tabsCfg.driver.btn.classList.toggle("hide", !kycOk);
   tabsCfg.settings.btn.classList.toggle("hide", !logged);
   if(!logged) setActiveTab("access");
 }
-Object.values(tabsCfg).forEach(({btn})=> btn.addEventListener("click", ()=> setActiveTab(btn.dataset.tab), {passive:true}));
+function paintAuth(){ $("#authPill").textContent=currentUser?`${currentUser.displayName||currentUser.email} — ${(currentUser.role||'rider')}${currentUser.approved?' (KYC✓)':''}`:"Sin sesión"; }
 
-/* ===== Tema ===== */
+/* ========================= Tema ========================= */
 function applyTheme(){ const t=localStorage.getItem("taxiya_theme")||"dark"; document.documentElement.classList.toggle("light", t==="light"); $("#themeToggle").checked=(t==="light"); }
 $("#themeToggle").addEventListener("change", e=>{ localStorage.setItem("taxiya_theme", e.target.checked?"light":"dark"); applyTheme(); });
 applyTheme();
 
-/* ===== Autocomplete ===== */
+/* ========================= Autocomplete calles ========================= */
 const removeDiacritics = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 const norm = s => removeDiacritics(String(s||"").toLowerCase().trim());
 let STREETS = ["Av. Libertador General San Martín","Av. Ignacio de la Roza","Av. Rawson","Calle Mendoza","Calle Salta","Calle Tucumán","Calle Catamarca","Calle Rivadavia","Calle Mitre","Calle Santa Fe","Calle Rioja","Calle San Luis","Calle Urquiza","Calle Sarmiento","Calle Laprida","Calle Entre Ríos"];
@@ -432,7 +457,7 @@ function createAutocomplete(inputEl, listEl, onEnterNoActive){
   });
 }
 
-/* ===== Map utils ===== */
+/* ========================= Map utils ========================= */
 function resizeMap(map){ try{ map && map.invalidateSize(); }catch(_){} }
 function fallbackTileLayer(){ return L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'© OpenStreetMap'}); }
 function primaryTileLayer(){
@@ -441,7 +466,7 @@ function primaryTileLayer(){
   return tl;
 }
 
-/* ===== Map Ride ===== */
+/* ========================= Map Ride ========================= */
 let mapRide=null, origin=null, dest=null, markers={origin:null,dest:null,driver:null};
 function ensureRideMap(){
   if(mapRide) return;
@@ -478,7 +503,7 @@ function initRideMapOnce(){
   });
 }
 
-/* Geocoder (Nominatim) */
+/* ========================= Geocoder (Nominatim) ========================= */
 async function geocode(text){
   try{
     const url=new URL("https://nominatim.openstreetmap.org/search");
@@ -504,7 +529,7 @@ async function setDestFromField(){
   mapRide.setView([loc.lat,loc.lng],15); updateEstimate(); resizeMap(mapRide);
 }
 
-/* ===== Estimación ===== */
+/* ========================= Estimación ========================= */
 function estimateFareRaw(km){ const base=990, perKm=660, perMin=99; const mins=(km/24)*60; return Math.max(800, Math.round(base + km*perKm + mins*perMin)); }
 function updateEstimate(){
   const distEl=$("#distance"), fareEl=$("#fare");
@@ -512,7 +537,7 @@ function updateEstimate(){
   const km=km2(origin,dest); distEl.value=`${km.toFixed(2)} km`; fareEl.value=money(estimateFareRaw(km));
 }
 
-/* ===== Pago (demo) ===== */
+/* ========================= Pago (demo local UI) ========================= */
 let payConfirmed=false, payment={method:null,status:"pending"};
 function resetPayment(){
   payConfirmed=false; payment={method:null,status:"pending"};
@@ -524,8 +549,7 @@ $("#payMethod").addEventListener("change", e=>{
   const m=e.target.value; payment.method=m;
   $("#payCashBox").classList.toggle("hide", m!=="cash");
   $("#payMPBox").classList.toggle("hide", m!=="mp");
-  if(!m) return;
-  $("#payStatus").classList.remove("hide");
+  if(!m) return; $("#payStatus").classList.remove("hide");
 });
 $("#chkCashConfirm").addEventListener("change", e=>{
   if($("#payMethod").value!=="cash") return;
@@ -541,19 +565,17 @@ $("#btnPayMP").addEventListener("click", async ()=>{
   b.disabled=false; b.textContent="Simular pago con MP";
 });
 
-/* ===== Flujo UNIFICADO: Pedir/Cancelar con contador ===== */
-let searching=false, waitTimer=null, waitSeconds=0, searchTimeout=null;
+/* ========================= RIDE FLOW con Firestore ========================= */
+let searching=false, waitTimer=null, waitSeconds=0;
 const waitLabel=$("#waitSecs"), searchStatus=$("#searchStatus"), btnUnified=$("#btnUnified"), btnCancel=$("#btnCancel");
-function startSearching(){
+
+function startSearchingUI(){
   searching=true; waitSeconds=0;
   btnUnified.disabled=true; btnUnified.textContent="Buscando…";
   btnCancel.classList.remove("hide");
   searchStatus.classList.remove("hide");
   waitLabel.textContent="0";
   waitTimer=setInterval(()=>{ waitSeconds++; waitLabel.textContent=String(waitSeconds); },1000);
-  // Simular match en 3–6s
-  const ms=3000+Math.floor(Math.random()*3000);
-  searchTimeout=setTimeout(()=> assignDriver(), ms);
 }
 function stopSearchingUI(){
   searching=false;
@@ -561,76 +583,257 @@ function stopSearchingUI(){
   btnCancel.classList.add("hide");
   searchStatus.classList.add("hide");
   clearInterval(waitTimer); waitTimer=null;
-  clearTimeout(searchTimeout); searchTimeout=null;
 }
-btnUnified.addEventListener("click", ()=>{
-  if(!currentUser){ toast("Iniciá sesión"); return; }
-  if(!origin || !dest){ toast("Seleccioná origen y destino (campo o clic en el mapa)"); return; }
-  if(searching) return;
-  startSearching();
-});
-btnCancel.addEventListener("click", ()=>{
-  if(!searching) return;
-  stopSearchingUI();
-  toast("Solicitud cancelada");
-});
 
-/* ===== Asignación de conductor y UI pasajero ===== */
-function assignDriver(){
+async function riderCreateRide(){
+  if(!currentUser){ toast("Iniciá sesión"); return; }
+  if(!origin || !dest){ toast("Seleccioná origen y destino"); return; }
+  startSearchingUI();
+
   const km=km2(origin,dest);
   const finalFare=estimateFareRaw(km);
-
-  // Conductor ficticio para demo
-  const driver={ name:"Carlos Pérez", photo:"https://i.pravatar.cc/100?img=3" };
-
-  // Mostrar tarjeta al pasajero
-  $("#driverName").textContent=driver.name;
-  $("#driverAvatar").src=driver.photo;
-  $("#driverCard").classList.remove("hide");
-
-  const top=$("#rideMapTop");
-  top.textContent=`✅ Conductor asignado — ${driver.name} · Total estimado ${money(finalFare)}`;
-  top.classList.add("show");
-  setTimeout(()=> top.classList.remove("show"), 2500);
-
-  // Guardar historial
-  const rec={id:Math.random().toString(36).slice(2), originText:$("#riderOrigin").value.trim(), destText:$("#riderDest").value.trim(), km, finalFare, ts:Date.now()};
-  const arr=loadArr(riderHistKey(currentUser.email)); arr.push(rec); saveArr(riderHistKey(currentUser.email),arr); renderRiderHistory();
-
-  // Simular “por dónde viene el conductor”
-  simulateDriverApproach(driver);
-
-  toast("Viaje confirmado");
-  stopSearchingUI();
-
-  // Habilitar simulación del lado conductor (si el usuario es conductor logueado en otro dispositivo, esto se haría por tiempo real)
-  enableDriverIncoming(rec, driver);
+  const data={
+    riderId: currentUser.uid,
+    riderName: currentUser.displayName || currentUser.email,
+    riderPhoto: currentUser.photo || "",
+    riderEmail: currentUser.email,
+    originText: $("#riderOrigin").value.trim() || `${origin.lat.toFixed(5)}, ${origin.lng.toFixed(5)}`,
+    destText: $("#riderDest").value.trim() || `${dest.lat.toFixed(5)}, ${dest.lng.toFixed(5)}`,
+    origin, dest,
+    km, fare: finalFare, vehicle: $("#reqType").value || "auto",
+    payment,
+    status:"requested", finished:false,
+    ts: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  try{
+    await ridesCol.add(data);
+    toast("Solicitud enviada");
+  }catch(e){
+    toast("Error al crear viaje: "+e.message);
+    stopSearchingUI();
+  }
 }
 
-/* Simular acercamiento del conductor al origen */
-let driverAnim={timer:null};
-function simulateDriverApproach(driver){
-  ensureRideMap();
-  if(driverAnim.timer){ clearInterval(driverAnim.timer); driverAnim.timer=null; }
-  // Punto de partida del conductor (a ~1.2km)
-  const start = origin ? {lat: origin.lat+0.01, lng: origin.lng+0.01} : {lat:-31.53,lng:-68.53};
-  if(!markers.driver) markers.driver=L.marker([start.lat,start.lng]).addTo(mapRide).bindTooltip("Conductor");
-  markers.driver.setLatLng([start.lat,start.lng]);
+function riderAttachActiveRide(){
+  if(riderActiveUnsub) riderActiveUnsub();
+  riderActiveUnsub = ridesCol
+    .where("riderId","==", currentUser.uid)
+    .where("finished","==", false)
+    .orderBy("ts","desc").limit(1)
+    .onSnapshot((qs)=>{
+      if(qs.empty){
+        // sin viaje activo
+        $("#driverCard").classList.add("hide");
+        stopSearchingUI();
+        return;
+      }
+      const doc = qs.docs[0];
+      const r = doc.data();
 
-  let t=0;
-  driverAnim.timer=setInterval(()=>{
-    t+=0.02; if(t>=1){ t=1; clearInterval(driverAnim.timer); driverAnim.timer=null; }
-    const lat = start.lat + (origin.lat - start.lat)*t;
-    const lng = start.lng + (origin.lng - start.lng)*t;
-    markers.driver.setLatLng([lat,lng]);
-    $("#driverExtra").textContent = t<1 ? "En camino al punto de partida…" : "Llegó al punto de partida";
-  }, 250);
+      // UI estado
+      $("#rideMapTop").textContent = `Estado: ${r.status.toUpperCase()} — ${r.originText} → ${r.destText} · ${r.km?.toFixed?.(2)||0} km · ${money(r.fare)}`;
+      $("#rideMapTop").classList.add("show");
+      setTimeout(()=> $("#rideMapTop").classList.remove("show"), 1600);
+
+      // mostrar botón cancelar sólo si sigue en requested
+      btnCancel.classList.toggle("hide", r.status!=="requested");
+      btnCancel.onclick = async ()=>{
+        try{
+          await db.runTransaction(async (tx)=>{
+            const ref=ridesCol.doc(doc.id);
+            const snap=await tx.get(ref);
+            const cur=snap.data();
+            if(cur.status!=="requested") throw new Error("Ya no se puede cancelar");
+            tx.update(ref,{status:"cancelled", finished:true});
+          });
+          toast("Solicitud cancelada");
+        }catch(e){ toast(e.message); }
+      };
+
+      // Si fue aceptado, mostrar conductor
+      if(r.driverId){
+        $("#driverName").textContent = r.driverName || "Conductor";
+        $("#driverAvatar").src = r.driverPhoto || "https://i.pravatar.cc/100?img=3";
+        $("#driverExtra").textContent = r.status==="accepted" ? "En camino al punto de partida…" :
+                                        r.status==="arrived"  ? "Conductor llegó al origen" :
+                                        r.status==="in_trip"  ? "En viaje" :
+                                        r.status==="completed"? "Viaje finalizado" : "—";
+        $("#driverCard").classList.remove("hide");
+        stopSearchingUI();
+      } else {
+        $("#driverCard").classList.add("hide");
+      }
+
+      // Terminado
+      if(r.finished){
+        stopSearchingUI();
+        // guardar historial local para tu pestaña Historial
+        const key = `taxiya_rider_history_${currentUser.email}`;
+        const arr = (()=>{try{return JSON.parse(localStorage.getItem(key)||"[]");}catch(_){return[];}})();
+        arr.push({ts: Date.now(), originText:r.originText, destText:r.destText, km:r.km, finalFare:r.fare});
+        localStorage.setItem(key, JSON.stringify(arr));
+        renderRiderHistory();
+      }
+    });
 }
 
-/* ===== Historial ===== */
+/* ========================= CONDUCTOR — estado y matching ========================= */
+let driverMap=null;
+function initDriverMapOnce(){
+  if(driverMap || !currentUser || currentUser.approved!==true) return;
+  driverMap=L.map('mapDriver',{zoomControl:false});
+  L.control.zoom({position:'bottomright'}).addTo(driverMap);
+  primaryTileLayer().addTo(driverMap);
+  driverMap.setView([-31.5375,-68.5364],13);
+  window.addEventListener('resize', ()=> resizeMap(driverMap));
+}
+
+function paintKycUI(){
+  const st=currentUser?.approved ? "Aprobado" : "No solicitado";
+  const pill=$("#drvKycStatus");
+  if(pill){ pill.textContent=st; pill.className="pill "+(currentUser.approved?"ok":"warn"); }
+  $("#btnToggleOnline").disabled = !currentUser?.approved;
+  $("#btnStartRoute").disabled = !currentUser?.approved;
+  $("#btnPauseRoute").disabled = !currentUser?.approved;
+  $("#btnStopRoute").disabled = !currentUser?.approved;
+}
+
+$("#btnVerifySubmit").addEventListener("click", async ()=>{
+  if(!auth.currentUser){ toast("Iniciá sesión"); return; }
+  await usersCol.doc(auth.currentUser.uid).set({role:"driver", approved:true},{merge:true});
+  currentUser.approved = true; currentUser.role="driver";
+  refreshTabVisibility(); setActiveTab("driver"); initDriverMapOnce(); paintKycUI();
+  $("#verifyMsg").textContent="Aprobado en modo pruebas (sin validaciones).";
+  $("#verifyMsg").className="pill ok"; $("#verifyMsg").classList.remove("hide");
+  toast("✅ Verificación aprobada");
+});
+
+$("#btnToggleOnline").addEventListener("click", async ()=>{
+  if(!auth.currentUser) return;
+  const online = !currentUser.online;
+  await usersCol.doc(auth.currentUser.uid).set({online},{merge:true});
+  currentUser.online = online;
+  toast(online?"Conductor en línea":"Conductor en pausa");
+  attachDriverStreams();
+});
+
+/* Listeners en vivo para el conductor */
+function attachDriverStreams(){
+  // limpiar
+  if(driverAvailUnsub) driverAvailUnsub();
+  if(driverMineUnsub) driverMineUnsub();
+
+  if(!(currentUser?.approved && currentUser?.online)){
+    $("#driverAvailable").innerHTML = `<div class="small muted">Ponete EN LÍNEA para ver viajes disponibles.</div>`;
+    $("#driverMyActive").innerHTML = `<div class="small muted">Sin viajes activos.</div>`;
+    return;
+  }
+
+  driverAvailUnsub = ridesCol.where("status","==","requested")
+    .orderBy("ts","asc").limit(30)
+    .onSnapshot((qs)=>{
+      const wrap=$("#driverAvailable"); wrap.innerHTML="";
+      if(qs.empty){ wrap.innerHTML=`<div class="small muted">Sin viajes por ahora…</div>`; return; }
+      qs.forEach(doc=>{
+        const r=doc.data();
+        const item=document.createElement("div"); item.className="item";
+        item.innerHTML=`
+          <div><b>${r.originText}</b> → <b>${r.destText}</b></div>
+          <div class="small muted">${(r.km||0).toFixed(1)} km · ${money(r.fare)} · Pasajero: ${r.riderName||"—"}</div>
+          <div class="row" style="margin-top:6px">
+            <button class="btnp">Aceptar</button>
+          </div>`;
+        item.querySelector(".btnp").onclick = ()=> driverAcceptRide(doc.id);
+        wrap.appendChild(item);
+      });
+    });
+
+  driverMineUnsub = ridesCol.where("driverId","==", auth.currentUser.uid)
+    .where("finished","==",false)
+    .orderBy("ts","desc")
+    .onSnapshot((qs)=>{
+      const wrap=$("#driverMyActive"); wrap.innerHTML="";
+      if(qs.empty){ wrap.innerHTML=`<div class="small muted">Sin viajes activos.</div>`; return; }
+      qs.forEach(doc=>{
+        const r=doc.data();
+        const item=document.createElement("div"); item.className="item";
+        const nextButtons = renderNextButtons(r.status);
+        item.innerHTML=`
+          <div><b>${r.originText}</b> → <b>${r.destText}</b></div>
+          <div class="small muted">${(r.km||0).toFixed(1)} km · ${money(r.fare)} · Pasajero: ${r.riderName||"—"} · Estado: <b>${r.status}</b></div>
+          <div class="row" style="margin-top:6px">${nextButtons}</div>`;
+        item.querySelectorAll("button[data-next]").forEach(b=>{
+          b.onclick = ()=> driverAdvance(doc.id, b.dataset.next);
+        });
+        const c=item.querySelector("[data-cancel]");
+        if(c) c.onclick = ()=> driverCancel(doc.id);
+        wrap.appendChild(item);
+      });
+    });
+}
+function renderNextButtons(cur){
+  const order=["requested","accepted","arrived","in_trip","completed"];
+  const nx = (label,next,enabled)=>`<button class="btn${enabled?' btnp':''}" data-next="${next}" ${enabled?'':'disabled'}>${label}</button>`;
+  const can = n=> order.indexOf(n)===order.indexOf(cur)+1;
+  const cancelAllowed = cur==="requested"||cur==="accepted";
+  return `
+    ${nx("Llegué","arrived", can("arrived"))}
+    ${nx("Iniciar viaje","in_trip", can("in_trip"))}
+    ${nx("Finalizar","completed", can("completed"))}
+    ${cancelAllowed?`<button class="btnd" data-cancel>Cancelar</button>`:""}
+  `;
+}
+async function driverAcceptRide(rideId){
+  try{
+    await db.runTransaction(async (tx)=>{
+      const ref=ridesCol.doc(rideId);
+      const snap=await tx.get(ref);
+      if(!snap.exists) throw new Error("El viaje ya no existe");
+      const r=snap.data();
+      if(r.status!=="requested") throw new Error("El viaje ya fue tomado");
+      tx.update(ref,{
+        status:"accepted",
+        driverId: auth.currentUser.uid,
+        driverName: currentUser.displayName || currentUser.email,
+        driverPhoto: currentUser.photo || "",
+      });
+    });
+    toast("¡Viaje aceptado!");
+  }catch(e){ toast(e.message); }
+}
+async function driverAdvance(rideId,next){
+  const ord=["requested","accepted","arrived","in_trip","completed"];
+  try{
+    await db.runTransaction(async (tx)=>{
+      const ref=ridesCol.doc(rideId);
+      const snap=await tx.get(ref);
+      if(!snap.exists) throw new Error("No existe");
+      const r=snap.data();
+      if(ord.indexOf(next)!==ord.indexOf(r.status)+1) throw new Error("Secuencia inválida");
+      const upd={status:next};
+      if(next==="completed") upd.finished=true;
+      tx.update(ref,upd);
+    });
+  }catch(e){ toast(e.message); }
+}
+async function driverCancel(rideId){
+  try{
+    await db.runTransaction(async (tx)=>{
+      const ref=ridesCol.doc(rideId);
+      const snap=await tx.get(ref);
+      if(!snap.exists) throw new Error("No existe");
+      const r=snap.data();
+      if(r.status!=="requested" && r.status!=="accepted") throw new Error("No se puede cancelar ahora");
+      tx.update(ref,{status:"cancelled", finished:true});
+    });
+  }catch(e){ toast(e.message); }
+}
+
+/* ========================= Historial (local UI) ========================= */
 function renderRiderHistory(){
   if(!currentUser) return;
-  const list=loadArr(riderHistKey(currentUser.email));
+  const key=`taxiya_rider_history_${currentUser.email}`;
+  let list=[]; try{ list=JSON.parse(localStorage.getItem(key)||"[]"); }catch(_){}
   const wrap=$("#riderHistory"); wrap.innerHTML="";
   if(!list.length){ wrap.innerHTML=`<div class="muted small">Sin viajes aún.</div>`; return; }
   list.slice().reverse().forEach((t)=>{
@@ -641,166 +844,92 @@ function renderRiderHistory(){
     wrap.appendChild(div);
   });
 }
-$("#btnClearRiderHistory").addEventListener("click", ()=>{ if(!currentUser) return; saveArr(riderHistKey(currentUser.email),[]); renderRiderHistory(); toast("Historial borrado"); });
-
-/* ===== Driver (solo tras KYC aprobado) ===== */
-let driverMap=null;
-function initDriverMapOnce(){
-  if(driverMap || !currentUser || currentUser.kyc?.status!=="approved") return;
-  driverMap=L.map('mapDriver',{zoomControl:false});
-  L.control.zoom({position:'bottomright'}).addTo(driverMap);
-  primaryTileLayer().addTo(driverMap);
-  driverMap.setView([-31.5375,-68.5364],13);
-  window.addEventListener('resize', ()=> resizeMap(driverMap));
-  $("#btnSimIncoming").disabled=false;
-}
-$("#btnToggleOnline").addEventListener("click", ()=>{
-  if(currentUser?.kyc?.status!=="approved") return toast("Verificación necesaria");
-  $("#btnStartRoute").disabled=false; $("#btnPauseRoute").disabled=false; $("#btnStopRoute").disabled=false;
-  toast("Conductor en línea");
-});
-$("#btnStartRoute").addEventListener("click", ()=> toast("Recorrido iniciado"));
-$("#btnPauseRoute").addEventListener("click", ()=> toast("Recorrido en pausa"));
-$("#btnStopRoute").addEventListener("click", ()=> toast("Recorrido terminado"));
-
-/* Mostrar viaje entrante en panel Conductor */
-function enableDriverIncoming(rec, driver){
-  // Guarda temporalmente el último viaje para usar con “Simular viaje entrante”
-  localStorage.setItem("taxiya_last_trip", JSON.stringify({rec, driver, rider:{name: currentUser?.name || "Pasajero", photo: currentUser?.photo || ""}}));
-  $("#btnSimIncoming").disabled=false;
-}
-$("#btnSimIncoming").addEventListener("click", ()=>{
-  if(currentUser?.kyc?.status!=="approved"){ toast("Necesitás verificación aprobada"); return; }
-  const last = JSON.parse(localStorage.getItem("taxiya_last_trip")||"null") ||
-               { rec:{originText:"Av. Siempre Viva 742",destText:"Terminal Central",km:5.2,finalFare:estimateFareRaw(5.2)}, driver:{name:"Vos"}, rider:{name:"Laura Gómez", photo:"https://i.pravatar.cc/100?img=5"} };
-  $("#driverIncoming").style.display="flex";
-  $("#incomingAvatar").src = last.rider.photo || "https://i.pravatar.cc/100?img=5";
-  $("#incomingTitle").textContent = `Pasajera: ${last.rider.name}`;
-  $("#incomingDetail").innerHTML = `Partida: <b>${last.rec.originText}</b> · Destino: <b>${last.rec.destText}</b><br>Total: <b>${money(last.rec.finalFare)}</b>`;
-  toast("🔔 Nuevo viaje entrante");
+$("#btnClearRiderHistory").addEventListener("click", ()=>{
+  if(!currentUser) return;
+  localStorage.setItem(`taxiya_rider_history_${currentUser.email}`,"[]");
+  renderRiderHistory(); toast("Historial borrado");
 });
 
-/* ===== Verificación (Ajustes) — MODO LIBRE ===== */
-function kycStatusText(s){ return s==="approved"?"Aprobado": s==="pending"?"Pendiente":"No solicitado"; }
-function paintKycUI(){
-  const st=currentUser?.kyc?.status||"none";
-  const pill=$("#drvKycStatus");
-  if(pill){ pill.textContent=kycStatusText(st); pill.className="pill "+(st==="approved"?"ok":"warn"); }
-  const toggle=$("#btnToggleOnline");
-  if(toggle) toggle.disabled = st!=="approved";
-  $("#btnSimIncoming").disabled = st!=="approved";
-}
-function showKycMsg(t,cls){ const m=$("#verifyMsg"); if(!m) return; m.textContent=t; m.className=`pill ${cls}`; m.classList.remove("hide"); }
-$("#btnVerifySubmit").addEventListener("click", ()=>{
-  if(!currentUser) return toast("Iniciá sesión");
-  currentUser.role="driver";
-  currentUser.kyc={status:"approved", submittedAt:Date.now(), data:{freeApproval:true}};
-  const db=loadUsers(); db[normEmail(currentUser.email)]=currentUser; saveUsers(db); saveSession(currentUser);
-  paintKycUI(); refreshTabVisibility(); setActiveTab("driver"); initDriverMapOnce();
-  showKycMsg("Aprobado en modo pruebas (sin validaciones).","ok");
-  toast("✅ Verificación aprobada (pruebas)");
-});
-
-/* ===== Perfil / Sesión ===== */
-function paintAuth(){
-  $("#authPill").textContent=currentUser
-    ? `${(currentUser.name||currentUser.email)} — ${currentUser.role}${currentUser.kyc?.status==="approved"?" (KYC✓)":""}`
-    : "Sin sesión";
-}
+/* ========================= Perfil / Sesión ========================= */
 function paintProfile(){
   const el=$("#profileInfo"), av=$("#profileAvatar"); if(!el||!av) return;
   if(!currentUser){ el.innerHTML="No hay sesión."; av.src=""; return; }
-  const {name,email,role,kyc,photo}=currentUser;
+  const {displayName,email,role,approved,photo} = currentUser;
   av.src = photo || "https://i.pravatar.cc/100?u=placeholder";
-  el.innerHTML=`Nombre: <b>${name||"—"}</b> · Correo: <b>${email}</b><br>Rol: <b>${role}</b> · KYC: <b>${kycStatusText(kyc?.status||"none")}</b>`;
+  el.innerHTML=`Nombre: <b>${displayName||"—"}</b> · Correo: <b>${email}</b><br>Rol: <b>${role||'rider'}</b> · KYC: <b>${approved?'Aprobado':'No solicitado'}</b>`;
 }
-function signOut(){ clearSession(); currentUser=null; paintAuth(); refreshTabVisibility(); setActiveTab("access"); showLogin(); toast("Sesión cerrada"); }
-$("#btnSignOut").addEventListener("click", signOut);
+$("#btnSignOut").addEventListener("click", ()=> auth.signOut().catch(e=>toast(e.message)));
 
-/* ===== Calificaciones ===== */
-function avg(arr){ if(!arr.length) return 0; return Math.round((arr.reduce((a,b)=>a+b,0)/arr.length)*10)/10; }
-function renderRatings(){
-  if(!currentUser) return;
-  const list=loadArr(ratingKey(currentUser.email));
-  $("#ratingSummary").innerHTML = list.length
-    ? `Promedio: <b>${avg(list)} ★</b> · Cantidad: <b>${list.length}</b>`
-    : `Sin calificaciones aún.`;
-  const wrap=$("#ratingList"); wrap.innerHTML="";
-  list.slice().reverse().forEach((v,i)=>{
-    const div=document.createElement("div"); div.className="item";
-    div.innerHTML=`<div>⭐ ${v} · <span class="muted small">#${list.length - i}</span></div>`;
-    wrap.appendChild(div);
-  });
-}
-$("#btnAddFakeRating").addEventListener("click", ()=>{
-  if(!currentUser) return;
-  const val = 3 + Math.floor(Math.random()*3); // 3..5
-  const arr=loadArr(ratingKey(currentUser.email)); arr.push(val); saveArr(ratingKey(currentUser.email),arr);
-  renderRatings(); toast("Calificación añadida");
-});
-$("#btnClearRatings").addEventListener("click", ()=>{ if(!currentUser) return; saveArr(ratingKey(currentUser.email),[]); renderRatings(); toast("Calificaciones borradas"); });
-
-/* ===== Acceso ===== */
-function cryptoRandom(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
-function signUp({name,email,pass,photo}){
-  email=normEmail(email);
-  if(!name) return {ok:false,msg:"Ingresá tu nombre."};
-  if(!email||!pass) return {ok:false,msg:"Correo y contraseña requeridos."};
-  if(pass.length<6) return {ok:false,msg:"La contraseña debe tener al menos 6 caracteres."};
-  if(!photo) return {ok:false,msg:"La foto de perfil es obligatoria."};
-  const db=loadUsers(); if(db[email]) return {ok:false,msg:"El correo ya existe."};
-  const user={uid:cryptoRandom(),name,email,pass,photo,role:"rider",createdAt:Date.now(),kyc:{status:"none"}};
-  db[email]=user; saveUsers(db); saveSession(user); currentUser=user; return {ok:true,msg:"Cuenta creada."};
-}
-function signIn({email,pass}){
-  email=normEmail(email);
-  if(!email||!pass) return {ok:false,msg:"Ingresá correo y contraseña."};
-  const db=loadUsers(); const u=db[email]; if(!u) return {ok:false,msg:"Usuario no encontrado."};
-  if(u.pass!==pass) return {ok:false,msg:"Contraseña incorrecta."};
-  saveSession(u); currentUser=u; return {ok:true,msg:"Sesión iniciada."};
-}
+/* ========================= Acceso (Firebase Auth) ========================= */
 function banner(text,type="warn"){ const el=$("#msg"); el.textContent=text; el.className=`pill ${type}`; el.classList.remove("hide"); }
 function hideBanner(){ $("#msg").className="pill hide"; }
-function routeAfterAuth(){
-  refreshTabVisibility(); paintAuth();
-  initRideMapOnce(); renderRiderHistory(); paintProfile(); renderRatings(); paintKycUI();
-  setActiveTab("ride");
-}
+
 function showLogin(){ $("#loginBox").classList.remove("hide"); $("#registerBox").classList.add("hide"); setTimeout(()=>$("#loginEmail").focus(),0); }
 function showRegister(){ $("#registerBox").classList.remove("hide"); $("#loginBox").classList.add("hide"); setTimeout(()=>$("#regName").focus(),0); }
 $("#switchToLogin").addEventListener("click", showLogin);
 $("#switchToRegister").addEventListener("click", showRegister);
-$("#loginBox").addEventListener("submit", (e)=>{ e.preventDefault(); hideBanner(); const email=$("#loginEmail").value, pass=$("#loginPass").value;
-  const r=signIn({email,pass}); if(!r.ok){ banner(r.msg,"error"); return; } banner(r.msg,"ok"); routeAfterAuth(); });
+
+$("#loginBox").addEventListener("submit", async (e)=>{
+  e.preventDefault(); hideBanner();
+  const email=$("#loginEmail").value.trim(), pass=$("#loginPass").value;
+  try{
+    await auth.signInWithEmailAndPassword(email,pass);
+    banner("Sesión iniciada.","ok");
+  }catch(err){ banner(err.message,"error"); }
+});
+
 $("#registerBox").addEventListener("submit", (e)=>{
   e.preventDefault(); hideBanner();
-  const name=$("#regName").value.trim(), email=$("#regEmail").value, pass=$("#regPass").value;
+  const name=$("#regName").value.trim(), email=$("#regEmail").value.trim(), pass=$("#regPass").value;
   const file=$("#regPhoto").files[0];
   if(!file){ banner("La foto de perfil es obligatoria.","error"); return; }
   const reader=new FileReader();
-  reader.onload=()=>{
+  reader.onload=async ()=>{
     const photo=reader.result;
-    const r=signUp({name,email,pass,photo});
-    if(!r.ok){ banner(r.msg,"error"); return; }
-    banner(r.msg,"ok"); routeAfterAuth();
+    try{
+      const {user}=await auth.createUserWithEmailAndPassword(email,pass);
+      await user.updateProfile({displayName:name});
+      await usersCol.doc(user.uid).set({
+        uid:user.uid, email:user.email, displayName:name, photo,
+        role:"rider", approved:false, online:false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      },{merge:true});
+      banner("Cuenta creada.","ok");
+    }catch(err){ banner(err.message,"error"); }
   };
   reader.readAsDataURL(file);
 });
 
-/* Reset datos */
-$("#btnResetAll").addEventListener("click", ()=>{
-  localStorage.clear(); currentUser=null; paintAuth(); refreshTabVisibility(); setActiveTab("access"); showLogin(); banner("Datos locales limpiados.","ok");
+auth.onAuthStateChanged(async (u)=>{
+  if(!u){
+    currentUser=null; paintAuth(); refreshTabVisibility(); setActiveTab("access"); showLogin();
+    // limpiar listeners
+    if(riderActiveUnsub) riderActiveUnsub(); if(driverAvailUnsub) driverAvailUnsub(); if(driverMineUnsub) driverMineUnsub();
+    return;
+  }
+  // cargar perfil desde users
+  const ref=usersCol.doc(u.uid);
+  const snap=await ref.get();
+  if(!snap.exists){
+    await ref.set({uid:u.uid, email:u.email, displayName:u.displayName||"", photo:u.photoURL||"", role:"rider", approved:false, online:false, createdAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  }
+  currentUser=(await ref.get()).data();
+  paintAuth(); refreshTabVisibility(); paintProfile();
+  // enrutar
+  setActiveTab("ride");
+  initRideMapOnce();
+  renderRiderHistory();
+  paintKycUI();
+  riderAttachActiveRide();
+  attachDriverStreams();
 });
 
-/* ===== Montaje general ===== */
-function paintAuthAndStart(){
-  const saved=loadSession(); if(saved){ currentUser=saved; }
-  paintAuth(); refreshTabVisibility();
-  if(!currentUser){ setActiveTab("access"); showLogin(); } else { routeAfterAuth(); }
-}
-paintAuthAndStart();
+/* ========================= Driver panel extras ========================= */
+$("#btnStartRoute").addEventListener("click", ()=> toast("Recorrido iniciado"));
+$("#btnPauseRoute").addEventListener("click", ()=> toast("Recorrido en pausa"));
+$("#btnStopRoute").addEventListener("click", ()=> toast("Recorrido terminado"));
 
-/* ===== Inputs Ride bindings ===== */
+/* ========================= Inputs Ride bindings ========================= */
 createAutocomplete($("#riderOrigin"), $("#acOrigin"), setOriginFromField);
 createAutocomplete($("#riderDest"), $("#acDest"), setDestFromField);
 $("#btnGeoRO").addEventListener("click", setOriginFromField);
@@ -815,6 +944,18 @@ $("#btnLocate").addEventListener("click", ()=>{
     updateEstimate();
   }, ()=> toast("No se pudo obtener tu ubicación"), {enableHighAccuracy:true,timeout:5000,maximumAge:15000});
 });
+
+$("#btnUnified").addEventListener("click", riderCreateRide);
+$("#btnCancel").addEventListener("click", ()=>{}); // se asigna dinámicamente al escuchar el ride
+
+/* ========================= Reset demo local ========================= */
+$("#btnResetAll").addEventListener("click", async ()=>{
+  localStorage.clear();
+  try{ await auth.signOut(); }catch(_){}
+  currentUser=null; paintAuth(); refreshTabVisibility(); setActiveTab("access"); showLogin(); banner("Datos locales limpiados.","ok");
+});
+
+/* ========================= Map resize on focus ========================= */
 window.addEventListener("focus", ()=>{ resizeMap(mapRide); resizeMap(driverMap); });
 </script>
 </body>
