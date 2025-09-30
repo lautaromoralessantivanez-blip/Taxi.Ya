@@ -342,25 +342,25 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:poin
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <!-- Firebase (Compat) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore-compat.js"></script>
 
 <script type="module">
 /* ========================= Firebase ========================= */
 const firebaseConfig = {
-  /* TODO: pegá tu config de Firebase aquí */
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_AUTH_DOMAIN",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_BUCKET",
-  messagingSenderId: "TU_SENDER_ID",
-  appId: "TU_APP_ID"
+  apiKey: "AIzaSyBu523IOGnIZGfAkdlLdVLcENwLgv5KU9o",
+  authDomain: "taxi-ya-3be33.firebaseapp.com",
+  projectId: "taxi-ya-3be33",
+  storageBucket: "taxi-ya-3be33.appspot.com",
+  messagingSenderId: "31840475169",
+  appId: "1:31840475169:web:1485e47b9ebea4a66c6b60",
+  measurementId: "G-2RQRP1G2KB"
 };
+
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
-
 const usersCol = db.collection("users");
 const ridesCol = db.collection("rides");
 
@@ -371,12 +371,15 @@ const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',ma
 const toRad=d=>d*Math.PI/180;
 const km2=(a,b)=>{const R=6371,dLat=toRad(b.lat-a.lat),dLon=toRad(b.lng-a.lng);const la1=toRad(a.lat),la2=toRad(b.lat);const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(h));};
 function toast(msg,ms=1700){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hide"); setTimeout(()=>t.classList.add("hide"),ms); }
+function banner(text,type="warn"){ const el=$("#msg"); el.textContent=text; el.className=`pill ${type}`; el.classList.remove("hide"); }
+function hideBanner(){ $("#msg").className="pill hide"; }
+function showIndexHint(err){ console.error(err); if(err && /index/i.test(err.message||"")) banner("Firestore necesita un índice para esa consulta. Abrí la consola y seguí el link sugerido. Simplifiqué la consulta para que funcione igual.", "warn"); }
 
 /* ========================= Estado global ========================= */
-let currentUser=null;         // perfil users/{uid}
-let riderActiveUnsub=null;    // listener viaje activo pasajero
-let driverAvailUnsub=null;    // listener viajes disponibles
-let driverMineUnsub=null;     // listener viajes del conductor
+let currentUser=null;
+let riderActiveUnsub=null;
+let driverAvailUnsub=null;
+let driverMineUnsub=null;
 
 /* ========================= Tabs ========================= */
 const tabsCfg={
@@ -397,7 +400,6 @@ function setActiveTab(name){
   if(name==="settings"){ paintProfile(); paintKycUI(); renderRatings(); }
 }
 Object.values(tabsCfg).forEach(({btn})=> btn.addEventListener("click", ()=> setActiveTab(btn.dataset.tab), {passive:true}));
-
 function refreshTabVisibility(){
   const logged=!!currentUser;
   tabsCfg.access.btn.classList.toggle("hide", logged);
@@ -415,7 +417,7 @@ function applyTheme(){ const t=localStorage.getItem("taxiya_theme")||"dark"; doc
 $("#themeToggle").addEventListener("change", e=>{ localStorage.setItem("taxiya_theme", e.target.checked?"light":"dark"); applyTheme(); });
 applyTheme();
 
-/* ========================= Autocomplete calles ========================= */
+/* ========================= Autocomplete ========================= */
 const removeDiacritics = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 const norm = s => removeDiacritics(String(s||"").toLowerCase().trim());
 let STREETS = ["Av. Libertador General San Martín","Av. Ignacio de la Roza","Av. Rawson","Calle Mendoza","Calle Salta","Calle Tucumán","Calle Catamarca","Calle Rivadavia","Calle Mitre","Calle Santa Fe","Calle Rioja","Calle San Luis","Calle Urquiza","Calle Sarmiento","Calle Laprida","Calle Entre Ríos"];
@@ -590,6 +592,10 @@ async function riderCreateRide(){
   if(!origin || !dest){ toast("Seleccioná origen y destino"); return; }
   startSearchingUI();
 
+  // Evitar 2 viajes activos por pasajero (sin orderBy → no índice)
+  const existing = await ridesCol.where("riderId","==", currentUser.uid).where("finished","==", false).limit(1).get().catch(()=>null);
+  if(existing && !existing.empty){ toast("Ya tenés un viaje activo"); stopSearchingUI(); return; }
+
   const km=km2(origin,dest);
   const finalFare=estimateFareRaw(km);
   const data={
@@ -616,13 +622,13 @@ async function riderCreateRide(){
 
 function riderAttachActiveRide(){
   if(riderActiveUnsub) riderActiveUnsub();
+  // Sin orderBy para evitar índice; asumimos 0 o 1 activo
   riderActiveUnsub = ridesCol
     .where("riderId","==", currentUser.uid)
     .where("finished","==", false)
-    .orderBy("ts","desc").limit(1)
+    .limit(1)
     .onSnapshot((qs)=>{
       if(qs.empty){
-        // sin viaje activo
         $("#driverCard").classList.add("hide");
         stopSearchingUI();
         return;
@@ -630,12 +636,10 @@ function riderAttachActiveRide(){
       const doc = qs.docs[0];
       const r = doc.data();
 
-      // UI estado
       $("#rideMapTop").textContent = `Estado: ${r.status.toUpperCase()} — ${r.originText} → ${r.destText} · ${r.km?.toFixed?.(2)||0} km · ${money(r.fare)}`;
       $("#rideMapTop").classList.add("show");
       setTimeout(()=> $("#rideMapTop").classList.remove("show"), 1600);
 
-      // mostrar botón cancelar sólo si sigue en requested
       btnCancel.classList.toggle("hide", r.status!=="requested");
       btnCancel.onclick = async ()=>{
         try{
@@ -650,7 +654,6 @@ function riderAttachActiveRide(){
         }catch(e){ toast(e.message); }
       };
 
-      // Si fue aceptado, mostrar conductor
       if(r.driverId){
         $("#driverName").textContent = r.driverName || "Conductor";
         $("#driverAvatar").src = r.driverPhoto || "https://i.pravatar.cc/100?img=3";
@@ -664,17 +667,15 @@ function riderAttachActiveRide(){
         $("#driverCard").classList.add("hide");
       }
 
-      // Terminado
       if(r.finished){
         stopSearchingUI();
-        // guardar historial local para tu pestaña Historial
         const key = `taxiya_rider_history_${currentUser.email}`;
         const arr = (()=>{try{return JSON.parse(localStorage.getItem(key)||"[]");}catch(_){return[];}})();
         arr.push({ts: Date.now(), originText:r.originText, destText:r.destText, km:r.km, finalFare:r.fare});
         localStorage.setItem(key, JSON.stringify(arr));
         renderRiderHistory();
       }
-    });
+    }, showIndexHint);
 }
 
 /* ========================= CONDUCTOR — estado y matching ========================= */
@@ -719,7 +720,6 @@ $("#btnToggleOnline").addEventListener("click", async ()=>{
 
 /* Listeners en vivo para el conductor */
 function attachDriverStreams(){
-  // limpiar
   if(driverAvailUnsub) driverAvailUnsub();
   if(driverMineUnsub) driverMineUnsub();
 
@@ -729,8 +729,8 @@ function attachDriverStreams(){
     return;
   }
 
-  driverAvailUnsub = ridesCol.where("status","==","requested")
-    .orderBy("ts","asc").limit(30)
+  // Viajes disponibles (sin orderBy para evitar índice)
+  driverAvailUnsub = ridesCol.where("status","==","requested").limit(30)
     .onSnapshot((qs)=>{
       const wrap=$("#driverAvailable"); wrap.innerHTML="";
       if(qs.empty){ wrap.innerHTML=`<div class="small muted">Sin viajes por ahora…</div>`; return; }
@@ -746,11 +746,10 @@ function attachDriverStreams(){
         item.querySelector(".btnp").onclick = ()=> driverAcceptRide(doc.id);
         wrap.appendChild(item);
       });
-    });
+    }, showIndexHint);
 
-  driverMineUnsub = ridesCol.where("driverId","==", auth.currentUser.uid)
-    .where("finished","==",false)
-    .orderBy("ts","desc")
+  // Mis viajes activos (sin orderBy para evitar índice)
+  driverMineUnsub = ridesCol.where("driverId","==", auth.currentUser.uid).where("finished","==",false)
     .onSnapshot((qs)=>{
       const wrap=$("#driverMyActive"); wrap.innerHTML="";
       if(qs.empty){ wrap.innerHTML=`<div class="small muted">Sin viajes activos.</div>`; return; }
@@ -769,7 +768,7 @@ function attachDriverStreams(){
         if(c) c.onclick = ()=> driverCancel(doc.id);
         wrap.appendChild(item);
       });
-    });
+    }, showIndexHint);
 }
 function renderNextButtons(cur){
   const order=["requested","accepted","arrived","in_trip","completed"];
@@ -861,9 +860,6 @@ function paintProfile(){
 $("#btnSignOut").addEventListener("click", ()=> auth.signOut().catch(e=>toast(e.message)));
 
 /* ========================= Acceso (Firebase Auth) ========================= */
-function banner(text,type="warn"){ const el=$("#msg"); el.textContent=text; el.className=`pill ${type}`; el.classList.remove("hide"); }
-function hideBanner(){ $("#msg").className="pill hide"; }
-
 function showLogin(){ $("#loginBox").classList.remove("hide"); $("#registerBox").classList.add("hide"); setTimeout(()=>$("#loginEmail").focus(),0); }
 function showRegister(){ $("#registerBox").classList.remove("hide"); $("#loginBox").classList.add("hide"); setTimeout(()=>$("#regName").focus(),0); }
 $("#switchToLogin").addEventListener("click", showLogin);
@@ -903,11 +899,9 @@ $("#registerBox").addEventListener("submit", (e)=>{
 auth.onAuthStateChanged(async (u)=>{
   if(!u){
     currentUser=null; paintAuth(); refreshTabVisibility(); setActiveTab("access"); showLogin();
-    // limpiar listeners
     if(riderActiveUnsub) riderActiveUnsub(); if(driverAvailUnsub) driverAvailUnsub(); if(driverMineUnsub) driverMineUnsub();
     return;
   }
-  // cargar perfil desde users
   const ref=usersCol.doc(u.uid);
   const snap=await ref.get();
   if(!snap.exists){
@@ -915,7 +909,6 @@ auth.onAuthStateChanged(async (u)=>{
   }
   currentUser=(await ref.get()).data();
   paintAuth(); refreshTabVisibility(); paintProfile();
-  // enrutar
   setActiveTab("ride");
   initRideMapOnce();
   renderRiderHistory();
@@ -946,7 +939,7 @@ $("#btnLocate").addEventListener("click", ()=>{
 });
 
 $("#btnUnified").addEventListener("click", riderCreateRide);
-$("#btnCancel").addEventListener("click", ()=>{}); // se asigna dinámicamente al escuchar el ride
+$("#btnCancel").addEventListener("click", ()=>{}); // se asigna al escuchar el ride
 
 /* ========================= Reset demo local ========================= */
 $("#btnResetAll").addEventListener("click", async ()=>{
