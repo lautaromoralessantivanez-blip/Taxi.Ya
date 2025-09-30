@@ -28,7 +28,7 @@ header{position:sticky;top:0;z-index:30;background:linear-gradient(180deg,rgba(0
 .brand{font-weight:800}
 .badge{display:inline-block;background:transparent;border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px;color:var(--ink);opacity:.8}
 
-/* Tabs */
+/* Tabs app */
 nav.tabs{position:sticky; top:0; z-index:25; background:var(--panel); border-bottom:1px solid var(--line);
   display:flex; gap:8px; padding:8px; justify-content:center; flex-wrap:wrap}
 .tab-btn{flex:0 0 auto; min-width:140px; height:44px; display:flex; align-items:center; justify-content:center; gap:8px;
@@ -77,11 +77,6 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:poin
 
 /* Mapas */
 .map{width:100%;height:64vh;min-height:360px;border-radius:16px;border:1px solid var(--line);overflow:hidden;position:relative}
-.radar{position:absolute; inset:0; pointer-events:none; display:none; place-items:center}
-.radar.show{display:grid}
-.radar .pulse{width:140px; height:140px; border-radius:999px; position:relative; background:radial-gradient(closest-side, rgba(255,211,77,.35), rgba(255,211,77,0) 70%); animation:pulse 1.6s infinite ease-out;}
-.radar .emoji{position:absolute; inset:0; display:grid; place-items:center; font-size:40px; text-shadow:0 2px 6px rgba(0,0,0,.6)}
-@keyframes pulse{0%{transform:scale(.6); opacity:.9}70%{transform:scale(1.4); opacity:.2}100%{transform:scale(1.8); opacity:0}}
 .map-top{position:absolute; left:10px; right:10px; top:10px; z-index:400; display:none; padding:8px 12px; border-radius:12px; font-weight:700; border:1px solid var(--line); background:rgba(0,0,0,.25); backdrop-filter: blur(4px)}
 .map-top.show{display:block}
 
@@ -99,6 +94,11 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:poin
 .docc{border:1px solid var(--line);border-radius:12px;padding:10px}
 .docc h5{margin:0 0 4px 0}
 .docc img{max-width:100%;max-height:120px;border-radius:8px;display:block}
+
+/* Subtabs (Ajustes) */
+.subtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.subtab-btn{border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 12px;font-weight:700;cursor:pointer}
+.subtab-btn.active{background:linear-gradient(180deg,var(--accent),var(--accent-2));color:#0b2d37;border-color:transparent}
 </style>
 </head>
 <body>
@@ -122,10 +122,9 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:poin
       <h2>Acceso</h2>
       <div class="row" style="justify-content:flex-end; gap:8px">
         <button class="btn" id="btnResetAll" type="button">Limpiar datos</button>
-        <button class="btn" data-docs="access" type="button">📎 Subir documentos</button>
       </div>
     </div>
-    <div id="msg" class="pill hide"></div>
+    <div id="msg" class="pill hide" role="status" aria-live="polite"></div>
 
     <div class="row" style="margin-top:6px">
       <button class="btnp" id="switchToLogin" type="button">Ir a Iniciar sesión</button>
@@ -133,7 +132,7 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:poin
     </div>
 
     <!-- Login -->
-    <form id="loginBox" style="margin-top:10px">
+    <form id="loginBox" style="margin-top:10px" autocomplete="on" novalidate>
       <div class="row">
         <div><label for="loginEmail">Correo</label><input id="loginEmail" type="email" placeholder="tucorreo@dominio.com" autocomplete="username" required></div>
         <div><label for="loginPass">Contraseña</label><input id="loginPass" type="password" placeholder="••••••" autocomplete="current-password" required></div>
@@ -144,7 +143,7 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:poin
     </form>
 
     <!-- Registro -->
-    <form id="registerBox" class="hide" style="margin-top:10px">
+    <form id="registerBox" class="hide" style="margin-top:10px" autocomplete="on" novalidate>
       <div class="split">
         <div><label for="regName">Nombre</label><input id="regName" placeholder="Tu nombre y apellido" autocomplete="name" required></div>
         <div><label for="regEmail">Correo</label><input id="regEmail" type="email" placeholder="tucorreo@dominio.com" autocomplete="username" required></div>
@@ -154,7 +153,6 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:poin
       </div>
       <div class="row" style="margin-top:10px">
         <button class="btnp" id="btnSignUp" type="submit">Crear cuenta</button>
-        <button class="btn" data-docs="access" type="button">📎 Subir documentos</button>
       </div>
     </form>
   </section>
@@ -164,7 +162,6 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:poin
     <section class="card">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <h2>Solicitar viaje</h2>
-        <button class="btn" data-docs="ride" type="button">📎 Subir documentos</button>
       </div>
       <div class="split">
         <div class="ac-wrap">
@@ -191,7 +188,7 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:poin
           <select id="reqType"><option value="auto">Auto</option><option value="moto">Moto</option></select>
         </div>
         <div>
-          <label for="payMethod">Pago</label>
+          <label for="payMethod">Pago (opcional)</label>
           <select id="payMethod">
             <option value="">Elegir…</option>
             <option value="cash">💵 Efectivo</option>
@@ -204,9 +201,9 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:poin
         <label><input type="checkbox" id="chkCashConfirm"> Confirmo pago en efectivo</label>
       </div>
       <div id="payMPBox" class="row hide" style="margin-top:6px">
-        <button class="btnp" id="btnPayMP" type="button">Pagar con MP (simulado)</button>
+        <button class="btn" id="btnPayMP" type="button">Simular pago con MP</button>
       </div>
-      <div id="payStatus" class="pill warn hide">Pago pendiente</div>
+      <div id="payStatus" class="pill hide">Pago pendiente</div>
 
       <div class="split" style="margin-top:10px">
         <div><label for="distance">Distancia</label><input id="distance" readonly value="0.00 km"></div>
@@ -214,15 +211,17 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:poin
       </div>
 
       <div class="row" style="margin-top:10px">
-        <button class="btn" id="btnScanNearby" type="button">Buscar vehículos</button>
-        <button class="btnp" id="btnRequest" type="button" disabled>Solicitar viaje 🚕</button>
+        <button class="btnp" id="btnUnified" type="button">🚕 Pedir viaje</button>
+        <button class="btnd hide" id="btnCancel" type="button">Cancelar viaje</button>
+      </div>
+
+      <div id="searchStatus" class="small muted hide" style="margin-top:6px">
+        <b>Buscando…</b> <span id="waitSecs">0</span>s
       </div>
     </section>
 
     <section class="card" style="position:relative">
-      <div id="mapRide" class="map">
-        <div id="radar" class="radar"><div class="pulse"><div id="radarEmoji" class="emoji">🚗</div></div></div>
-      </div>
+      <div id="mapRide" class="map" aria-label="Mapa de viaje"></div>
       <div id="rideMapTop" class="map-top"></div>
     </section>
   </section>
@@ -233,7 +232,6 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:poin
       <h2>Historial</h2>
       <div class="row" style="justify-content:flex-end; gap:8px">
         <button class="btn" id="btnClearRiderHistory" type="button">Limpiar</button>
-        <button class="btn" data-docs="history" type="button">📎 Subir documentos</button>
       </div>
     </div>
     <div id="riderHistory" class="list"></div>
@@ -243,7 +241,6 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:poin
   <section id="panel-driver" class="card hide" role="tabpanel" aria-labelledby="tab-driver">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <h2>Panel del conductor</h2>
-      <button class="btn" data-docs="driver" type="button">📎 Subir documentos</button>
     </div>
     <div class="row" style="margin-top:6px">
       <button class="btnp" id="btnToggleOnline" type="button" disabled>Poner EN LÍNEA</button>
@@ -251,79 +248,85 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:poin
       <button class="btn" id="btnPauseRoute" type="button" disabled>Pausar</button>
       <button class="btnd" id="btnStopRoute" type="button" disabled>Terminar</button>
     </div>
-    <div id="mapDriver" class="map" style="margin-top:8px"></div>
-    <div id="drvMapTop" class="map-top"></div>
+    <div id="mapDriver" class="map" style="margin-top:8px" aria-label="Mapa del conductor"></div>
   </section>
 
-  <!-- ===== AJUSTES ===== -->
+  <!-- ===== AJUSTES con SUBTABS ===== -->
   <section id="panel-settings" class="card hide" role="tabpanel" aria-labelledby="tab-settings">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <h2>Ajustes</h2>
-      <button class="btn" data-docs="settings" type="button">📎 Subir documentos</button>
+    <h2>Ajustes</h2>
+    <div class="subtabs" role="tablist" aria-label="Subsecciones de Ajustes">
+      <button class="subtab-btn active" data-sub="profile" id="sub-profile">👤 Perfil</button>
+      <button class="subtab-btn" data-sub="theme" id="sub-theme">🌓 Tema</button>
+      <button class="subtab-btn" data-sub="driverkyc" id="sub-driverkyc">🧑‍✈️ Conductor</button>
+      <button class="subtab-btn" data-sub="ratings" id="sub-ratings">⭐ Calificaciones</button>
     </div>
-    <div class="row"><label><input type="checkbox" id="themeToggle"> Tema Claro</label></div>
 
-    <div class="card" style="margin-top:10px">
-      <h3 style="margin:4px 0 8px">Ser conductor</h3>
-      <p class="small muted" style="margin:0 0 6px">Subí tu documentación y pedí verificación. La pestaña “Conductor” se habilita una vez <b>aprobado</b>.</p>
-      <div class="split">
-        <div><label for="vPlate">Patente</label><input id="vPlate" placeholder="AA123BB"></div>
-        <div><label for="vYear">Año</label><input id="vYear" type="number" min="1995" max="2100" placeholder="2018"></div>
-      </div>
-      <div class="split" style="margin-top:6px">
-        <div><label for="vModel">Modelo</label><input id="vModel" placeholder="Fiat Cronos 1.3"></div>
-        <div><label for="vCard">Cédula verde/azul</label><input id="vCard" placeholder="N° cédula"></div>
-      </div>
-      <div class="row" style="margin-top:6px">
-        <div>
-          <label>Licencia de conducir</label>
-          <input id="docLicense" type="file" accept="image/*,application/pdf">
-        </div>
-        <div>
-          <label>Seguro vigente</label>
-          <input id="docInsurance" type="file" accept="image/*,application/pdf">
+    <!-- Perfil -->
+    <div id="settings-profile">
+      <div class="item">
+        <h4>Información de la cuenta</h4>
+        <div id="profileInfo" class="small"></div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" id="btnSignOut" type="button">Cerrar sesión</button>
         </div>
       </div>
-      <div id="verifyMsg" class="pill hide" style="margin-top:8px"></div>
-      <div class="row" style="margin-top:10px">
-        <button class="btnp" id="btnVerifySubmit" type="button">Solicitar verificación</button>
-        <span id="drvKycStatus" class="pill warn">No solicitado</span>
+    </div>
+
+    <!-- Tema -->
+    <div id="settings-theme" class="hide">
+      <div class="item">
+        <h4>Modo de color</h4>
+        <div class="row">
+          <label><input type="checkbox" id="themeToggle"> Tema Claro</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conductor (KYC) -->
+    <div id="settings-driverkyc" class="hide">
+      <div class="item">
+        <h4>Verificación para ser conductor</h4>
+        <p class="small muted">La pestaña “Conductor” se habilita cuando tu verificación está <b>aprobada</b>.</p>
+        <div class="split" style="margin-top:6px">
+          <div><label for="vPlate">Patente</label><input id="vPlate" placeholder="AA123BB"></div>
+          <div><label for="vYear">Año</label><input id="vYear" type="number" min="1995" max="2100" placeholder="2018"></div>
+        </div>
+        <div class="split" style="margin-top:6px">
+          <div><label for="vModel">Modelo</label><input id="vModel" placeholder="Fiat Cronos 1.3"></div>
+          <div><label for="vCard">Cédula verde/azul</label><input id="vCard" placeholder="N° cédula"></div>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <div>
+            <label>Licencia de conducir</label>
+            <input id="docLicense" type="file" accept="image/*,application/pdf">
+          </div>
+          <div>
+            <label>Seguro vigente</label>
+            <input id="docInsurance" type="file" accept="image/*,application/pdf">
+          </div>
+        </div>
+        <div id="verifyMsg" class="pill hide" style="margin-top:8px"></div>
+        <div class="row" style="margin-top:10px">
+          <button class="btnp" id="btnVerifySubmit" type="button">Solicitar verificación</button>
+          <span id="drvKycStatus" class="pill warn">No solicitado</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calificaciones -->
+    <div id="settings-ratings" class="hide">
+      <div class="item">
+        <h4>Mi puntaje</h4>
+        <div id="ratingSummary" class="small"></div>
+        <div id="ratingList" class="list" style="margin-top:8px"></div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" id="btnAddFakeRating" type="button">Añadir calificación de prueba</button>
+          <button class="btn" id="btnClearRatings" type="button">Borrar calificaciones</button>
+        </div>
       </div>
     </div>
   </section>
 </main>
-
-<!-- ===== Modal Documentos (global, abre desde cualquier sección) ===== -->
-<div id="docsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="docsTitle">
-  <div class="box">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <h3 id="docsTitle" style="margin:0 0 6px 0">Gestor de documentos</h3>
-      <button class="btnd" id="btnDocsClose" type="button">Cerrar</button>
-    </div>
-    <div class="split">
-      <div>
-        <label for="docCat">Categoría</label>
-        <select id="docCat">
-          <option value="identidad">Identidad</option>
-          <option value="licencia">Licencia</option>
-          <option value="vehiculo">Vehículo</option>
-          <option value="seguro">Seguro</option>
-          <option value="cedula">Cédula</option>
-          <option value="otros">Otros</option>
-        </select>
-      </div>
-      <div>
-        <label>Subir archivo(s)</label>
-        <input id="docFiles" type="file" accept="image/*,application/pdf" multiple>
-      </div>
-    </div>
-    <div class="row" style="margin-top:8px">
-      <button class="btnp" id="btnDocsSave" type="button">Guardar en mi cuenta</button>
-      <button class="btn" id="btnDocsClear" type="button">Borrar todos (esta cuenta)</button>
-    </div>
-    <div id="docsGrid" class="docgrid"></div>
-  </div>
-</div>
 
 <div id="toast" class="toast hide"></div>
 
@@ -338,7 +341,7 @@ const toRad=d=>d*Math.PI/180;
 const km2=(a,b)=>{const R=6371,dLat=toRad(b.lat-a.lat),dLon=toRad(b.lng-a.lng);const la1=toRad(a.lat),la2=toRad(b.lat);const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(h));};
 const storeKey="taxiya_users_by_email", sessionKey="taxiya_session";
 const riderHistKey=e=>`taxiya_rider_history_${e}`;
-const docsKey=e=>`taxiya_docs_${e}`;
+const ratingKey=e=>`taxiya_ratings_${e}`;
 
 const loadUsers=()=>{ try{return JSON.parse(localStorage.getItem(storeKey)||"{}");}catch(_){return{};} };
 const saveUsers=db=>localStorage.setItem(storeKey,JSON.stringify(db));
@@ -349,7 +352,7 @@ const loadArr=k=>{ try{return JSON.parse(localStorage.getItem(k)||"[]");}catch(_
 const saveArr=(k,arr)=>localStorage.setItem(k,JSON.stringify(arr));
 function toast(msg,ms=1700){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hide"); setTimeout(()=>t.classList.add("hide"),ms); }
 
-/* ==== Tabs ==== */
+/* ===== Tabs ===== */
 let currentUser=null;
 const tabsCfg={
   access:{btn:$("#tab-access"), panel:$("#panel-access")},
@@ -364,81 +367,124 @@ function setActiveTab(name){
     tabsCfg[k].btn.classList.toggle("active",on);
     tabsCfg[k].panel.classList.toggle("hide",!on);
   }
-  // Importante: cuando se muestra un panel con mapa, (re)inicializar y redimensionar
-  if(name==="ride"){ initRideMapOnce(); setTimeout(()=> resizeMap(mapRide), 60); }
-  if(name==="driver"){ initDriverMapOnce(); setTimeout(()=> resizeMap(driverMap), 60); }
+  if(name==="ride"){ initRideMapOnce(); requestAnimationFrame(()=> resizeMap(mapRide)); }
+  if(name==="driver"){ initDriverMapOnce(); requestAnimationFrame(()=> resizeMap(driverMap)); }
+  if(name==="settings"){ paintProfile(); paintKycUI(); renderRatings(); }
 }
 function refreshTabVisibility(){
   const logged=!!currentUser;
   tabsCfg.access.btn.classList.toggle("hide", logged);
   tabsCfg.ride.btn.classList.toggle("hide", !logged);
   tabsCfg.history.btn.classList.toggle("hide", !logged);
-  // Conductor SOLO visible si KYC aprobado
   const kycOk = logged && currentUser.kyc?.status==="approved";
   tabsCfg.driver.btn.classList.toggle("hide", !kycOk);
   tabsCfg.settings.btn.classList.toggle("hide", !logged);
   if(!logged) setActiveTab("access");
-  else if(kycOk) setActiveTab("ride");
-  else setActiveTab("ride");
 }
-Object.values(tabsCfg).forEach(({btn})=> btn.addEventListener("click", ()=> setActiveTab(btn.dataset.tab)));
+Object.values(tabsCfg).forEach(({btn})=> btn.addEventListener("click", ()=> setActiveTab(btn.dataset.tab), {passive:true}));
+
+/* ===== Subtabs Ajustes ===== */
+const subTabs={
+  profile: {btn:$("#sub-profile"), panel:$("#settings-profile")},
+  theme: {btn:$("#sub-theme"), panel:$("#settings-theme")},
+  driverkyc: {btn:$("#sub-driverkyc"), panel:$("#settings-driverkyc")},
+  ratings: {btn:$("#sub-ratings"), panel:$("#settings-ratings")}
+};
+Object.values(subTabs).forEach(({btn})=>{
+  btn.addEventListener("click",()=>{
+    const name=btn.dataset.sub;
+    for(const k in subTabs){
+      const on=k===name;
+      subTabs[k].btn.classList.toggle("active",on);
+      subTabs[k].panel.classList.toggle("hide",!on);
+    }
+    if(name==="ratings") renderRatings();
+  });
+});
 
 /* ===== Tema ===== */
 function applyTheme(){ const t=localStorage.getItem("taxiya_theme")||"dark"; document.documentElement.classList.toggle("light", t==="light"); $("#themeToggle").checked=(t==="light"); }
-$("#themeToggle").addEventListener("change", e=>{ localStorage.setItem("taxiya_theme", e.target.checked?"light":"dark"); applyTheme(); }); applyTheme();
+$("#settings-theme").addEventListener("change", e=>{
+  if(e.target.id==="themeToggle"){ localStorage.setItem("taxiya_theme", e.target.checked?"light":"dark"); applyTheme(); }
+});
+applyTheme();
 
-/* ===== Autocomplete (San Juan base breve, se puede ampliar con streets.json) ===== */
+/* ===== Autocomplete ===== */
 const removeDiacritics = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 const norm = s => removeDiacritics(String(s||"").toLowerCase().trim());
 let STREETS = ["Av. Libertador General San Martín","Av. Ignacio de la Roza","Av. Rawson","Calle Mendoza","Calle Salta","Calle Tucumán","Calle Catamarca","Calle Rivadavia","Calle Mitre","Calle Santa Fe","Calle Rioja","Calle San Luis","Calle Urquiza","Calle Sarmiento","Calle Laprida","Calle Entre Ríos"];
-async function tryLoadExternalStreets(){ try{ const r=await fetch("streets.json",{cache:"no-store"}); if(!r.ok) return; const extra=await r.json(); if(Array.isArray(extra)&&extra.length){ STREETS=[...new Set([...STREETS, ...extra.filter(x=>typeof x==="string")])]; } }catch(_){ } }
+async function tryLoadExternalStreets(){
+  try{
+    const r=await fetch("streets.json",{cache:"no-store"});
+    if(r.ok){
+      const extra=await r.json();
+      if(Array.isArray(extra)&&extra.length){ STREETS=[...new Set([...STREETS, ...extra.filter(x=>typeof x==="string")])]; }
+    }
+  }catch(_){}
+}
 tryLoadExternalStreets();
 function streetPrefix(t){ const m=String(t||"").trim().match(/^[^\d]+/); return m?m[0].trim():t; }
 function buildMatcher(q){ const qn=norm(q); return s=>{ const sn=norm(s); const i=sn.indexOf(qn); return i===-1?null:{s,i,len:qn.length}; }; }
-function renderSuggestions(listEl, items, activeIdx){ listEl.innerHTML=""; items.forEach((it,idx)=>{ const {s,i,len}=it; const b=s.slice(0,i), m=s.slice(i,i+len), a=s.slice(i+len); const div=document.createElement("div"); div.className="ac-item"+(idx===activeIdx?" active":""); div.innerHTML=`${b}<b>${m}</b>${a}`; div.dataset.value=s; listEl.appendChild(div); }); listEl.classList.toggle("hide", items.length===0); }
+function renderSuggestions(listEl, items, activeIdx){
+  listEl.innerHTML="";
+  items.forEach((it,idx)=>{ const {s,i,len}=it; const b=s.slice(0,i), m=s.slice(i,i+len), a=s.slice(i+len); const div=document.createElement("div"); div.className="ac-item"+(idx===activeIdx?" active":""); div.innerHTML=`${b}<b>${m}</b>${a}`; div.dataset.value=s; listEl.appendChild(div); });
+  listEl.classList.toggle("hide", items.length===0);
+}
 function createAutocomplete(inputEl, listEl, onEnterNoActive){
   let candidates=[], active=-1;
-  function update(){ const q=streetPrefix(inputEl.value).trim(); if(q.length<2){ candidates=[]; active=-1; renderSuggestions(listEl,candidates,active); return; }
-    const match=buildMatcher(q); candidates=STREETS.map(s=>match(s)).filter(Boolean).sort((a,b)=>a.i-b.i||a.s.localeCompare(b.s)).slice(0,12); active=-1; renderSuggestions(listEl,candidates,active); }
-  function choose(idx){ if(idx<0||idx>=candidates.length) return; inputEl.value=candidates[idx].s+" "; listEl.classList.add("hide"); inputEl.focus(); }
-  inputEl.addEventListener("input", update);
-  inputEl.addEventListener("focus", update);
-  inputEl.addEventListener("blur", ()=> setTimeout(()=>listEl.classList.add("hide"), 120));
+  function update(){
+    const q=streetPrefix(inputEl.value).trim();
+    if(q.length<2){ candidates=[]; active=-1; renderSuggestions(listEl,candidates,active); return; }
+    const match=buildMatcher(q);
+    candidates=STREETS.map(s=>match(s)).filter(Boolean).sort((a,b)=>a.i-b.i||a.s.localeCompare(b.s)).slice(0,12);
+    active=-1; renderSuggestions(listEl,candidates,active);
+  }
+  function choose(idx){
+    if(idx<0||idx>=candidates.length) return;
+    inputEl.value=candidates[idx].s+" ";
+    listEl.classList.add("hide"); inputEl.focus();
+  }
+  inputEl.addEventListener("input", update, {passive:true});
+  inputEl.addEventListener("focus", update, {passive:true});
+  inputEl.addEventListener("blur", ()=> setTimeout(()=>listEl.classList.add("hide"), 120), {passive:true});
   listEl.addEventListener("mousedown", e=>{ const d=e.target.closest(".ac-item"); if(!d) return; choose(Array.from(listEl.children).indexOf(d)); });
   inputEl.addEventListener("keydown", e=>{
-    const key=e.key||""; const kc=e.keyCode||0; const listOpen=!listEl.classList.contains("hide"); const max=candidates.length;
-    if((key==="ArrowDown"||kc===40) && listOpen && max>0){ e.preventDefault(); active=(active+1)%max; renderSuggestions(listEl,candidates,active); }
-    else if((key==="ArrowUp"||kc===38) && listOpen && max>0){ e.preventDefault(); active=(active-1+max)%max; renderSuggestions(listEl,candidates,active); }
-    else if((key==="Enter"||kc===13)){
+    const key=e.key||""; const listOpen=!listEl.classList.contains("hide"); const max=candidates.length;
+    if(key==="ArrowDown" && listOpen && max>0){ e.preventDefault(); active=(active+1)%max; renderSuggestions(listEl,candidates,active); }
+    else if(key==="ArrowUp" && listOpen && max>0){ e.preventDefault(); active=(active-1+max)%max; renderSuggestions(listEl,candidates,active); }
+    else if(key==="Enter"){
       if(listOpen && active>=0){ e.preventDefault(); choose(active); }
       else if(typeof onEnterNoActive==="function"){ e.preventDefault(); onEnterNoActive(); }
-    } else if(key==="Escape"||kc===27){ listEl.classList.add("hide"); }
+    } else if(key==="Escape"){ listEl.classList.add("hide"); }
   });
 }
 
 /* ===== Map utils ===== */
 function resizeMap(map){ try{ map && map.invalidateSize(); }catch(_){} }
 function fallbackTileLayer(){
-  // Fallback público
   return L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'© OpenStreetMap'});
 }
 function primaryTileLayer(){
   const tl = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'© OpenStreetMap'});
-  tl.on('tileerror', ()=>{ // si falla el primary, intento fallback
-    try{ if(tl._fallbackAdded) return; tl._fallbackAdded=true; tl._map && fallbackTileLayer().addTo(tl._map); }catch(_){}
-  });
+  tl.on('tileerror', ()=>{ try{ if(tl._fallbackAdded) return; tl._fallbackAdded=true; tl._map && fallbackTileLayer().addTo(tl._map); }catch(_){ } });
   return tl;
 }
 
 /* ===== Map Ride ===== */
-let mapRide=null, origin=null, dest=null, markers={origin:null,dest:null}, nearbyLayer=null;
-function initRideMapOnce(){
+let mapRide=null, origin=null, dest=null, markers={origin:null,dest:null};
+function ensureRideMap(){
   if(mapRide) return;
-  const el=$("#mapRide"); if(!el) return;
   mapRide=L.map('mapRide',{zoomControl:false});
   L.control.zoom({position:'bottomright'}).addTo(mapRide);
   primaryTileLayer().addTo(mapRide);
-  const fallback={lat:-31.5375,lng:-68.5364}; // San Juan
+  mapRide.setView([-31.5375,-68.5364],12);
+  window.addEventListener('resize', ()=> resizeMap(mapRide));
+}
+function initRideMapOnce(){
+  ensureRideMap();
+  if(markers._initialized) return;
+  markers._initialized=true;
+
   function setOriginMarker(o){
     origin=o;
     if(!markers.origin) markers.origin=L.marker([o.lat,o.lng]).addTo(mapRide).bindTooltip("Origen");
@@ -449,12 +495,9 @@ function initRideMapOnce(){
       const o={lat:p.coords.latitude,lng:p.coords.longitude};
       mapRide.setView([o.lat,o.lng],14); setOriginMarker(o); resizeMap(mapRide);
     }, _=>{
-      mapRide.setView([fallback.lat,fallback.lng],12); setOriginMarker(fallback); resizeMap(mapRide);
-    }, {enableHighAccuracy:true, timeout:6000});
-  }else{
-    mapRide.setView([fallback.lat,fallback.lng],12); setOriginMarker(fallback);
+      const fallback={lat:-31.5375,lng:-68.5364}; mapRide.setView([fallback.lat,fallback.lng],12); setOriginMarker(fallback); resizeMap(mapRide);
+    }, {enableHighAccuracy:true, timeout:5000, maximumAge:15000});
   }
-  // Click fija destino
   mapRide.on('click', e=>{
     if(!currentUser) return;
     dest={lat:e.latlng.lat,lng:e.latlng.lng};
@@ -462,39 +505,31 @@ function initRideMapOnce(){
     markers.dest.setLatLng([dest.lat,dest.lng]);
     updateEstimate();
   });
-  // Redimensionar en resize
-  window.addEventListener('resize', ()=> resizeMap(mapRide));
-}
-
-/* Radar + vehículos cercanos */
-function showRadar(ms=1400, emoji="🚗"){ $("#radarEmoji").textContent = emoji; const r=$("#radar"); r.classList.add("show"); setTimeout(()=>r.classList.remove("show"), ms); }
-function vehicleIcon(emoji){ return L.divIcon({className:"", html:`<div style="font-size:22px;filter:drop-shadow(0 1px 2px #000)">${emoji}</div>`}); }
-function randAround(c,km){ const r=km/111, a=Math.random()*2*Math.PI, d=r*Math.random(); return {lat:c.lat+Math.cos(a)*d, lng:c.lng+Math.sin(a)*d}; }
-function scanNearbyVehicles(){
-  if(!mapRide) return;
-  const emoji=$("#reqType").value==="moto"?"🏍️":"🚗"; showRadar(1600, emoji);
-  if(nearbyLayer){ nearbyLayer.clearLayers(); }
-  nearbyLayer=L.layerGroup().addTo(mapRide);
-  const c=mapRide.getCenter();
-  for(let i=0;i<10;i++){ const p=randAround({lat:c.lat,lng:c.lng},1.4); L.marker([p.lat,p.lng],{icon:vehicleIcon(emoji)}).addTo(nearbyLayer); }
 }
 
 /* Geocoder (Nominatim) */
 async function geocode(text){
-  const url=new URL("https://nominatim.openstreetmap.org/search");
-  url.searchParams.set("q",text); url.searchParams.set("format","json"); url.searchParams.set("limit","1");
-  const r=await fetch(url,{headers:{'Accept-Language':'es'}});
-  const js=await r.json(); if(!js.length) return null;
-  return {lat:parseFloat(js[0].lat), lng:parseFloat(js[0].lon)};
+  try{
+    const url=new URL("https://nominatim.openstreetmap.org/search");
+    url.searchParams.set("q",text); url.searchParams.set("format","json"); url.searchParams.set("limit","1");
+    const r=await fetch(url,{headers:{'Accept-Language':'es','User-Agent':'taxiya-demo'}});
+    if(!r.ok) return null;
+    const js=await r.json(); if(!js.length) return null;
+    return {lat:parseFloat(js[0].lat), lng:parseFloat(js[0].lon)};
+  }catch(_){ return null; }
 }
 async function setOriginFromField(){
-  const txt=$("#riderOrigin").value.trim(); if(!txt) return; showRadar(700,$("#reqType").value==="moto"?"🏍️":"🚗");
-  const loc=await geocode(txt); if(!loc) return; origin=loc; if(markers.origin) markers.origin.setLatLng([loc.lat,loc.lng]); else markers.origin=L.marker([loc.lat,loc.lng]).addTo(mapRide).bindTooltip("Origen");
+  const txt=$("#riderOrigin").value.trim(); if(!txt) return;
+  ensureRideMap();
+  const loc=await geocode(txt); if(!loc){ toast("No se encontró el origen"); return; }
+  origin=loc; if(markers.origin) markers.origin.setLatLng([loc.lat,loc.lng]); else markers.origin=L.marker([loc.lat,loc.lng]).addTo(mapRide).bindTooltip("Origen");
   mapRide.setView([loc.lat,loc.lng],15); updateEstimate(); resizeMap(mapRide);
 }
 async function setDestFromField(){
-  const txt=$("#riderDest").value.trim(); if(!txt) return; showRadar(700,$("#reqType").value==="moto"?"🏍️":"🚗");
-  const loc=await geocode(txt); if(!loc) return; dest=loc; if(markers.dest) markers.dest.setLatLng([loc.lat,loc.lng]); else markers.dest=L.marker([loc.lat,loc.lng]).addTo(mapRide).bindTooltip("Destino");
+  const txt=$("#riderDest").value.trim(); if(!txt) return;
+  ensureRideMap();
+  const loc=await geocode(txt); if(!loc){ toast("No se encontró el destino"); return; }
+  dest=loc; if(markers.dest) markers.dest.setLatLng([loc.lat,loc.lng]); else markers.dest=L.marker([loc.lat,loc.lng]).addTo(mapRide).bindTooltip("Destino");
   mapRide.setView([loc.lat,loc.lng],15); updateEstimate(); resizeMap(mapRide);
 }
 
@@ -502,30 +537,84 @@ async function setDestFromField(){
 function estimateFareRaw(km){ const base=990, perKm=660, perMin=99; const mins=(km/24)*60; return Math.max(800, Math.round(base + km*perKm + mins*perMin)); }
 function updateEstimate(){
   const distEl=$("#distance"), fareEl=$("#fare");
-  if(!origin||!dest){ distEl.value="0.00 km"; fareEl.value="$0"; gateRequest(); return; }
-  const km=km2(origin,dest); distEl.value=`${km.toFixed(2)} km`; fareEl.value=money(estimateFareRaw(km)); gateRequest();
+  if(!origin||!dest){ distEl.value="0.00 km"; fareEl.value="$0"; return; }
+  const km=km2(origin,dest); distEl.value=`${km.toFixed(2)} km`; fareEl.value=money(estimateFareRaw(km));
 }
 
-/* Pago */
+/* ===== Pago (opcional para demo fluida) ===== */
 let payConfirmed=false, payment={method:null,status:"pending"};
-function resetPayment(){ payConfirmed=false; payment={method:null,status:"pending"}; $("#payStatus").className="pill warn"; $("#payStatus").textContent="Pago pendiente"; $("#payStatus").classList.remove("hide"); }
-function gateRequest(){ $("#btnRequest").disabled=!(origin&&dest&&payConfirmed&&currentUser); }
-$("#payMethod").addEventListener("change", e=>{ resetPayment(); const m=e.target.value; payment.method=m; $("#payCashBox").classList.toggle("hide", m!=="cash"); $("#payMPBox").classList.toggle("hide", m!=="mp"); if(!m) $("#payStatus").classList.add("hide"); gateRequest(); });
-$("#chkCashConfirm").addEventListener("change", e=>{ if($("#payMethod").value!=="cash") return; payConfirmed=e.target.checked; payment.status=payConfirmed?"cash_confirmed":"pending"; $("#payStatus").className=`pill ${payConfirmed?'ok':'warn'}`; $("#payStatus").textContent= payConfirmed ? "Pago en efectivo confirmado" : "Pago pendiente"; gateRequest(); });
-$("#btnPayMP").addEventListener("click", async ()=>{ const b=$("#btnPayMP"); b.disabled=true; b.textContent="Procesando..."; await new Promise(r=>setTimeout(r,900)); payConfirmed=true; payment.status="approved"; $("#payStatus").className="pill ok"; $("#payStatus").textContent="Pago aprobado (MP)"; b.disabled=false; b.textContent="Pagar con MP (simulado)"; gateRequest(); });
-
-/* Solicitud (demo) */
-function simulateMatch(){ $("#rideMapTop").textContent="Buscando vehículo…"; $("#rideMapTop").classList.add("show");
-  const ms=2500 + Math.floor(Math.random()*2000);
-  setTimeout(()=>{ $("#rideMapTop").classList.remove("show"); toast("✅ Conductor asignado"); }, ms);
+function resetPayment(){
+  payConfirmed=false; payment={method:null,status:"pending"};
+  const ps=$("#payStatus"); ps.className="pill hide"; ps.textContent="Pago pendiente";
+  $("#chkCashConfirm").checked=false;
 }
-$("#btnScanNearby").addEventListener("click", scanNearbyVehicles);
-$("#btnRequest").addEventListener("click", ()=>{
-  if(!nearbyLayer || nearbyLayer.getLayers().length===0){ alert("Primero buscá vehículos cercanos."); return; }
-  toast("✅ Solicitud enviada"); simulateMatch();
+$("#payMethod").addEventListener("change", e=>{
+  resetPayment();
+  const m=e.target.value; payment.method=m;
+  $("#payCashBox").classList.toggle("hide", m!=="cash");
+  $("#payMPBox").classList.toggle("hide", m!=="mp");
+  if(!m) return;
+  $("#payStatus").classList.remove("hide");
+});
+$("#chkCashConfirm").addEventListener("change", e=>{
+  if($("#payMethod").value!=="cash") return;
+  payConfirmed=e.target.checked; payment.status=payConfirmed?"cash_confirmed":"pending";
+  $("#payStatus").className=`pill ${payConfirmed?'ok':''}`;
+  $("#payStatus").textContent= payConfirmed ? "Pago en efectivo confirmado" : "Pago pendiente";
+});
+$("#btnPayMP").addEventListener("click", async ()=>{
+  const b=$("#btnPayMP"); b.disabled=true; b.textContent="Procesando...";
+  await new Promise(r=>setTimeout(r,900));
+  payConfirmed=true; payment.status="approved";
+  $("#payStatus").className="pill ok"; $("#payStatus").textContent="Pago aprobado (MP)";
+  b.disabled=false; b.textContent="Simular pago con MP";
+});
+
+/* ===== Flujo UNIFICADO: Pedir/Cancelar con contador ===== */
+let searching=false, waitTimer=null, waitSeconds=0, searchTimeout=null;
+const waitLabel=$("#waitSecs"), searchStatus=$("#searchStatus"), btnUnified=$("#btnUnified"), btnCancel=$("#btnCancel");
+function startSearching(){
+  searching=true; waitSeconds=0;
+  btnUnified.disabled=true; btnUnified.textContent="Buscando…";
+  btnCancel.classList.remove("hide");
+  searchStatus.classList.remove("hide");
+  waitLabel.textContent="0";
+  waitTimer=setInterval(()=>{ waitSeconds++; waitLabel.textContent=String(waitSeconds); },1000);
+  // Simular match en 3–6s
+  const ms=3000+Math.floor(Math.random()*3000);
+  searchTimeout=setTimeout(()=> assignDriver(), ms);
+}
+function stopSearchingUI(){
+  searching=false;
+  btnUnified.disabled=false; btnUnified.textContent="🚕 Pedir viaje";
+  btnCancel.classList.add("hide");
+  searchStatus.classList.add("hide");
+  clearInterval(waitTimer); waitTimer=null;
+  clearTimeout(searchTimeout); searchTimeout=null;
+}
+function assignDriver(){
+  // éxito
+  const top=$("#rideMapTop");
+  top.textContent="✅ Conductor asignado";
+  top.classList.add("show");
+  setTimeout(()=> top.classList.remove("show"), 2000);
+  // Guardar historial
   const km=km2(origin,dest);
   const rec={id:Math.random().toString(36).slice(2), originText:$("#riderOrigin").value.trim(), destText:$("#riderDest").value.trim(), km, finalFare:estimateFareRaw(km), ts:Date.now()};
   const arr=loadArr(riderHistKey(currentUser.email)); arr.push(rec); saveArr(riderHistKey(currentUser.email),arr); renderRiderHistory();
+  toast("Viaje confirmado");
+  stopSearchingUI();
+}
+btnUnified.addEventListener("click", ()=>{
+  if(!currentUser){ toast("Iniciá sesión"); return; }
+  if(!origin || !dest){ toast("Seleccioná origen y destino (campo o clic en el mapa)"); return; }
+  if(searching) return;
+  startSearching();
+});
+btnCancel.addEventListener("click", ()=>{
+  if(!searching) return;
+  stopSearchingUI();
+  toast("Solicitud cancelada");
 });
 
 /* ===== Historial ===== */
@@ -548,7 +637,6 @@ $("#btnClearRiderHistory").addEventListener("click", ()=>{ if(!currentUser) retu
 let driverMap=null;
 function initDriverMapOnce(){
   if(driverMap || !currentUser || currentUser.kyc?.status!=="approved") return;
-  const el=$("#mapDriver"); if(!el) return;
   driverMap=L.map('mapDriver',{zoomControl:false});
   L.control.zoom({position:'bottomright'}).addTo(driverMap);
   primaryTileLayer().addTo(driverMap);
@@ -567,23 +655,57 @@ $("#btnStopRoute").addEventListener("click", ()=> toast("Recorrido terminado"));
 /* ===== Verificación (Ajustes) ===== */
 function plateValid(p){ return /^[A-Z]{2}\d{3}[A-Z]{2}$/.test(p) || /^[A-Z]{3}\d{3}$/.test(p); }
 function kycStatusText(s){ return s==="approved"?"Aprobado": s==="pending"?"Pendiente":"No solicitado"; }
-function paintKycUI(){ const st=currentUser?.kyc?.status||"none"; const pill=$("#drvKycStatus"); pill.textContent=kycStatusText(st); pill.className="pill "+(st==="approved"?"ok": st==="pending"?"warn":"warn"); $("#btnToggleOnline").disabled = st!=="approved"; }
-function showKycMsg(t,cls){ const m=$("#verifyMsg"); m.textContent=t; m.className=`pill ${cls}`; }
+function paintKycUI(){ const st=currentUser?.kyc?.status||"none"; const pill=$("#drvKycStatus"); if(!pill) return; pill.textContent=kycStatusText(st); pill.className="pill "+(st==="approved"?"ok":"warn"); $("#btnToggleOnline").disabled = st!=="approved"; }
+function showKycMsg(t,cls){ const m=$("#verifyMsg"); m.textContent=t; m.className=`pill ${cls}`; m.classList.remove("hide"); }
 $("#btnVerifySubmit").addEventListener("click", async ()=>{
+  if(!currentUser) return toast("Iniciá sesión");
   const p=$("#vPlate").value.trim().toUpperCase(), y=parseInt($("#vYear").value,10), m=$("#vModel").value.trim(), c=$("#vCard").value.trim();
   if(!plateValid(p)) return showKycMsg("Patente inválida.","error");
   if(!(y>=1995&&y<=2100)) return showKycMsg("Año inválido.","error");
   if(!m||!c) return showKycMsg("Completá modelo y cédula.","error");
-  // Requiere docs mínimos:
-  const docs=loadArr(docsKey(currentUser.email));
-  const hasLic=docs.some(d=>d.cat==="licencia");
-  const hasSeg=docs.some(d=>d.cat==="seguro");
-  if(!hasLic || !hasSeg) return showKycMsg("Subí licencia y seguro para continuar.","warn");
   currentUser.role="driver";
   currentUser.kyc={status:"approved", submittedAt:Date.now(), data:{p,y,m,c}};
   const db=loadUsers(); db[normEmail(currentUser.email)]=currentUser; saveUsers(db); saveSession(currentUser);
   paintKycUI(); refreshTabVisibility(); setActiveTab("driver"); initDriverMapOnce(); toast("✅ Verificación aprobada");
 });
+
+/* ===== Perfil / Sesión ===== */
+function paintAuth(){
+  $("#authPill").textContent=currentUser
+    ? `${(currentUser.name||currentUser.email)} — ${currentUser.role}${currentUser.kyc?.status==="approved"?" (KYC✓)":""}`
+    : "Sin sesión";
+}
+function paintProfile(){
+  const el=$("#profileInfo"); if(!el) return;
+  if(!currentUser){ el.innerHTML="No hay sesión."; return; }
+  const {name,email,role,kyc}=currentUser;
+  el.innerHTML=`Nombre: <b>${name||"—"}</b> · Correo: <b>${email}</b><br>Rol: <b>${role}</b> · KYC: <b>${kycStatusText(kyc?.status||"none")}</b>`;
+}
+function signOut(){ clearSession(); currentUser=null; paintAuth(); refreshTabVisibility(); setActiveTab("access"); showLogin(); toast("Sesión cerrada"); }
+$("#btnSignOut").addEventListener("click", signOut);
+
+/* ===== Calificaciones ===== */
+function avg(arr){ if(!arr.length) return 0; return Math.round((arr.reduce((a,b)=>a+b,0)/arr.length)*10)/10; }
+function renderRatings(){
+  if(!currentUser) return;
+  const list=loadArr(ratingKey(currentUser.email));
+  $("#ratingSummary").innerHTML = list.length
+    ? `Promedio: <b>${avg(list)} ★</b> · Cantidad: <b>${list.length}</b>`
+    : `Sin calificaciones aún.`;
+  const wrap=$("#ratingList"); wrap.innerHTML="";
+  list.slice().reverse().forEach((v,i)=>{
+    const div=document.createElement("div"); div.className="item";
+    div.innerHTML=`<div>⭐ ${v} · <span class="muted small">#${list.length - i}</span></div>`;
+    wrap.appendChild(div);
+  });
+}
+$("#btnAddFakeRating").addEventListener("click", ()=>{
+  if(!currentUser) return;
+  const val = 3 + Math.floor(Math.random()*3); // 3..5
+  const arr=loadArr(ratingKey(currentUser.email)); arr.push(val); saveArr(ratingKey(currentUser.email),arr);
+  renderRatings(); toast("Calificación añadida");
+});
+$("#btnClearRatings").addEventListener("click", ()=>{ if(!currentUser) return; saveArr(ratingKey(currentUser.email),[]); renderRatings(); toast("Calificaciones borradas"); });
 
 /* ===== Acceso ===== */
 function cryptoRandom(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
@@ -596,96 +718,59 @@ function signUp({name,email,pass}){
   const user={uid:cryptoRandom(),name,email,pass,role:"rider",createdAt:Date.now(),kyc:{status:"none"}};
   db[email]=user; saveUsers(db); saveSession(user); currentUser=user; return {ok:true,msg:"Cuenta creada."};
 }
-function signIn({email,pass}){ email=normEmail(email); if(!email||!pass) return {ok:false,msg:"Ingresá correo y contraseña."};
-  const db=loadUsers(); const u=db[email]; if(!u) return {ok:false,msg:"Usuario no encontrado."}; if(u.pass!==pass) return {ok:false,msg:"Contraseña incorrecta."}; saveSession(u); currentUser=u; return {ok:true,msg:"Sesión iniciada."}; }
+function signIn({email,pass}){
+  email=normEmail(email);
+  if(!email||!pass) return {ok:false,msg:"Ingresá correo y contraseña."};
+  const db=loadUsers(); const u=db[email]; if(!u) return {ok:false,msg:"Usuario no encontrado."};
+  if(u.pass!==pass) return {ok:false,msg:"Contraseña incorrecta."};
+  saveSession(u); currentUser=u; return {ok:true,msg:"Sesión iniciada."};
+}
 function banner(text,type="warn"){ const el=$("#msg"); el.textContent=text; el.className=`pill ${type}`; el.classList.remove("hide"); }
 function hideBanner(){ $("#msg").className="pill hide"; }
 function routeAfterAuth(){
   refreshTabVisibility(); paintAuth();
-  initRideMapOnce(); renderRiderHistory();
-  setActiveTab("ride"); // conductor se habilitará luego del KYC
+  initRideMapOnce(); renderRiderHistory(); paintProfile(); renderRatings(); paintKycUI();
+  setActiveTab("ride");
 }
-
-/* Alternador Login/Registro */
 function showLogin(){ $("#loginBox").classList.remove("hide"); $("#registerBox").classList.add("hide"); setTimeout(()=>$("#loginEmail").focus(),0); }
 function showRegister(){ $("#registerBox").classList.remove("hide"); $("#loginBox").classList.add("hide"); setTimeout(()=>$("#regName").focus(),0); }
 $("#switchToLogin").addEventListener("click", showLogin);
 $("#switchToRegister").addEventListener("click", showRegister);
-
-/* Submit Login/Registro */
 $("#loginBox").addEventListener("submit", (e)=>{ e.preventDefault(); hideBanner(); const email=$("#loginEmail").value, pass=$("#loginPass").value;
   const r=signIn({email,pass}); if(!r.ok){ banner(r.msg,"error"); return; } banner(r.msg,"ok"); routeAfterAuth(); });
 $("#registerBox").addEventListener("submit", (e)=>{ e.preventDefault(); hideBanner();
   const name=$("#regName").value.trim(), email=$("#regEmail").value, pass=$("#regPass").value;
   const r=signUp({name,email,pass}); if(!r.ok){ banner(r.msg,"error"); return; } banner(r.msg,"ok"); routeAfterAuth(); });
 
-/* Reset & logout */
-$("#btnResetAll").addEventListener("click", ()=>{ localStorage.clear(); currentUser=null; paintAuth(); refreshTabVisibility(); setActiveTab("access"); showLogin(); banner("Datos locales limpiados.","ok"); });
-function signOut(){ clearSession(); currentUser=null; paintAuth(); refreshTabVisibility(); setActiveTab("access"); showLogin(); banner("Sesión cerrada.","ok"); }
-$("#panel-settings").addEventListener("click", (e)=>{ if(e.target.id==="btnSignOut") signOut(); });
+/* Reset datos */
+$("#btnResetAll").addEventListener("click", ()=>{
+  localStorage.clear(); currentUser=null; paintAuth(); refreshTabVisibility(); setActiveTab("access"); showLogin(); banner("Datos locales limpiados.","ok");
+});
 
-/* ===== Autocomplete montaje ===== */
-function hideAllAC(){ $("#acOrigin")?.classList.add("hide"); $("#acDest")?.classList.add("hide"); }
+/* ===== Montaje general ===== */
+function paintAuthAndStart(){
+  const saved=loadSession(); if(saved){ currentUser=saved; }
+  paintAuth(); refreshTabVisibility();
+  if(!currentUser){ setActiveTab("access"); showLogin(); } else { routeAfterAuth(); }
+}
+paintAuthAndStart();
+
+/* ===== Inputs Ride bindings ===== */
 createAutocomplete($("#riderOrigin"), $("#acOrigin"), setOriginFromField);
 createAutocomplete($("#riderDest"), $("#acDest"), setDestFromField);
 $("#btnGeoRO").addEventListener("click", setOriginFromField);
 $("#btnGeoRD").addEventListener("click", setDestFromField);
-$("#btnLocate").addEventListener("click", ()=>{ if(!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(p=>{ const o={lat:p.coords.latitude,lng:p.coords.longitude}; origin=o; if(mapRide){ if(!markers.origin) markers.origin=L.marker([o.lat,o.lng]).addTo(mapRide).bindTooltip("Origen"); markers.origin.setLatLng([o.lat,o.lng]); mapRide.setView([o.lat,o.lng],15); resizeMap(mapRide);} updateEstimate(); }); });
-document.addEventListener("keydown", (e)=>{ const key=e.key||""; const kc=e.keyCode||0; if(key==="Escape"||kc===27){ hideAllAC(); if($("#docsModal").classList.contains("show")) $("#docsModal").classList.remove("show"); }});
-
-/* ===== Documentos (modal global) ===== */
-function renderDocs(){
-  if(!currentUser) return;
-  const grid=$("#docsGrid"); grid.innerHTML="";
-  const docs=loadArr(docsKey(currentUser.email));
-  if(!docs.length){ grid.innerHTML='<div class="muted small">Sin documentos aún.</div>'; return; }
-  docs.slice().reverse().forEach(d=>{
-    const div=document.createElement("div"); div.className="docc";
-    const dl = d.dataUrl ? `<a href="${d.dataUrl}" download="${d.name}">Descargar</a>` : '';
-    const prev = d.dataUrl && d.type.startsWith("image/") ? `<img src="${d.dataUrl}" alt="preview">` : '';
-    div.innerHTML=`<h5>${d.name}</h5><div class="small muted">${d.cat} · ${(d.size/1024).toFixed(0)} KB</div>${prev}<div style="margin-top:6px">${dl}</div>`;
-    grid.appendChild(div);
-  });
-}
-async function filesToData(dtf){
-  const arr=[];
-  for(const f of dtf){
-    const dataUrl = await new Promise(res=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(f); });
-    arr.push({id:Math.random().toString(36).slice(2), name:f.name, size:f.size, type:f.type, dataUrl});
-  }
-  return arr;
-}
-function openDocsModal(){ $("#docsModal").classList.add("show"); renderDocs(); }
-function closeDocsModal(){ $("#docsModal").classList.remove("show"); }
-$("#btnDocsClose").addEventListener("click", closeDocsModal);
-$$('[data-docs]').forEach(btn=> btn.addEventListener('click', openDocsModal));
-$("#btnDocsSave").addEventListener("click", async ()=>{
-  if(!currentUser) return toast("Iniciá sesión");
-  const cat=$("#docCat").value;
-  const files=$("#docFiles").files;
-  if(!files || !files.length) return toast("Elegí archivos");
-  const toStore=await filesToData(files);
-  const docs=loadArr(docsKey(currentUser.email));
-  toStore.forEach(d=> docs.push({...d, cat, ts:Date.now()}));
-  saveArr(docsKey(currentUser.email), docs);
-  $("#docFiles").value="";
-  renderDocs();
-  toast("Documentos guardados");
+$("#btnLocate").addEventListener("click", ()=>{
+  if(!navigator.geolocation) return toast("El navegador no soporta geolocalización");
+  ensureRideMap();
+  navigator.geolocation.getCurrentPosition(p=>{
+    const o={lat:p.coords.latitude,lng:p.coords.longitude}; origin=o;
+    if(!markers.origin) markers.origin=L.marker([o.lat,o.lng]).addTo(mapRide).bindTooltip("Origen");
+    markers.origin.setLatLng([o.lat,o.lng]); mapRide.setView([o.lat,o.lng],15); resizeMap(mapRide);
+    updateEstimate();
+  }, ()=> toast("No se pudo obtener tu ubicación"), {enableHighAccuracy:true,timeout:5000,maximumAge:15000});
 });
-$("#btnDocsClear").addEventListener("click", ()=>{
-  if(!currentUser) return;
-  saveArr(docsKey(currentUser.email),[]);
-  renderDocs(); toast("Documentos eliminados");
-});
-
-/* ===== Auth chip + estado inicial ===== */
-function paintAuth(){ $("#authPill").textContent=currentUser? `${(currentUser.name||currentUser.email)} — ${currentUser.role}${currentUser.kyc?.status==="approved"?" (KYC✓)":""}` : "Sin sesión"; }
-const saved=loadSession(); if(saved){ currentUser=saved; }
-paintAuth(); refreshTabVisibility();
-if(!currentUser){ setActiveTab("access"); showLogin(); } else { routeAfterAuth(); }
-window.addEventListener("focus", ()=>{ // si el mapa quedó sin tamaño al volver a la pestaña
-  resizeMap(mapRide); resizeMap(driverMap);
-});
+window.addEventListener("focus", ()=>{ resizeMap(mapRide); resizeMap(driverMap); });
 </script>
 </body>
 </html>
