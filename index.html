@@ -1,93 +1,104 @@
-```html
 <!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Taxi Ya — estable</title>
+<title>Taxi Ya • Panel pasajero y conductor</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"/>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore-compat.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
 
 <style>
 :root{
-  --bg:#0b0d10; --panel:#11141a; --ink:#f5f7fb; --muted:#9fb0c0; --line:#1f2a36;
-  --accent:#ffd34d; --accent2:#7dd3fc; --ok:#22c55e; --danger:#ef4444; --link:#8ee6f4;
+  --bg:#0e1116; --panel:#111722; --ink:#f6f8fb; --muted:#93a6b7; --line:#243445;
+  --accent:#00b3ff; --accent2:#ffd34d; --ok:#17c964; --danger:#ef4444; --link:#76c8ff;
   --radius:16px; --shadow:0 16px 40px rgba(0,0,0,.45);
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:Poppins,system-ui,Arial}
-a{color:var(--link)}
-header{position:sticky;top:0;z-index:30;background:#0b0d10d9;padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
-.brand{font-weight:800}
-.badge{border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px;opacity:.85}
-main{max-width:1200px;margin:14px auto;padding:0 10px;display:grid;gap:12px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
+body{margin:0;background:radial-gradient(1200px 700px at 20% -10%,rgba(0,179,255,.10),transparent 50%),var(--bg);color:var(--ink);font-family:Poppins,system-ui,Arial}
+header{position:sticky;top:0;z-index:30;background:rgba(14,17,22,.8);backdrop-filter:blur(6px);padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.brand{font-weight:800;letter-spacing:.2px}
+.badge{border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px;opacity:.9}
+
+main{max-width:1200px;margin:16px auto;padding:0 12px;display:grid;gap:12px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
 h2{margin:6px 0 10px;font-size:18px}
 label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
 input,select,button{font:inherit}
-input,select{width:100%;padding:10px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink)}
-button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:pointer}
-.btn{background:transparent;border:1px solid var(--line);color:var(--ink)}
-.btnp{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#092331}
-.btnd{background:linear-gradient(180deg,#ff7676,var(--danger));color:#fff}
+input,select{width:100%;padding:10px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.02);color:var(--ink)}
+input::placeholder{color:#8aa0b3}
+button{border:0;border-radius:12px;padding:10px 12px;font-weight:800;cursor:pointer}
+.btn{background:transparent;border:1px solid var(--line);color:var(--ink)} .btn:hover{filter:brightness(1.08)}
+.btnp{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#082532} .btnp:hover{filter:brightness(1.03)}
+.btnd{background:linear-gradient(180deg,#ff7a7a,var(--danger));color:#fff}
 .row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
 .small{font-size:12px}.muted{color:var(--muted)}
-.pill{display:inline-block;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:transparent;font-size:12px}
-.ok{color:#0c3; background:#0b2615;border-color:#1e5028}
+.pill{display:inline-block;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:12px}
+.ok{color:#0d3a24;background:#123225;border-color:#256a4b}
 .warn{color:#c58b22;background:#2a230f;border-color:#4a3d14}
 .error{color:#ffb4b4;background:#2a0f12;border-color:#5d1d24}
-.inline-card{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px}
+.inline-card{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px;background:rgba(255,255,255,.02)}
 .avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;border:1px solid var(--line)}
 .list{display:grid;gap:8px}
-.item{border:1px solid var(--line);border-radius:12px;padding:10px}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;z-index:9999;background:rgba(0,0,0,.9);color:#fff;padding:10px 14px;border-radius:12px;border:1px solid #000;font-weight:700}
+.item{border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(255,255,255,.02)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;z-index:9999;background:rgba(24,30,38,.95);color:#fff;padding:10px 14px;border-radius:12px;border:1px solid #000;font-weight:700}
 
-/* Tabs */
-nav.tabs{position:sticky; top:0; background:var(--panel); border:1px solid var(--line); display:flex; gap:8px; padding:8px; border-radius:12px}
-.tab-btn{flex:1 1 0; min-width:100px; height:44px; display:flex; align-items:center; justify-content:center; gap:6px; border-radius:999px; font-weight:700; cursor:pointer; background:transparent; border:1px solid var(--line); color:var(--ink)}
-.tab-btn.active{background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#0b2d37; border-color:transparent}
+/* Tabs (sin emojis) */
+nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid var(--line); display:flex; gap:8px; padding:8px; border-radius:12px; backdrop-filter: blur(6px)}
+.tab-btn{flex:1 1 0; min-width:100px; height:44px; display:flex; align-items:center; justify-content:center; gap:6px; border-radius:999px; font-weight:800; cursor:pointer; background:transparent; border:1px solid var(--line); color:var(--ink)}
+.tab-btn.active{background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#082532; border-color:transparent}
 .hide{display:none!important}
 
-/* Maps */
+/* Mapas: estilo “dark suave” tipo Google Maps */
 .map{width:100%;height:62vh;min-height:360px;border-radius:16px;border:1px solid var(--line);overflow:hidden;position:relative}
-.map-top{position:absolute; left:10px; right:10px; top:10px; z-index:400; display:none; padding:8px 12px; border-radius:12px; font-weight:700; border:1px solid var(--line); background:rgba(0,0,0,.25); backdrop-filter: blur(4px)}
+.map-top{position:absolute; left:10px; right:10px; top:10px; z-index:400; display:none; padding:8px 12px; border-radius:12px; font-weight:800; border:1px solid var(--line); background:rgba(0,0,0,.28); backdrop-filter: blur(4px)}
 .map-top.show{display:block}
+/* aclarar dark_all para que parezca el screenshot: */
+#mapRide .leaflet-tile, #mapDriver .leaflet-tile{
+  filter: brightness(1.18) contrast(0.93) saturate(1.12) hue-rotate(190deg);
+}
 
 /* Driver control bar */
 .ctrlbar{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px}
-.ctrlbar .timer{justify-self:center;border:1px solid var(--line);padding:8px 14px;border-radius:999px;font-weight:800}
+.ctrlbar .timer{justify-self:center;border:1px solid var(--line);padding:8px 14px;border-radius:999px;font-weight:800;background:rgba(255,255,255,.06)}
 .ctrlbar .l{justify-self:start}
 .ctrlbar .r{justify-self:end}
 
-/* Mobile bottom tabs */
+/* Car (autito) svg marker */
+.car-ico{width:38px;height:38px;display:grid;place-items:center;transform: translate(-50%,-50%);}
+.car-ico svg{width:32px;height:32px;filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); transform: rotate(var(--rot,0deg));}
+
 @media (max-width:900px){
-  nav.tabs{position:fixed; bottom:8px; left:10px; right:10px; z-index:40}
-  body{padding-bottom:78px}
+  nav.tabs{position:fixed; bottom:10px; left:12px; right:12px; z-index:40}
+  body{padding-bottom:84px}
 }
 </style>
 </head>
 <body>
 <header>
-  <div class="brand">Taxi Ya 🚕</div>
+  <div class="brand">Taxi Ya</div>
   <div id="authPill" class="badge">Sin sesión</div>
 </header>
 
 <nav class="tabs" role="tablist">
-  <button class="tab-btn active" data-tab="access">🔐 Acceso</button>
-  <button class="tab-btn hide"   data-tab="ride">🚕 Viaje</button>
-  <button class="tab-btn hide"   data-tab="history">🧾 Historial</button>
-  <button class="tab-btn hide"   data-tab="driver">🧑‍✈️ Conductor</button>
-  <button class="tab-btn hide"   data-tab="settings">⚙️ Ajustes</button>
+  <button class="tab-btn active" data-tab="access">Acceso</button>
+  <button class="tab-btn hide"   data-tab="ride">Viaje</button>
+  <button class="tab-btn hide"   data-tab="history">Historial</button>
+  <button class="tab-btn hide"   data-tab="driver">Conductor</button>
+  <button class="tab-btn hide"   data-tab="settings">Ajustes</button>
 </nav>
 
 <main>
-  <!-- ========== ACCESO ========== -->
+  <!-- ACCESO -->
   <section id="panel-access" class="card">
     <h2>Acceso</h2>
     <div class="row">
@@ -101,21 +112,21 @@ nav.tabs{position:sticky; top:0; background:var(--panel); border:1px solid var(-
     <div id="msg" class="pill hide" style="margin-top:8px"></div>
   </section>
 
-  <!-- ========== VIAJE (PASAJERO) ========== -->
+  <!-- PASAJERO -->
   <section id="panel-ride" class="card hide">
     <h2>Solicitar viaje</h2>
     <div class="row">
-      <div><label>Origen 📍</label><input id="riderOrigin" placeholder="Calle y altura"></div>
-      <div><label>Destino 🎯</label><input id="riderDest" placeholder="Calle y altura"></div>
+      <div><label>Origen</label><input id="riderOrigin" placeholder="Calle y altura"></div>
+      <div><label>Destino</label><input id="riderDest" placeholder="Calle y altura"></div>
     </div>
     <div class="row" style="margin-top:6px">
-      <button class="btn" id="btnGeoRO">Buscar Origen</button>
-      <button class="btn" id="btnGeoRD">Buscar Destino</button>
+      <button class="btn" id="btnGeoRO">Buscar origen</button>
+      <button class="btn" id="btnGeoRD">Buscar destino</button>
       <button class="btn" id="btnLocate">Ubicarme</button>
     </div>
     <div class="row" style="margin-top:8px">
       <div><label>Tipo</label><select id="reqType"><option value="auto">Auto</option><option value="moto">Moto</option></select></div>
-      <div><label>Pago (opcional)</label><select id="payMethod"><option value="">Elegir…</option><option value="cash">💵 Efectivo</option><option value="mp">💳 MP</option></select></div>
+      <div><label>Pago</label><select id="payMethod"><option value="">Elegir…</option><option value="cash">Efectivo</option><option value="mp">Mercado Pago</option></select></div>
       <div><label>Distancia</label><input id="distance" readonly value="0.00 km"></div>
       <div><label>Tarifa</label><input id="fare" readonly value="$0"></div>
     </div>
@@ -124,7 +135,7 @@ nav.tabs{position:sticky; top:0; background:var(--panel); border:1px solid var(-
     <div id="payStatus" class="pill hide">Pago pendiente</div>
 
     <div class="row" style="margin-top:10px">
-      <button class="btnp" id="btnUnified" type="button">🚕 Pedir viaje</button>
+      <button class="btnp" id="btnUnified" type="button">Pedir viaje</button>
       <button class="btnd hide" id="btnCancel" type="button">Cancelar</button>
     </div>
 
@@ -139,20 +150,18 @@ nav.tabs{position:sticky; top:0; background:var(--panel); border:1px solid var(-
     </div>
   </section>
 
-  <!-- ========== HISTORIAL ========== -->
+  <!-- HISTORIAL -->
   <section id="panel-history" class="card hide">
     <h2>Historial</h2>
     <div class="row" style="justify-content:flex-end"><button class="btn" id="btnClearRiderHistory">Limpiar</button></div>
     <div id="riderHistory" class="list" style="margin-top:8px"></div>
   </section>
 
-  <!-- ========== CONDUCTOR ========== -->
+  <!-- CONDUCTOR -->
   <section id="panel-driver" class="card hide">
     <h2>Conductor</h2>
-
-    <!-- Control bar -->
     <div class="ctrlbar">
-      <div class="l"><button class="btnp" id="btnStartRoute" disabled>Iniciar viajes</button></div>
+      <div class="l"><button class="btnp" id="btnStartRoute" disabled>Iniciar</button></div>
       <div class="timer" id="onlineTimer">00:00:00</div>
       <div class="r">
         <div class="row" style="gap:6px">
@@ -161,23 +170,19 @@ nav.tabs{position:sticky; top:0; background:var(--panel); border:1px solid var(-
         </div>
       </div>
     </div>
-
-    <!-- Map -->
     <div style="position:relative">
       <div id="mapDriver" class="map" aria-label="Mapa del conductor"></div>
       <div id="driverMapTop" class="map-top"></div>
     </div>
 
-    <!-- Viajes disponibles -->
-    <h3 style="margin:12px 0 6px">Viajes disponibles</h3>
+    <h3 style="margin:14px 0 8px">Viajes disponibles</h3>
     <div id="driverAvailable" class="list"></div>
 
-    <!-- Mi viaje activo -->
-    <h3 style="margin:12px 0 6px">Mi viaje activo</h3>
+    <h3 style="margin:14px 0 8px">Mi viaje activo</h3>
     <div id="driverMyActive" class="list"></div>
   </section>
 
-  <!-- ========== AJUSTES ========== -->
+  <!-- AJUSTES -->
   <section id="panel-settings" class="card hide">
     <h2>Ajustes</h2>
     <div class="inline-card">
@@ -194,12 +199,6 @@ nav.tabs{position:sticky; top:0; background:var(--panel); border:1px solid var(-
 
 <div id="toast" class="toast hide"></div>
 
-<!-- Firebase (Compat) -->
-<script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-storage-compat.js"></script>
-
 <script type="module">
 /* ================= Firebase ================= */
 const firebaseConfig = {
@@ -214,7 +213,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
-const storage = firebase.storage();
 const usersCol = db.collection("users");
 const ridesCol = db.collection("rides");
 
@@ -222,62 +220,131 @@ const ridesCol = db.collection("rides");
 const $=s=>document.querySelector(s);
 const $$=s=>Array.from(document.querySelectorAll(s));
 const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n||0);
-function toast(msg,ms=1600){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hide"); setTimeout(()=>t.classList.add("hide"),ms); }
+function toast(msg,ms=1700){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hide"); setTimeout(()=>t.classList.add("hide"),ms); }
 function pill(el, text, cls){ el.textContent=text; el.className=`pill ${cls||''}`; el.classList.remove('hide'); }
-function toRad(d){return d*Math.PI/180}
-function km2(a,b){const R=6371,dLat=toRad(b.lat-a.lat),dLon=toRad(b.lng-a.lng);const la1=toRad(a.lat),la2=toRad(b.lat);const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
-const looksLikeCoords = t => /^\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*$/.test(String(t||""));
+const toRad=d=>d*Math.PI/180;
+const km2=(a,b)=>{const R=6371,dLat=toRad(b.lat-a.lat),dLon=toRad(b.lng-a.lng);const la1=toRad(a.lat),la2=toRad(b.lat);const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(h));};
+const bearing=(a,b)=>{const φ1=toRad(a.lat), φ2=toRad(b.lat), Δλ=toRad(b.lng-a.lng); const y=Math.sin(Δλ)*Math.cos(φ2); const x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ); return (Math.atan2(y,x)*180/Math.PI+360)%360;}
 
 /* ================= Tabs ================= */
 let currentUser=null;
 const panels=["access","ride","history","driver","settings"];
-function setTab(name){ panels.forEach(p=>{ $("#panel-"+p).classList.toggle("hide",p!==name); document.querySelector(`[data-tab="${p}"]`).classList.toggle("active",p===name); }); }
+function setTab(name){
+  panels.forEach(p=>{
+    $("#panel-"+p).classList.toggle("hide",p!==name);
+    document.querySelector(`[data-tab="${p}"]`).classList.toggle("active",p===name);
+  });
+  if(name==="ride"){ ensureRideMap(); setTimeout(()=> mapRide.invalidateSize(), 120); }
+  if(name==="driver"){ ensureDriverMap(); setTimeout(()=> mapDriver.invalidateSize(), 120); }
+  if(name==="settings"){ paintProfile(); }
+}
 $$('.tabs .tab-btn').forEach(b=> b.addEventListener('click', ()=> setTab(b.dataset.tab)));
 
-/* ================= Theme-less (simple) ================= */
+/* ================= Map tiles (dark suave) ================= */
+function darkTileLayer(){
+  const tl = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    maxZoom:19, attribution:'© OpenStreetMap, © CARTO'
+  });
+  tl.on('tileerror', ()=>{ try{ if(tl._fallback) return; tl._fallback=true; L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(tl._map); }catch(_){ } });
+  return tl;
+}
 
-/* ================= Rider Map & Flow ================= */
-let mapRide=null, origin=null, dest=null, riderMarkers={origin:null,dest:null,driver:null}, riderLines={o2d:null,drv:null};
+/* ================= OSRM Routing (siguiendo calles) ================= */
+async function routeCoords(a,b){
+  const url=`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`;
+  const r=await fetch(url); if(!r.ok) throw new Error("OSRM off");
+  const j=await r.json(); const rt=j.routes?.[0]; if(!rt) throw new Error("Sin ruta");
+  return rt.geometry.coordinates.map(([x,y])=>[y,x]);
+}
+
+/* ================= ICONOS (profesional: SVG, sin emojis) ================= */
+function carIcon(color="#00b3ff"){
+  const svg = `
+  <div class="car-ico">
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="${color}"/><stop offset="1" stop-color="#5fd2ff"/></linearGradient></defs>
+      <g>
+        <rect x="14" y="24" width="36" height="18" rx="6" fill="url(#g)" />
+        <path d="M18 24 l7-10 h14 l7 10 z" fill="#0d1b24"/>
+        <circle cx="22" cy="44" r="6" fill="#0d1b24"/><circle cx="42" cy="44" r="6" fill="#0d1b24"/>
+        <circle cx="22" cy="44" r="2" fill="#9ecbe6"/><circle cx="42" cy="44" r="2" fill="#9ecbe6"/>
+        <rect x="20" y="26" width="24" height="8" rx="2" fill="#8ad4ff" opacity=".9"/>
+      </g>
+    </svg>
+  </div>`;
+  return L.divIcon({html:svg, className:'', iconSize:[38,38], iconAnchor:[19,19]});
+}
+function setCarRotation(marker,deg){ try{ marker.getElement()?.querySelector('.car-ico')?.style.setProperty('--rot', deg+'deg'); }catch(_){ } }
+
+/* ================= PASAJERO ================= */
+let mapRide=null, riderMarkers={origin:null,dest:null,driver:null}, riderLines={o2d:null,drv:null};
+let origin=null, dest=null, riderActiveUnsub=null, lastDriverPt=null;
+
 function ensureRideMap(){
   if(mapRide) return;
   mapRide=L.map('mapRide',{zoomControl:false});
   L.control.zoom({position:'bottomright'}).addTo(mapRide);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(mapRide);
+  darkTileLayer().addTo(mapRide);
   mapRide.setView([-31.5375,-68.5364],12);
 }
-function setRideMarker(kind, lat, lng, color, label){
-  const m=riderMarkers[kind];
-  if(!m) riderMarkers[kind]=L.circleMarker([lat,lng],{radius:8,color,weight:3}).addTo(mapRide).bindTooltip(label,{direction:'top'});
-  else m.setLatLng([lat,lng]);
+function setRideMarker(kind, lat, lng, label){
+  let ico;
+  if(kind==='driver'){ ico = carIcon('#ffd34d'); }
+  else{
+    const bg = kind==='origin' ? '#0f2a22' : '#2a0f12';
+    const fg = kind==='origin' ? '#53f0a8' : '#ffb4b4';
+    ico = L.divIcon({
+      html:`<div class="pill" style="transform:translate(-50%,-50%);background:${bg};color:${fg};border-color:${fg}">${label}</div>`,
+      className:'', iconSize:[0,0]
+    });
+  }
+  if(!riderMarkers[kind]) riderMarkers[kind]=L.marker([lat,lng],{icon:ico}).addTo(mapRide);
+  else riderMarkers[kind].setLatLng([lat,lng]);
 }
 function drawRideLine(name, coords){ if(riderLines[name]){ mapRide.removeLayer(riderLines[name]); } riderLines[name]=L.polyline(coords,{weight:5}).addTo(mapRide); }
-function fitRideBounds(){ const b=L.latLngBounds([]); Object.values(riderMarkers).forEach(m=>m&&b.extend(m.getLatLng())); if(b.isValid()) mapRide.fitBounds(b,{padding:[20,20]}); }
-async function geocode(q){ try{const u=new URL("https://nominatim.openstreetmap.org/search");u.searchParams.set("q",q);u.searchParams.set("format","json");u.searchParams.set("limit","1");const r=await fetch(u); if(!r.ok) return null; const j=await r.json(); if(!j.length) return null; return {lat:+j[0].lat,lng:+j[0].lon};}catch(_){return null} }
-async function fetchRoadRoute(a,b){
-  const url=`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson&steps=false`;
-  const r=await fetch(url); const j=await r.json(); const rt=j.routes?.[0]; if(!rt) throw new Error('no route'); return rt.geometry.coordinates.map(([x,y])=>[y,x]);
-}
+function fitRideBounds(){ const b=L.latLngBounds([]); Object.values(riderMarkers).forEach(m=>m&&b.extend(m.getLatLng())); if(b.isValid()) mapRide.fitBounds(b,{padding:[24,24]}); }
+async function geocode(q){ try{const u=new URL("https://nominatim.openstreetmap.org/search");u.searchParams.set("q",q);u.searchParams.set("format","json");u.searchParams.set("limit","1");const r=await fetch(u,{headers:{'Accept-Language':'es'}}); if(!r.ok) return null; const j=await r.json(); if(!j.length) return null; return {lat:+j[0].lat,lng:+j[0].lon};}catch(_){return null} }
 function estimateFareRaw(km){ const base=990, perKm=660, perMin=99; const mins=(km/24)*60; return Math.max(800, Math.round(base + km*perKm + mins*perMin)); }
 function updateEstimate(){ const dist=$("#distance"), fare=$("#fare"); if(!origin||!dest){ dist.value="0.00 km"; fare.value="$0"; return; } const km=km2(origin,dest); dist.value=`${km.toFixed(2)} km`; fare.value=money(estimateFareRaw(km)); }
 
-/* Rider inputs */
-$("#btnGeoRO").addEventListener("click", async ()=>{ ensureRideMap(); const loc=await geocode($("#riderOrigin").value.trim()); if(!loc) return toast("Origen no encontrado"); origin=loc; setRideMarker('origin',loc.lat,loc.lng,'#22c55e','Origen'); mapRide.setView([loc.lat,loc.lng],15); updateEstimate(); });
-$("#btnGeoRD").addEventListener("click", async ()=>{ ensureRideMap(); const loc=await geocode($("#riderDest").value.trim()); if(!loc) return toast("Destino no encontrado"); dest=loc; setRideMarker('dest',loc.lat,loc.lng,'#ef4444','Destino'); mapRide.setView([loc.lat,loc.lng],15); updateEstimate(); if(origin){ try{ const coords=await fetchRoadRoute(origin,dest); drawRideLine('o2d',coords); fitRideBounds(); }catch(_){} }});
-$("#btnLocate").addEventListener("click", ()=>{ if(!navigator.geolocation) return toast("Sin geolocalización"); ensureRideMap(); navigator.geolocation.getCurrentPosition(p=>{ origin={lat:p.coords.latitude,lng:p.coords.longitude}; setRideMarker('origin',origin.lat,origin.lng,'#22c55e','Origen'); mapRide.setView([origin.lat,origin.lng],15); updateEstimate(); }, ()=>toast("No se pudo ubicar"))});
+$("#btnGeoRO").addEventListener("click", async ()=>{
+  ensureRideMap(); const loc=await geocode($("#riderOrigin").value.trim()); if(!loc) return toast("Origen no encontrado");
+  origin=loc; setRideMarker('origin',loc.lat,loc.lng,'Origen'); mapRide.setView([loc.lat,loc.lng],15); updateEstimate();
+});
+$("#btnGeoRD").addEventListener("click", async ()=>{
+  ensureRideMap(); const loc=await geocode($("#riderDest").value.trim()); if(!loc) return toast("Destino no encontrado");
+  dest=loc; setRideMarker('dest',loc.lat,loc.lng,'Destino'); mapRide.setView([loc.lat,loc.lng],15); updateEstimate();
+  if(origin){ try{ const c=await routeCoords(origin,dest); drawRideLine('o2d',c); fitRideBounds(); }catch(_){ } }
+});
+$("#btnLocate").addEventListener("click", ()=>{
+  if(!navigator.geolocation) return toast("Sin geolocalización");
+  ensureRideMap();
+  navigator.geolocation.getCurrentPosition(p=>{
+    origin={lat:p.coords.latitude,lng:p.coords.longitude};
+    setRideMarker('origin',origin.lat,origin.lng,'Origen'); mapRide.setView([origin.lat,origin.lng],15); updateEstimate();
+  }, ()=>toast("No se pudo ubicar"), {enableHighAccuracy:true,timeout:5000,maximumAge:15000});
+});
 
-/* Rider create */
-let pay={method:null,status:"pending"}, payConfirmed=false;
-$("#payMethod").addEventListener("change", e=>{ pay={method:e.target.value||null,status:"pending"}; $("#payCashBox").classList.toggle("hide", e.target.value!=="cash"); $("#payMPBox").classList.toggle("hide", e.target.value!=="mp"); $("#payStatus").classList.toggle("hide", !e.target.value); });
-$("#chkCashConfirm").addEventListener("change", e=>{ payConfirmed=e.target.checked; pay.status=payConfirmed?"cash_confirmed":"pending"; $("#payStatus").className=`pill ${payConfirmed?'ok':''}`; $("#payStatus").textContent=payConfirmed?"Pago en efectivo confirmado":"Pago pendiente"; });
+/* Pago demo */
+let pay={method:null,status:"pending"};
+$("#payMethod").addEventListener("change", e=>{
+  pay={method:e.target.value||null,status:"pending"};
+  $("#payCashBox").classList.toggle("hide", e.target.value!=="cash");
+  $("#payMPBox").classList.toggle("hide", e.target.value!=="mp");
+  $("#payStatus").classList.toggle("hide", !e.target.value);
+});
+$("#chkCashConfirm").addEventListener("change", e=>{ pay.status=e.target.checked?"cash_confirmed":"pending"; $("#payStatus").className=`pill ${e.target.checked?'ok':''}`; $("#payStatus").textContent=e.target.checked?"Pago en efectivo confirmado":"Pago pendiente"; });
 $("#btnPayMP").addEventListener("click", async ()=>{ const b=$("#btnPayMP"); b.disabled=true; b.textContent="Procesando…"; await new Promise(r=>setTimeout(r,900)); pay.status="approved"; $("#payStatus").className="pill ok"; $("#payStatus").textContent="Pago aprobado (MP)"; b.disabled=false; b.textContent="Simular pago MP"; });
 
-let riderActiveUnsub=null;
+/* Crear viaje y escuchar (pasajero ve al conductor apenas acepta) */
+$("#btnUnified").addEventListener("click", riderCreateRide);
+$("#btnCancel").addEventListener("click", ()=>{}); // se setea al adjuntar
+
 async function riderCreateRide(){
   if(!currentUser) return toast("Iniciá sesión");
   if(!origin||!dest) return toast("Elegí origen y destino");
   const existing = await ridesCol.where("riderId","==", currentUser.uid).where("finished","==", false).limit(1).get().catch(()=>null);
   if(existing && !existing.empty) return toast("Ya tenés un viaje activo");
-
   const km=km2(origin,dest), fare=estimateFareRaw(km);
   const data={
     riderId: currentUser.uid,
@@ -294,84 +361,93 @@ async function riderCreateRide(){
   await ridesCol.add(data);
   toast("Solicitud enviada");
 }
-$("#btnUnified").addEventListener("click", riderCreateRide);
 
-/* Rider active ride listener (draw where the driver is coming from) */
 function riderAttachActiveRide(){
   if(riderActiveUnsub) riderActiveUnsub();
   riderActiveUnsub = ridesCol.where("riderId","==", currentUser.uid).where("finished","==", false).limit(1)
   .onSnapshot(qs=>{
     if(qs.empty){ $("#driverCard").classList.add("hide"); $("#btnCancel").classList.add("hide"); return; }
     const id=qs.docs[0].id, r=qs.docs[0].data();
+
     $("#btnCancel").classList.toggle("hide", r.status==="requested"?false:true);
     $("#btnCancel").onclick = async()=>{ try{ await ridesCol.doc(id).set({status:"cancelled", finished:true},{merge:true}); }catch(e){ toast(e.message) } };
 
     $("#rideMapTop").textContent=`${r.originText} → ${r.destText} · ${(r.km||0).toFixed(1)} km · ${money(r.fare||0)}`;
     $("#rideMapTop").classList.add("show"); setTimeout(()=>$("#rideMapTop").classList.remove("show"),1200);
 
+    // tarjeta conductor pro
     if(r.driverId){
       $("#driverCard").classList.remove("hide");
-      $("#driverName").textContent=r.driverName||"Conductor";
-      $("#driverAvatar").src=r.driverPhotoURL||"https://i.pravatar.cc/100?img=3";
+      $("#driverName").textContent = `${r.driverName||"Conductor"} — ${money(r.fare)} · ★${(r.driverRating||5).toFixed(1)}`;
+      $("#driverAvatar").src = r.driverPhotoURL || "https://i.pravatar.cc/100?img=3";
       $("#driverExtra").textContent = r.status==="accepted"?"En camino al origen": r.status==="arrived"?"Llegó al origen": r.status==="in_trip"?"En viaje": r.status==="completed"?"Finalizado":"—";
+    }
 
-      ensureRideMap();
-      if(r.origin) { origin=r.origin; setRideMarker('origin',origin.lat,origin.lng,'#22c55e','Origen'); }
-      if(r.dest)   { dest=r.dest;     setRideMarker('dest',dest.lat,dest.lng,'#ef4444','Destino'); }
+    // mapa con rutas por calles
+    ensureRideMap();
+    if(r.origin){ origin=r.origin; setRideMarker('origin',origin.lat,origin.lng,'Origen'); }
+    if(r.dest){ dest=r.dest; setRideMarker('dest',dest.lat,dest.lng,'Destino'); }
+    (async ()=>{ try{ const c=await routeCoords(origin,dest); drawRideLine('o2d',c); }catch(_){}})();
 
-      if(r.driverLoc){
-        const cur={lat:r.driverLoc.latitude,lng:r.driverLoc.longitude};
-        setRideMarker('driver',cur.lat,cur.lng,'#7dd3fc','Conductor');
-        let target=null;
-        if(r.status==="accepted"||r.status==="arrived") target=r.origin;
-        else if(r.status==="in_trip") target=r.dest;
-        if(target){
-          fetchRoadRoute(cur,target).then(coords=>{ drawRideLine('drv',coords); fitRideBounds(); }).catch(()=>{});
-        }
-      }
+    if(r.driverLoc){
+      const cur={lat:r.driverLoc.latitude,lng:r.driverLoc.longitude};
+      setRideMarker('driver',cur.lat,cur.lng,'');
+      if(lastDriverPt){ setCarRotation(riderMarkers.driver, bearing(lastDriverPt,cur)); }
+      lastDriverPt=cur;
+      const target = (r.status==="accepted"||r.status==="arrived")? r.origin : r.dest;
+      if(target){
+        routeCoords(cur,target).then(coords=>{ drawRideLine('drv',coords); fitRideBounds(); }).catch(()=>{});
+      }else{ fitRideBounds(); }
     }
   });
 }
 
-/* ================= Driver Map & Flow ================= */
-let driverMap=null, availMarkers={}, activePolylineToPick=null, activePolylineO2D=null, driverMarker=null;
+/* ================= CONDUCTOR ================= */
+let mapDriver=null, driverMarker=null, prevDriverPoint=null;
+let activePolylineToPick=null, activePolylineO2D=null;
 let driverAvailUnsub=null, driverMineUnsub=null;
-let onTimer=null, onStartTime=null, online=false, currentRideId=null;
+let geoWatchId=null, lastPush=0, currentRideId=null;
+let online=false, onTimer=null, onStart=null;
 
 function ensureDriverMap(){
-  if(driverMap) return;
-  driverMap=L.map('mapDriver',{zoomControl:false});
-  L.control.zoom({position:'bottomright'}).addTo(driverMap);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(driverMap);
-  driverMap.setView([-31.5375,-68.5364],13);
+  if(mapDriver) return;
+  mapDriver=L.map('mapDriver',{zoomControl:false});
+  L.control.zoom({position:'bottomright'}).addTo(mapDriver);
+  darkTileLayer().addTo(mapDriver);
+  mapDriver.setView([-31.5375,-68.5364],13);
 }
 function centerOnMeOnce(){
   if(!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(p=>{
-    const lat=p.coords.latitude, lng=p.coords.longitude;
     ensureDriverMap();
-    if(!driverMarker) driverMarker = L.circleMarker([lat,lng],{radius:8,color:'#7dd3fc',weight:3}).addTo(driverMap).bindTooltip("Yo (conductor)",{direction:'top'});
-    else driverMarker.setLatLng([lat,lng]);
-    driverMap.setView([lat,lng],14);
+    const lat=p.coords.latitude,lng=p.coords.longitude;
+    if(!driverMarker){
+      driverMarker=L.marker([lat,lng],{icon:carIcon('#00b3ff')}).addTo(mapDriver);
+    }else driverMarker.setLatLng([lat,lng]);
+    mapDriver.setView([lat,lng],14);
   });
 }
-let geoWatchId=null,lastPush=0;
 function startGeoWatch(){
   if(!navigator.geolocation) return;
   if(geoWatchId) navigator.geolocation.clearWatch(geoWatchId);
   geoWatchId = navigator.geolocation.watchPosition(async p=>{
+    ensureDriverMap();
     const lat=p.coords.latitude,lng=p.coords.longitude;
-    if(!driverMarker) driverMarker = L.circleMarker([lat,lng],{radius:8,color:'#7dd3fc',weight:3}).addTo(driverMap).bindTooltip("Yo (conductor)",{direction:'top'});
-    else driverMarker.setLatLng([lat,lng]);
+    const nowPoint={lat,lng};
+    if(!driverMarker){ driverMarker=L.marker([lat,lng],{icon:carIcon('#00b3ff')}).addTo(mapDriver); }
+    else{
+      if(prevDriverPoint){ setCarRotation(driverMarker, bearing(prevDriverPoint,nowPoint)); }
+      driverMarker.setLatLng([lat,lng]);
+    }
+    prevDriverPoint=nowPoint;
     const now=Date.now();
-    if(currentRideId && now-lastPush>2500){ lastPush=now; await ridesCol.doc(currentRideId).set({driverLoc:new firebase.firestore.GeoPoint(lat,lng), driverLocAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); }
+    if(currentRideId && now-lastPush>2500){
+      lastPush=now;
+      await ridesCol.doc(currentRideId).set({driverLoc:new firebase.firestore.GeoPoint(lat,lng), driverLocAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    }
   }, console.warn, {enableHighAccuracy:true, maximumAge:2000, timeout:15000});
 }
 function stopGeoWatch(){ if(geoWatchId){ navigator.geolocation.clearWatch(geoWatchId); geoWatchId=null; } }
-
-function fmt(t){ const s=Math.floor(t/1000); const h=String(Math.floor(s/3600)).padStart(2,"0"); const m=String(Math.floor((s%3600)/60)).padStart(2,"0"); const ss=String(s%60).padStart(2,"0"); return `${h}:${m}:${ss}`;}
-function startTimer(){ onStartTime=Date.now(); $("#onlineTimer").textContent="00:00:00"; if(onTimer) clearInterval(onTimer); onTimer=setInterval(()=>$("#onlineTimer").textContent=fmt(Date.now()-onStartTime),1000); }
-function stopTimer(reset=true){ if(onTimer) clearInterval(onTimer); if(reset) $("#onlineTimer").textContent="00:00:00"; }
 
 function setOnlineUI(isOnline){
   online=isOnline;
@@ -379,57 +455,46 @@ function setOnlineUI(isOnline){
   $("#btnPauseRoute").disabled = !currentUser?.approved || !online;
   $("#btnStopRoute").disabled  = !currentUser?.approved || !online;
 }
+function fmtTime(ms){ const s=Math.floor(ms/1000); const h=String(Math.floor(s/3600)).padStart(2,"0"); const m=String(Math.floor((s%3600)/60)).padStart(2,"0"); const ss=String(s%60).padStart(2,"0"); return `${h}:${m}:${ss}`;}
+function startTimer(){ onStart=Date.now(); $("#onlineTimer").textContent="00:00:00"; if(onTimer) clearInterval(onTimer); onTimer=setInterval(()=>$("#onlineTimer").textContent=fmtTime(Date.now()-onStart),1000); }
+function stopTimer(reset=true){ if(onTimer) clearInterval(onTimer); if(reset) $("#onlineTimer").textContent="00:00:00"; }
 
-async function goOnline(){
-  await usersCol.doc(auth.currentUser.uid).set({online:true},{merge:true});
-  setOnlineUI(true); startTimer(); ensureDriverMap(); centerOnMeOnce(); startGeoWatch(); attachDriverStreams(); toast("Conectado");
-}
-async function pauseOnline(){
-  await usersCol.doc(auth.currentUser.uid).set({online:false},{merge:true});
-  setOnlineUI(false); stopTimer(false); stopGeoWatch(); toast("Pausado");
-}
-async function stopOnline(){
-  await usersCol.doc(auth.currentUser.uid).set({online:false},{merge:true});
-  setOnlineUI(false); stopTimer(true); stopGeoWatch(); clearAvailMarkers(); clearActiveRoute(); toast("Desconectado");
-}
-
+async function goOnline(){ await usersCol.doc(auth.currentUser.uid).set({online:true},{merge:true}); setOnlineUI(true); startTimer(); ensureDriverMap(); centerOnMeOnce(); startGeoWatch(); attachDriverStreams(); toast("Conectado"); }
+async function pauseOnline(){ await usersCol.doc(auth.currentUser.uid).set({online:false},{merge:true}); setOnlineUI(false); stopTimer(false); stopGeoWatch(); toast("Pausado"); }
+async function stopOnline(){ await usersCol.doc(auth.currentUser.uid).set({online:false},{merge:true}); setOnlineUI(false); stopTimer(true); stopGeoWatch(); clearActiveRoute(); $("#driverAvailable").innerHTML=""; $("#driverMyActive").innerHTML=""; toast("Desconectado"); }
 $("#btnStartRoute").addEventListener("click", goOnline);
 $("#btnPauseRoute").addEventListener("click", pauseOnline);
 $("#btnStopRoute").addEventListener("click", stopOnline);
 
-/* Avail markers & cards */
-function clearAvailMarkers(){ Object.values(availMarkers).forEach(m=>{ driverMap && driverMap.removeLayer(m.o); driverMap && driverMap.removeLayer(m.d); }); availMarkers={}; $("#driverAvailable").innerHTML=""; }
-function clearActiveRoute(){ if(activePolylineToPick){ driverMap.removeLayer(activePolylineToPick); activePolylineToPick=null; } if(activePolylineO2D){ driverMap.removeLayer(activePolylineO2D); activePolylineO2D=null; } }
+function clearActiveRoute(){ if(activePolylineToPick){ mapDriver.removeLayer(activePolylineToPick); activePolylineToPick=null; } if(activePolylineO2D){ mapDriver.removeLayer(activePolylineO2D); activePolylineO2D=null; } }
 
+/* Streams conductor */
 function attachDriverStreams(){
   if(driverAvailUnsub) driverAvailUnsub();
   if(driverMineUnsub)  driverMineUnsub();
 
-  if(!online){ $("#driverAvailable").innerHTML=`<div class="small muted">Poné “Iniciar viajes”.</div>`; $("#driverMyActive").innerHTML=`<div class="small muted">Sin viajes activos.</div>`; return; }
-
+  if(!online){
+    $("#driverAvailable").innerHTML=`<div class="small muted">Presioná “Iniciar”.</div>`;
+    $("#driverMyActive").innerHTML=`<div class="small muted">Sin viajes activos.</div>`;
+    return;
+  }
   ensureDriverMap();
 
   // Disponibles
   driverAvailUnsub = ridesCol.where("status","==","requested").limit(40)
   .onSnapshot(qs=>{
-    clearAvailMarkers();
-    const wrap=$("#driverAvailable");
+    const wrap=$("#driverAvailable"); wrap.innerHTML="";
     if(qs.empty){ wrap.innerHTML=`<div class="small muted">Sin viajes por ahora…</div>`; return; }
     qs.forEach(doc=>{
       const r=doc.data();
-      // markers
-      if(r.origin){ const o=L.circleMarker([r.origin.lat,r.origin.lng],{radius:7,color:'#22c55e',weight:3}).addTo(driverMap).bindTooltip("Origen",{direction:'top'});
-        let d=null; if(r.dest) d=L.circleMarker([r.dest.lat,r.dest.lng],{radius:7,color:'#ef4444',weight:3}).addTo(driverMap).bindTooltip("Destino",{direction:'top'});
-        availMarkers[doc.id]={o,d}; }
-      // card
       const item=document.createElement("div"); item.className="item";
       item.innerHTML=`
         <div class="inline-card">
           <img class="avatar" src="${r.riderPhotoURL||'https://i.pravatar.cc/100?img=12'}" alt="Pasajero">
           <div>
-            <b>${r.riderName||'Pasajero'}</b>
+            <b>${r.riderName||'Pasajero'}</b> — ${money(r.fare)} · ★${(r.riderRating||5).toFixed(1)}
             <div class="small">${r.originText} → ${r.destText}</div>
-            <div class="small muted">${(r.km||0).toFixed(1)} km · ${money(r.fare)} · ${r.vehicle||'auto'}</div>
+            <div class="small muted">${(r.km||0).toFixed(1)} km · ${r.vehicle||'auto'}</div>
           </div>
         </div>
         <div class="row" style="margin-top:6px">
@@ -442,56 +507,64 @@ function attachDriverStreams(){
     });
   });
 
-  // Mis activos
+  // Mi activo
   driverMineUnsub = ridesCol.where("driverId","==", auth.currentUser.uid).where("finished","==",false)
   .onSnapshot(qs=>{
     const wrap=$("#driverMyActive"); wrap.innerHTML="";
     if(qs.empty){ currentRideId=null; wrap.innerHTML=`<div class="small muted">Sin viajes activos.</div>`; clearActiveRoute(); return; }
     qs.forEach((doc,i)=>{
       const r=doc.data(); if(i===0){ currentRideId=doc.id; showActiveRoute(r); }
-      const item=document.createElement("div"); item.className="item";
       const order=["requested","accepted","arrived","in_trip","completed"];
       const can=n=> order.indexOf(n)===order.indexOf(r.status)+1;
+      const item=document.createElement("div"); item.className="item";
       item.innerHTML=`
-        <div><b>${r.originText}</b> → <b>${r.destText}</b></div>
-        <div class="small muted">${(r.km||0).toFixed(1)} km · ${money(r.fare)} · Pasajero: ${r.riderName||"—"} · Estado: <b>${r.status}</b></div>
+        <div class="inline-card">
+          <img class="avatar" src="${r.riderPhotoURL||'https://i.pravatar.cc/100?img=12'}" alt="Pasajero">
+          <div>
+            <b>${r.riderName||'Pasajero'}</b> — ${money(r.fare)} · ★${(r.riderRating||5).toFixed(1)}
+            <div class="small">${r.originText} → ${r.destText}</div>
+            <div class="small muted">${(r.km||0).toFixed(1)} km · Estado: <b>${r.status}</b></div>
+          </div>
+        </div>
         <div class="row" style="margin-top:6px">
           <button class="btn${can('arrived')?' btnp':''}" data-next="arrived" ${can('arrived')?'':'disabled'}>Llegué</button>
           <button class="btn${can('in_trip')?' btnp':''}" data-next="in_trip" ${can('in_trip')?'':'disabled'}>Iniciar</button>
           <button class="btn${can('completed')?' btnp':''}" data-next="completed" ${can('completed')?'':'disabled'}>Finalizar</button>
         </div>`;
-      item.querySelectorAll("[data-next]").forEach(b=> b.onclick=()=> driverAdvance(doc.id,b.dataset.next));
+      item.querySelectorAll('[data-next]').forEach(b=> b.onclick=()=> driverAdvance(doc.id,b.dataset.next));
       wrap.appendChild(item);
     });
   });
 }
 
 async function showRoutePreview(r){
-  centerOnMeOnce();
-  clearActiveRoute();
+  centerOnMeOnce(); clearActiveRoute();
   if(!driverMarker || !r.origin) return;
   try{
     const cur=driverMarker.getLatLng();
-    const toPick = await fetchRoadRoute({lat:cur.lat,lng:cur.lng}, r.origin);
-    activePolylineToPick = L.polyline(toPick,{weight:5}).addTo(driverMap);
-    if(r.dest){ const o2d = await fetchRoadRoute(r.origin, r.dest); activePolylineO2D = L.polyline(o2d,{weight:4,opacity:.6}).addTo(driverMap); }
-    const b=L.latLngBounds([[cur.lat,cur.lng],[r.origin.lat,r.origin.lng]]); if(r.dest) b.extend([r.dest.lat,r.dest.lng]); driverMap.fitBounds(b,{padding:[20,20]});
+    const toPick = await routeCoords({lat:cur.lat,lng:cur.lng}, r.origin);
+    activePolylineToPick = L.polyline(toPick,{weight:5}).addTo(mapDriver);
+    if(r.dest){ const o2d = await routeCoords(r.origin, r.dest); activePolylineO2D = L.polyline(o2d,{weight:4,opacity:.6}).addTo(mapDriver); }
+    const b=L.latLngBounds([[cur.lat,cur.lng],[r.origin.lat,r.origin.lng]]); if(r.dest) b.extend([r.dest.lat,r.dest.lng]); mapDriver.fitBounds(b,{padding:[24,24]});
     const top=$("#driverMapTop"); top.textContent=`${r.originText} → ${r.destText} · ${(r.km||0).toFixed(1)} km · ${money(r.fare)}`; top.classList.add("show"); setTimeout(()=>top.classList.remove("show"),1600);
   }catch(_){}
 }
-
 async function showActiveRoute(r){
   ensureDriverMap(); centerOnMeOnce(); clearActiveRoute();
-  if(r.driverLoc && r.origin){
+  if(r.driverLoc){
     const cur={lat:r.driverLoc.latitude,lng:r.driverLoc.longitude};
-    try{ const toPick = await fetchRoadRoute(cur, r.status==="in_trip"?r.dest:r.origin);
-      activePolylineToPick = L.polyline(toPick,{weight:5}).addTo(driverMap);
+    if(prevDriverPoint){ setCarRotation(driverMarker, bearing(prevDriverPoint,cur)); }
+    driverMarker?.setLatLng([cur.lat,cur.lng]); prevDriverPoint=cur;
+  }
+  if(r.origin){
+    try{
+      const from = r.status==="in_trip" ? r.origin : (r.driverLoc? {lat:r.driverLoc.latitude,lng:r.driverLoc.longitude} : null);
+      if(from){ const toPick = await routeCoords(from, r.status==="in_trip"? r.dest : r.origin); activePolylineToPick = L.polyline(toPick,{weight:5}).addTo(mapDriver); }
+      if(r.dest){ const o2d = await routeCoords(r.origin, r.dest); activePolylineO2D = L.polyline(o2d,{weight:4,opacity:.6}).addTo(mapDriver); }
+      const b=L.latLngBounds([]); if(driverMarker) b.extend(driverMarker.getLatLng()); b.extend([r.origin.lat,r.origin.lng]); if(r.dest) b.extend([r.dest.lat,r.dest.lng]); if(b.isValid()) mapDriver.fitBounds(b,{padding:[24,24]});
     }catch(_){}
   }
-  if(r.origin && r.dest){
-    try{ const o2d=await fetchRoadRoute(r.origin,r.dest); activePolylineO2D=L.polyline(o2d,{weight:4,opacity:.6}).addTo(driverMap);}catch(_){}
-  }
-  const top=$("#driverMapTop"); top.textContent=`${r.originText} → ${r.destText} · ${(r.km||0).toFixed(1)} km · ${money(r.fare)}`; top.classList.add("show"); setTimeout(()=>top.classList.remove("show"),1500);
+  const top=$("#driverMapTop"); top.textContent=`${r.originText} → ${r.destText} · ${(r.km||0).toFixed(1)} km · ${money(r.fare||0)}`; top.classList.add("show"); setTimeout(()=>top.classList.remove("show"),1500);
 }
 
 async function driverAcceptRide(rideId){
@@ -502,7 +575,7 @@ async function driverAcceptRide(rideId){
       const r=snap.data(); if(r.status!=="requested") throw new Error("Ya fue tomado");
       tx.update(ref,{status:"accepted", driverId:auth.currentUser.uid, driverName: currentUser.displayName||currentUser.email, driverPhotoURL: currentUser.photoURL||"", driverRating: currentUser.rating||5});
     });
-    currentRideId=rideId; toast("¡Viaje aceptado!"); attachDriverStreams(); // forzar refresco
+    currentRideId=rideId; toast("Viaje aceptado");
   }catch(e){ toast(e.message); }
 }
 async function driverAdvance(rideId,next){
@@ -517,7 +590,7 @@ async function driverAdvance(rideId,next){
   }catch(e){ toast(e.message); }
 }
 
-/* ================= Auth & Profile ================= */
+/* ================= Perfil / Auth ================= */
 function paintProfile(){
   const el=$("#profileInfo"), av=$("#profileAvatar"); if(!currentUser){ el.textContent="Sin sesión"; av.src=""; return; }
   av.src=currentUser.photoURL||"https://i.pravatar.cc/100?u=placeholder";
@@ -530,8 +603,11 @@ function refreshTabs(){
   document.querySelector(`[data-tab="history"]`).classList.toggle("hide", !logged);
   document.querySelector(`[data-tab="driver"]`).classList.toggle("hide", !(logged && currentUser.approved));
   document.querySelector(`[data-tab="settings"]`).classList.toggle("hide", !logged);
-  if(!logged) setTab("access"); else setTab("ride");
   $("#btnStartRoute").disabled = !(logged && currentUser.approved);
+  $("#drvKycStatus").className = "pill " + (currentUser?.approved?"ok":"warn");
+  $("#drvKycStatus").textContent = currentUser?.approved?"Aprobado":"No solicitado";
+  $("#authPill").textContent = logged ? `${currentUser.displayName||currentUser.email} — ${(currentUser.role||'rider')}${currentUser.approved?' (KYC✓)':''}` : "Sin sesión";
+  setTab(logged ? "ride" : "access");
 }
 
 $("#btnSignIn").addEventListener("click", async ()=>{
@@ -543,7 +619,7 @@ $("#btnCreateDemo").addEventListener("click", async ()=>{
     const email=`demo${Math.floor(Math.random()*1e6)}@mail.com`; const pass="123456";
     const {user}=await auth.createUserWithEmailAndPassword(email,pass);
     await usersCol.doc(user.uid).set({uid:user.uid,email:user.email,displayName:"Demo",photoURL:"https://i.pravatar.cc/100?img=15",role:"rider",approved:false,online:false,createdAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-    pill($("#msg"),`Cuenta demo creada: ${email} / 123456`,"ok");
+    pill($("#msg"),`Cuenta demo creada. Usuario: ${email} / Clave: 123456`,"ok");
   }catch(e){ pill($("#msg"),e.message,"error"); }
 });
 
@@ -552,23 +628,24 @@ $("#btnVerifySubmit").addEventListener("click", async ()=>{
   await usersCol.doc(auth.currentUser.uid).set({role:"driver",approved:true},{merge:true});
   currentUser.approved=true; paintProfile(); refreshTabs(); setTab("driver"); toast("Conductor aprobado (demo)");
 });
-
 $("#btnSignOut").addEventListener("click", ()=> auth.signOut().catch(e=>toast(e.message)));
 
 auth.onAuthStateChanged(async (u)=>{
   if(!u){
-    currentUser=null; $("#authPill").textContent="Sin sesión"; paintProfile(); refreshTabs();
-    if(riderActiveUnsub) riderActiveUnsub(); if(driverAvailUnsub) driverAvailUnsub(); if(driverMineUnsub) driverMineUnsub();
+    currentUser=null; paintProfile(); refreshTabs();
+    if(riderActiveUnsub) riderActiveUnsub();
+    if(driverAvailUnsub) driverAvailUnsub();
+    if(driverMineUnsub)  driverMineUnsub();
     stopOnline(); return;
   }
   const ref=usersCol.doc(u.uid); const snap=await ref.get();
   if(!snap.exists) await ref.set({uid:u.uid,email:u.email,displayName:u.displayName||"",photoURL:u.photoURL||"",role:"rider",approved:false,online:false,createdAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
   currentUser=(await ref.get()).data();
-  $("#authPill").textContent = `${currentUser.displayName||currentUser.email} — ${currentUser.role||'rider'}${currentUser.approved?' (KYC✓)':''}`;
-  paintProfile(); refreshTabs(); ensureRideMap(); riderAttachActiveRide();
+  paintProfile(); refreshTabs();
+  ensureRideMap(); riderAttachActiveRide();
 });
 
-/* ================= History (local) ================= */
+/* ================= Historial (local simple) ================= */
 function renderHistory(){
   if(!currentUser) return;
   const key=`taxiya_rider_history_${currentUser.email}`; let list=[]; try{list=JSON.parse(localStorage.getItem(key)||"[]");}catch(_){}
@@ -578,9 +655,8 @@ function renderHistory(){
 $("#btnClearRiderHistory").addEventListener("click", ()=>{ if(!currentUser) return; localStorage.setItem(`taxiya_rider_history_${currentUser.email}`,"[]"); renderHistory(); toast("OK"); });
 
 /* ================= Misc ================= */
-window.addEventListener("focus", ()=>{ try{mapRide&&mapRide.invalidateSize(); driverMap&&driverMap.invalidateSize();}catch(_){}});
+window.addEventListener("focus", ()=>{ try{mapRide&&mapRide.invalidateSize(); mapDriver&&mapDriver.invalidateSize();}catch(_){}});
 
 </script>
 </body>
 </html>
-```
