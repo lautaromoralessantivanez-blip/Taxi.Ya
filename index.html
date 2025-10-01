@@ -1,18 +1,8 @@
-¡Listo, Lau! Te paso el archivo **corregido** para copiar y pegar.
-Claves del arreglo:
-
-* **Registro sin verificación de email** (login libre). Ya no bloquea por “correo no verificado”.
-* **Foto de perfil opcional** (si subís, se guarda en Firestore; no intenta poner data URL en `updateProfile` para evitar errores).
-* Mantengo **“Entrar rápido (demo)”** para usar cualquier correo como alias y entrar anónimo.
-
-Pegá todo esto en un `.html` y abrilo:
-
-```html
 <!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>Taxi Ya — demo login libre</title>
 
 <!-- Leaflet -->
@@ -27,24 +17,43 @@ Pegá todo esto en un `.html` y abrilo:
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
 
 <style>
+/* ====== Diseño base ====== */
 :root{
-  --bg:#0e1116; --panel:#111722; --ink:#f6f8fb; --muted:#93a6b7; --line:#243445;
+  --bg:#0b0f15; --panel:#0f141d; --ink:#f5f7fb; --muted:#93a6b7; --line:#1c2a3a;
   --accent:#00b3ff; --accent2:#ffd34d; --ok:#17c964; --danger:#ef4444;
   --radius:16px; --shadow:0 16px 40px rgba(0,0,0,.45);
+  --safe-bottom: env(safe-area-inset-bottom, 12px);
 }
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Poppins,system-ui,Arial}
-header{position:sticky;top:0;z-index:30;background:rgba(14,17,22,.8);backdrop-filter:blur(6px);padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
-.brand{font-weight:800}
+
+/* ====== Header & Tabs ====== */
+header{position:sticky;top:0;z-index:50;background:rgba(11,15,21,.88);
+  backdrop-filter:blur(6px);padding:12px 16px;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center}
+.brand{font-weight:800;letter-spacing:.2px}
 .badge{border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px;opacity:.9}
 
+nav.tabs{position:sticky; top:0; background:rgba(15,20,29,.75);
+  border:1px solid var(--line); display:flex; gap:8px; padding:8px; border-radius:12px;
+  backdrop-filter: blur(6px); z-index:40}
+.tab-btn{flex:1 1 0; min-width:110px; height:44px; display:flex; align-items:center;
+  justify-content:center; gap:6px; border-radius:999px; font-weight:800; cursor:pointer;
+  background:transparent; border:1px solid var(--line); color:var(--ink)}
+.tab-btn.active{background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#082532; border-color:transparent}
+.hide{display:none!important}
+
+/* ====== Layout ====== */
 main{max-width:1200px;margin:16px auto;padding:0 12px;display:grid;gap:12px}
-.card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+  border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
 h2{margin:6px 0 10px;font-size:18px}
+h3{margin:14px 0 8px}
 label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
 input,select,button{font:inherit}
-input,select{width:100%;padding:10px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.02);color:var(--ink)}
+input,select{width:100%;padding:10px;border-radius:12px;border:1px solid var(--line);
+  background:rgba(255,255,255,.02);color:var(--ink)}
 input::placeholder{color:#8aa0b3}
 button{border:0;border-radius:12px;padding:10px 12px;font-weight:800;cursor:pointer}
 .btn{background:transparent;border:1px solid var(--line);color:var(--ink)} .btn:hover{filter:brightness(1.08)}
@@ -60,32 +69,41 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:800;cursor:poin
 .avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;border:1px solid var(--line)}
 .list{display:grid;gap:8px}
 .item{border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(255,255,255,.02)}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;z-index:9999;background:rgba(24,30,38,.95);color:#fff;padding:10px 14px;border-radius:12px;border:1px solid #000;font-weight:700}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(72px + var(--safe-bottom));z-index:9999;background:rgba(12,16,22,.96);color:#fff;padding:10px 14px;border-radius:12px;border:1px solid #000;font-weight:700}
 
-nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid var(--line); display:flex; gap:8px; padding:8px; border-radius:12px; backdrop-filter: blur(6px)}
-.tab-btn{flex:1 1 0; min-width:100px; height:44px; display:flex; align-items:center; justify-content:center; gap:6px; border-radius:999px; font-weight:800; cursor:pointer; background:transparent; border:1px solid var(--line); color:var(--ink)}
-.tab-btn.active{background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#082532; border-color:transparent}
-.hide{display:none!important}
-
-/* Map */
-.map{width:100%;height:62vh;min-height:360px;border-radius:16px;border:1px solid var(--line);overflow:hidden;position:relative}
+/* ====== Mapas ====== */
+.map{width:100%;min-height:360px;border-radius:16px;border:1px solid var(--line);overflow:hidden;position:relative}
 .map-top{position:absolute; left:10px; right:10px; top:10px; z-index:400; display:none; padding:8px 12px; border-radius:12px; font-weight:800; border:1px solid var(--line); background:rgba(0,0,0,.28); backdrop-filter: blur(4px)}
 .map-top.show{display:block}
-#mapRide .leaflet-tile, #mapDriver .leaflet-tile{ filter: brightness(1.06) contrast(1.02) saturate(1.05) hue-rotate(185deg); }
 
-/* Conductor */
-.ctrlbar{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px}
-.ctrlbar .timer{justify-self:center;border:1px solid var(--line);padding:8px 14px;border-radius:999px;font-weight:800;background:rgba(255,255,255,.06)}
+/* Tema por clases del <body> */
+body.theme-darkblue #mapRide .leaflet-tile,
+body.theme-darkblue #mapDriver .leaflet-tile{
+  /* Oscuro con tinte azul, más contraste para “visible pero oscuro” */
+  filter: brightness(1.08) contrast(1.1) saturate(1.2) hue-rotate(210deg);
+}
+body.theme-light #mapRide .leaflet-tile,
+body.theme-light #mapDriver .leaflet-tile{
+  filter: brightness(1.06) contrast(1.02) saturate(1.05) hue-rotate(185deg);
+}
+
+/* Icono “auto” */
 .car-ico{width:38px;height:38px;display:grid;place-items:center;transform: translate(-50%,-50%);}
 .car-ico svg{width:32px;height:32px;filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); transform: rotate(var(--rot,0deg));}
 
+/* ====== Mobile tuning ====== */
 @media (max-width:900px){
-  nav.tabs{position:fixed; bottom:10px; left:12px; right:12px; z-index:40}
-  body{padding-bottom:84px}
+  nav.tabs{position:fixed; bottom:10px; left:12px; right:12px; z-index:60}
+  body{padding-bottom:96px}
+  /* Alto del mapa pensado para que no quede escondido tras la barra fija */
+  .map{height:calc(100svh - 260px)}
+}
+@media (min-width:901px){
+  .map{height:62vh}
 }
 </style>
 </head>
-<body>
+<body class="theme-darkblue">
 <header>
   <div class="brand">Taxi Ya</div>
   <div id="authPill" class="badge">Sin sesión</div>
@@ -100,10 +118,9 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
 </nav>
 
 <main>
-  <!-- ACCESO -->
+  <!-- ====== ACCESO ====== -->
   <section id="panel-access" class="card">
     <h2>Acceso</h2>
-
     <div class="row" style="gap:6px;margin-bottom:8px">
       <button class="btnp" id="goLogin">Iniciar sesión</button>
       <button class="btn" id="goRegister">Registrarme</button>
@@ -112,7 +129,7 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
     <!-- LOGIN -->
     <div id="loginBox">
       <div class="row">
-        <div><label>Correo (o escribe cualquiera para demo)</label><input id="loginEmail" type="email" placeholder="tucorreo@dominio.com" autocomplete="username"></div>
+        <div><label>Correo (o cualquiera para demo)</label><input id="loginEmail" type="email" placeholder="tucorreo@dominio.com" autocomplete="username"></div>
         <div><label>Contraseña</label><input id="loginPass" type="password" placeholder="••••••" autocomplete="current-password"></div>
       </div>
       <div class="row" style="margin-top:6px">
@@ -121,7 +138,7 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
         <button class="btn"  id="btnForgot" type="button">Olvidé mi contraseña</button>
       </div>
       <div class="row" style="margin-top:6px">
-        <button class="btn" id="btnFast" type="button">Entrar rápido (demo, cualquier correo)</button>
+        <button class="btn" id="btnFast" type="button">Entrar rápido (demo)</button>
       </div>
     </div>
 
@@ -143,7 +160,7 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
     <div id="msg" class="pill hide" style="margin-top:8px"></div>
   </section>
 
-  <!-- PASAJERO -->
+  <!-- ====== PASAJERO ====== -->
   <section id="panel-ride" class="card hide">
     <h2>Solicitar viaje</h2>
     <div class="row">
@@ -170,19 +187,19 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
     </div>
 
     <div style="position:relative; margin-top:10px">
-      <div id="mapRide" class="map"></div>
+      <div id="mapRide" class="map" aria-label="Mapa del pasajero"></div>
       <div id="rideMapTop" class="map-top"></div>
     </div>
   </section>
 
-  <!-- HISTORIAL -->
+  <!-- ====== HISTORIAL ====== -->
   <section id="panel-history" class="card hide">
     <h2>Historial</h2>
     <div class="row" style="justify-content:flex-end"><button class="btn" id="btnClearRiderHistory">Limpiar</button></div>
     <div id="riderHistory" class="list" style="margin-top:8px"></div>
   </section>
 
-  <!-- CONDUCTOR -->
+  <!-- ====== CONDUCTOR ====== -->
   <section id="panel-driver" class="card hide">
     <h2>Conductor</h2>
     <div class="ctrlbar">
@@ -200,22 +217,64 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
       <div id="driverMapTop" class="map-top"></div>
     </div>
 
-    <h3 style="margin:14px 0 8px">Viajes disponibles</h3>
+    <h3>Viajes disponibles</h3>
     <div id="driverAvailable" class="list"></div>
 
-    <h3 style="margin:14px 0 8px">Mi viaje activo</h3>
+    <h3>Mi viaje activo</h3>
     <div id="driverMyActive" class="list"></div>
   </section>
 
-  <!-- AJUSTES -->
+  <!-- ====== AJUSTES ====== -->
   <section id="panel-settings" class="card hide">
     <h2>Ajustes</h2>
+
+    <!-- Perfil -->
     <div class="inline-card">
       <img id="profileAvatar" class="avatar" alt="Avatar">
       <div class="small" id="profileInfo"></div>
     </div>
     <div class="row" style="margin-top:8px">
-      <button class="btn" id="btnVerifySubmit" type="button">Aprobar como Conductor (demo)</button>
+      <div>
+        <label>Nombre para mostrar</label>
+        <input id="profileName" placeholder="Tu nombre"/>
+      </div>
+      <div>
+        <label>Foto de perfil</label>
+        <input id="profilePhoto" type="file" accept="image/*"/>
+      </div>
+      <div style="flex:0 0 180px;align-self:flex-end">
+        <button class="btnp" id="btnProfileSave" type="button">Guardar perfil</button>
+      </div>
+    </div>
+
+    <!-- Preferencias -->
+    <h3>Preferencias</h3>
+    <div class="row">
+      <div>
+        <label>Tema de mapa</label>
+        <div class="inline-card">
+          <label style="display:flex;align-items:center;gap:6px">
+            <input type="radio" name="mapTheme" value="darkBlue" id="prefThemeDark" checked/>
+            Azul oscuro (recomendado)
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;margin-left:14px">
+            <input type="radio" name="mapTheme" value="light" id="prefThemeLight"/>
+            Claro
+          </label>
+        </div>
+      </div>
+      <div>
+        <label>Permisos</label>
+        <div class="row" style="gap:6px">
+          <button class="btn" id="btnGeoTest" type="button">Probar geolocalización</button>
+          <button class="btn" id="btnRiderMode" type="button">Modo Pasajero (demo)</button>
+          <button class="btnp" id="btnDriverMode" type="button">Aprobar Conductor (demo)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sesión -->
+    <div class="row" style="margin-top:8px">
       <span id="drvKycStatus" class="pill warn">No solicitado</span>
       <button class="btn" id="btnSignOut" type="button">Cerrar sesión</button>
     </div>
@@ -225,7 +284,9 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
 <div id="toast" class="toast hide"></div>
 
 <script type="module">
-/* ================= Firebase ================= */
+/* =========================================================
+   Firebase
+========================================================= */
 const firebaseConfig = {
   apiKey: "AIzaSyBu523IOGnIZGfAkdlLdVLcENwLgv5KU9o",
   authDomain: "taxi-ya-3be33.firebaseapp.com",
@@ -241,7 +302,9 @@ const db   = firebase.firestore();
 const usersCol = db.collection("users");
 const ridesCol = db.collection("rides");
 
-/* ================= Utils ================= */
+/* =========================================================
+   Utilidades
+========================================================= */
 const $=s=>document.querySelector(s);
 const $$=s=>Array.from(document.querySelectorAll(s));
 const normalizeEmail = e => String(e||"").trim().toLowerCase();
@@ -258,7 +321,9 @@ const bearing=(a,b)=>{const φ1=toRad(a.lat), φ2=toRad(b.lat), Δλ=toRad(b.lng
   return (Math.atan2(y,x)*180/Math.PI+360)%360;};
 function fmtTime(ms){ const s=Math.floor(ms/1000); const h=String(Math.floor(s/3600)).padStart(2,"0"); const m=String(Math.floor((s%3600)/60)).padStart(2,"0"); const ss=String(s%60).padStart(2,"0"); return `${h}:${m}:${ss}`;}
 
-/* ================= Tabs ================= */
+/* =========================================================
+   Tabs
+========================================================= */
 let currentUser=null;
 const panels=["access","ride","history","driver","settings"];
 function setTab(name){
@@ -274,15 +339,54 @@ $$('.tabs .tab-btn').forEach(b=> b.addEventListener('click', ()=> setTab(b.datas
 $("#goLogin").onclick=()=>{ $("#loginBox").classList.remove("hide"); $("#registerBox").classList.add("hide"); };
 $("#goRegister").onclick=()=>{ $("#registerBox").classList.remove("hide"); $("#loginBox").classList.add("hide"); };
 
-/* ================= Map tiles ================= */
-function uberTiles(){
-  const tl=L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    {maxZoom:19,subdomains:'abcd',attribution:'© OpenStreetMap © CARTO'});
-  tl.on('tileerror',()=>{ try{ if(tl._fallback) return; tl._fallback=true; L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(tl._map);}catch(_){ }});
-  return tl;
-}
+/* =========================================================
+   Mapas y tema (Azul oscuro por defecto)
+========================================================= */
+let currentTheme = localStorage.getItem("taxiya_theme") || "darkBlue";
+document.body.classList.toggle("theme-darkblue", currentTheme==="darkBlue");
+document.body.classList.toggle("theme-light", currentTheme==="light");
 
-/* ================= OSRM routing ================= */
+let mapRide=null, mapDriver=null;
+let riderMarkers={origin:null,dest:null,driver:null}, riderLines={o2d:null,drv:null};
+let origin=null, dest=null, riderActiveUnsub=null, lastDriverPt=null;
+
+function tileLayerFor(theme){
+  if(theme==="darkBlue"){
+    // Carto Dark Matter (oscuro) + filtros CSS azules aplicados por clase de <body>
+    return L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      {maxZoom:19,subdomains:'abcd',attribution:'© OpenStreetMap © CARTO'});
+  }
+  // Claro (Voyager)
+  return L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+      {maxZoom:19,subdomains:'abcd',attribution:'© OpenStreetMap © CARTO'});
+}
+function applyMapTheme(map, theme){
+  // remove existing tile layers
+  const toRemove=[];
+  map.eachLayer(l=>{ if(l instanceof L.TileLayer) toRemove.push(l); });
+  toRemove.forEach(l=>map.removeLayer(l));
+  tileLayerFor(theme).addTo(map);
+}
+function ensureRideMap(){
+  if(mapRide) return;
+  mapRide=L.map('mapRide',{zoomControl:false});
+  L.control.zoom({position:'bottomright'}).addTo(mapRide);
+  applyMapTheme(mapRide, currentTheme);
+  mapRide.setView([-31.5375,-68.5364],12);
+}
+function ensureDriverMap(){
+  if(mapDriver) return;
+  mapDriver=L.map('mapDriver',{zoomControl:false});
+  L.control.zoom({position:'bottomright'}).addTo(mapDriver);
+  applyMapTheme(mapDriver, currentTheme);
+  mapDriver.setView([-31.5375,-68.5364],13);
+}
+window.addEventListener('resize', ()=>{
+  if(mapRide) mapRide.invalidateSize();
+  if(mapDriver) mapDriver.invalidateSize();
+}, {passive:true});
+
+/* Rutas (OSRM) */
 async function routeCoords(a,b){
   const url=`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`;
   const r=await fetch(url); if(!r.ok) throw new Error("OSRM off");
@@ -290,7 +394,7 @@ async function routeCoords(a,b){
   return rt.geometry.coordinates.map(([x,y])=>[y,x]);
 }
 
-/* ================= Iconos ================= */
+/* Iconos */
 function carIcon(color="#00b3ff"){
   const svg = `
   <div class="car-ico">
@@ -304,19 +408,6 @@ function carIcon(color="#00b3ff"){
     </svg>
   </div>`;
   return L.divIcon({html:svg, className:'', iconSize:[38,38], iconAnchor:[19,19]});
-}
-function setCarRotation(marker,deg){ try{ marker.getElement()?.querySelector('.car-ico')?.style.setProperty('--rot', deg+'deg'); }catch(_){ } }
-
-/* ================= PASAJERO (mapa y viajes) ================= */
-let mapRide=null, riderMarkers={origin:null,dest:null,driver:null}, riderLines={o2d:null,drv:null};
-let origin=null, dest=null, riderActiveUnsub=null, lastDriverPt=null;
-
-function ensureRideMap(){
-  if(mapRide) return;
-  mapRide=L.map('mapRide',{zoomControl:false});
-  L.control.zoom({position:'bottomright'}).addTo(mapRide);
-  uberTiles().addTo(mapRide);
-  mapRide.setView([-31.5375,-68.5364],12);
 }
 function setRideMarker(kind, lat, lng, label){
   let ico;
@@ -332,12 +423,14 @@ function setRideMarker(kind, lat, lng, label){
   if(!riderMarkers[kind]) riderMarkers[kind]=L.marker([lat,lng],{icon:ico}).addTo(mapRide);
   else riderMarkers[kind].setLatLng([lat,lng]);
 }
+function setCarRotation(marker,deg){ try{ marker.getElement()?.querySelector('.car-ico')?.style.setProperty('--rot', deg+'deg'); }catch(_){ } }
 function drawRideLine(name, coords){ if(riderLines[name]){ mapRide.removeLayer(riderLines[name]); } riderLines[name]=L.polyline(coords,{weight:5}).addTo(mapRide); }
 function fitRideBounds(){ const b=L.latLngBounds([]); Object.values(riderMarkers).forEach(m=>m&&b.extend(m.getLatLng())); if(b.isValid()) mapRide.fitBounds(b,{padding:[24,24]}); }
 async function geocode(q){ try{const u=new URL("https://nominatim.openstreetmap.org/search");u.searchParams.set("q",q);u.searchParams.set("format","json");u.searchParams.set("limit","1");const r=await fetch(u,{headers:{'Accept-Language':'es'}}); if(!r.ok) return null; const j=await r.json(); if(!j.length) return null; return {lat:+j[0].lat,lng:+j[0].lon};}catch(_){return null} }
 function estimateFareRaw(km){ const base=990, perKm=660, perMin=99; const mins=(km/24)*60; return Math.max(800, Math.round(base + km*perKm + mins*perMin)); }
 function updateEstimate(){ const dist=$("#distance"), fare=$("#fare"); if(!origin||!dest){ dist.value="0.00 km"; fare.value="$0"; return; } const km=km2(origin,dest); dist.value=`${km.toFixed(2)} km`; fare.value=money(estimateFareRaw(km)); }
 
+/* Botones pasajero */
 $("#btnGeoRO").addEventListener("click", async ()=>{
   ensureRideMap(); const loc=await geocode($("#riderOrigin").value.trim()); if(!loc) return toast("Origen no encontrado");
   origin=loc; setRideMarker('origin',loc.lat,loc.lng,'Origen'); mapRide.setView([loc.lat,loc.lng],15); updateEstimate();
@@ -348,18 +441,17 @@ $("#btnGeoRD").addEventListener("click", async ()=>{
   if(origin){ try{ const c=await routeCoords(origin,dest); drawRideLine('o2d',c); fitRideBounds(); }catch(_){ } }
 });
 $("#btnLocate").addEventListener("click", ()=>{
-  if(!navigator.geolocation) return toast("Sin geolocalización");
+  if(!navigator.geolocation){ toast("Sin geolocalización"); return; }
   ensureRideMap();
   navigator.geolocation.getCurrentPosition(p=>{
     origin={lat:p.coords.latitude,lng:p.coords.longitude};
     setRideMarker('origin',origin.lat,origin.lng,'Origen'); mapRide.setView([origin.lat,origin.lng],15); updateEstimate();
-  }, ()=>toast("No se pudo ubicar"), {enableHighAccuracy:true,timeout:5000,maximumAge:15000});
+  }, ()=>toast("No se pudo ubicar (abrí por https)"), {enableHighAccuracy:true,timeout:5000,maximumAge:15000});
 });
 
-/* Crear viaje */
+/* Crear/cancelar viaje */
 $("#btnUnified").addEventListener("click", riderCreateRide);
 $("#btnCancel").addEventListener("click", ()=>{});
-
 async function riderCreateRide(){
   if(!currentUser) return toast("Iniciá sesión");
   if(!origin||!dest) return toast("Elegí origen y destino");
@@ -380,7 +472,6 @@ async function riderCreateRide(){
   await ridesCol.add(data);
   toast("Solicitud enviada");
 }
-
 function riderAttachActiveRide(){
   if(riderActiveUnsub) riderActiveUnsub();
   riderActiveUnsub = ridesCol.where("riderId","==", auth.currentUser.uid).where("finished","==", false).limit(1)
@@ -418,20 +509,15 @@ function riderAttachActiveRide(){
   });
 }
 
-/* ================= CONDUCTOR ================= */
-let mapDriver=null, driverMarker=null, prevDriverPoint=null;
+/* =========================================================
+   Modo Conductor
+========================================================= */
+let driverMarker=null, prevDriverPoint=null;
 let activePolylineToPick=null, activePolylineO2D=null;
 let driverAvailUnsub=null, driverMineUnsub=null;
 let geoWatchId=null, lastPush=0, currentRideId=null;
 let online=false, onTimer=null, onStart=null;
 
-function ensureDriverMap(){
-  if(mapDriver) return;
-  mapDriver=L.map('mapDriver',{zoomControl:false});
-  L.control.zoom({position:'bottomright'}).addTo(mapDriver);
-  uberTiles().addTo(mapDriver);
-  mapDriver.setView([-31.5375,-68.5364],13);
-}
 function centerOnMeOnce(){
   if(!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(p=>{
@@ -441,7 +527,7 @@ function centerOnMeOnce(){
       driverMarker=L.marker([lat,lng],{icon:carIcon('#00b3ff')}).addTo(mapDriver);
     }else driverMarker.setLatLng([lat,lng]);
     mapDriver.setView([lat,lng],14);
-  });
+  }, ()=>toast("Geo deshabilitada"), {enableHighAccuracy:true,timeout:6000,maximumAge:15000});
 }
 function startGeoWatch(){
   if(!navigator.geolocation) return;
@@ -616,12 +702,18 @@ function attachDriverStreams(){
   });
 }
 
-/* ================= Perfil / Auth ================= */
+/* =========================================================
+   Perfil / Ajustes / Sesión
+========================================================= */
 function paintProfile(){
   const el=$("#profileInfo"), av=$("#profileAvatar"); if(!currentUser){ el.textContent="Sin sesión"; av.src=""; return; }
   av.src=currentUser.photoURL||"https://i.pravatar.cc/100?u="+(currentUser.uid||'placeholder');
   const tagDemo = currentUser.demo ? " (demo)" : "";
   el.innerHTML=`Nombre: <b>${currentUser.displayName||"—"}</b> · Correo: <b>${currentUser.email||currentUser.emailTyped||"—"}</b>${tagDemo}<br>Rol: <b>${currentUser.role||'rider'}</b> · KYC: <b>${currentUser.approved?'Aprobado':'No'}</b>`;
+  $("#profileName").value = currentUser.displayName||"";
+  // Tema de mapa UI
+  $("#prefThemeDark").checked = (currentTheme==="darkBlue");
+  $("#prefThemeLight").checked = (currentTheme==="light");
 }
 function refreshTabs(){
   const logged=!!currentUser;
@@ -638,7 +730,7 @@ function refreshTabs(){
   setTab(logged ? "ride" : "access");
 }
 
-/* compresión de imagen (para guardar en Firestore, no en Auth) */
+/* compresión de imagen */
 function compressImage(file, maxBytes=900*1024, maxW=512){
   return new Promise((resolve,reject)=>{
     const img=new Image(), rdr=new FileReader();
@@ -659,7 +751,7 @@ async function emailExists(email){
   try{ const m=await auth.fetchSignInMethodsForEmail(email); return Array.isArray(m)&&m.length>0; }catch(_){ return false; }
 }
 
-/* ===== Registro SIN verificación obligatoria (login libre) ===== */
+/* ===== Registro / Login (libre, sin exigir verificación) ===== */
 $("#btnSignUp").addEventListener("click", async ()=>{
   const name = $("#regName").value.trim();
   const email = normalizeEmail($("#regEmail").value);
@@ -670,7 +762,6 @@ $("#btnSignUp").addEventListener("click", async ()=>{
     pill($("#msg"), "Completá nombre, correo y contraseña (mín. 6).", "error");
     return;
   }
-
   try{
     if(await emailExists(email)){
       $("#goLogin").click();
@@ -678,97 +769,59 @@ $("#btnSignUp").addEventListener("click", async ()=>{
       pill($("#msg"), "Ese correo ya está registrado. Iniciá sesión o usá “Entrar rápido (demo)”.", "warn");
       return;
     }
-
     const { user } = await auth.createUserWithEmailAndPassword(email, pass);
-    // No ponemos dataURL como photoURL en Auth para evitar errores de URL inválida.
     if(name) await user.updateProfile({ displayName: name });
 
-    // Foto opcional guardada en Firestore.
     let photoURL = "https://i.pravatar.cc/100?u="+user.uid;
     if(file){ try{ photoURL = await compressImage(file); }catch(_){} }
 
     await usersCol.doc(user.uid).set({
-      uid: user.uid,
-      email: user.email,
-      displayName: name || (email.split('@')[0]),
-      photoURL,
-      role: "rider",
-      approved: false,
-      online: false,
-      demo: false,
+      uid: user.uid, email: user.email, displayName: name || (email.split('@')[0]),
+      photoURL, role: "rider", approved: false, online: false, demo: false,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
     pill($("#msg"), "Cuenta creada y sesión iniciada. ¡Listo!", "ok");
-    // Ya está logueado; pasamos directo a Viaje:
     setTab("ride");
-
   }catch(e){
     const code=e?.code||"";
-    if(code==="auth/invalid-email"){
-      pill($("#msg"), "Correo inválido.", "error");
-    }else if(code==="auth/weak-password"){
-      pill($("#msg"), "La contraseña es muy débil.", "error");
-    }else{
-      pill($("#msg"), "No se pudo crear la cuenta.", "error");
-      console.error(e);
-    }
+    if(code==="auth/invalid-email") pill($("#msg"), "Correo inválido.", "error");
+    else if(code==="auth/weak-password") pill($("#msg"), "La contraseña es muy débil.", "error");
+    else{ pill($("#msg"), "No se pudo crear la cuenta.", "error"); console.error(e); }
   }
 });
-
-/* Reenviar verificación (opcional, por si querés validar el correo) */
 $("#btnResend").addEventListener("click", async ()=>{
   const email = normalizeEmail($("#loginEmail").value);
   const pass  = $("#loginPass").value;
-  if(!email || !pass){
-    pill($("#msg"), "Completá email y contraseña para reenviar verificación.", "warn");
-    return;
-  }
+  if(!email || !pass){ pill($("#msg"), "Completá email y contraseña para reenviar verificación.", "warn"); return; }
   try{
     const { user } = await auth.signInWithEmailAndPassword(email, pass);
-    await user.sendEmailVerification();
-    await auth.signOut();
+    await user.sendEmailVerification(); await auth.signOut();
     pill($("#msg"), "Verificación reenviada. Revisá tu correo.", "ok");
   }catch(e){
     const code=e?.code||"";
-    if(code==="auth/user-not-found"){
-      pill($("#msg"), "Ese correo no tiene cuenta. Registrate o usá “Entrar rápido (demo)”.", "warn");
-    }else if(code==="auth/wrong-password" || code==="auth/invalid-credential"){
-      pill($("#msg"), "Correo o contraseña incorrectos.", "error");
-    }else{
-      pill($("#msg"), "No se pudo reenviar la verificación.", "error");
-    }
+    if(code==="auth/user-not-found") pill($("#msg"), "Ese correo no tiene cuenta. Registrate o usá “Entrar rápido (demo)”.", "warn");
+    else if(code==="auth/wrong-password" || code==="auth/invalid-credential") pill($("#msg"), "Correo o contraseña incorrectos.", "error");
+    else pill($("#msg"), "No se pudo reenviar la verificación.", "error");
   }
 });
-
-/* OLVIDÉ MI CONTRASEÑA */
 $("#btnForgot").addEventListener("click", async ()=>{
   const email = normalizeEmail($("#loginEmail").value);
   if(!email) return pill($("#msg"),"Escribí tu correo para enviar el enlace.","warn");
-  try{ await auth.sendPasswordResetEmail(email); pill($("#msg"),"Te envié un correo para restablecer tu contraseña.","ok"); }
+  try{ await auth.sendPasswordResetEmail(email); pill($("#msg"),"Te envié un correo para restablecer la contraseña.","ok"); }
   catch(_){ pill($("#msg"),"No se pudo enviar el correo. Verificá el email.","error"); }
 });
-
-/* Login normal (SIN exigir verificación) */
 $("#btnSignIn").addEventListener("click", async ()=>{
   const email = normalizeEmail($("#loginEmail").value);
   const pass  = $("#loginPass").value;
-  try{
-    await auth.signInWithEmailAndPassword(email, pass);
-    // no se bloquea por email no verificado
-  }catch(e){
+  try{ await auth.signInWithEmailAndPassword(email, pass); }
+  catch(e){
     const code=e?.code||"";
-    if(code==="auth/user-not-found"){
-      pill($("#msg"), "No existe una cuenta con ese correo. Registrate o usá “Entrar rápido (demo)”.", "warn");
-    }else if(code==="auth/wrong-password" || code==="auth/invalid-credential"){
-      pill($("#msg"), "Correo o contraseña incorrectos.", "error");
-    }else{
-      pill($("#msg"), "No se pudo iniciar sesión.", "error");
-    }
+    if(code==="auth/user-not-found") pill($("#msg"), "No existe una cuenta con ese correo. Registrate o usá “Entrar rápido (demo)”.", "warn");
+    else if(code==="auth/wrong-password" || code==="auth/invalid-credential") pill($("#msg"), "Correo o contraseña incorrectos.", "error");
+    else pill($("#msg"), "No se pudo iniciar sesión.", "error");
   }
 });
-
-/* ✨ ENTRAR RÁPIDO (DEMO) */
 $("#btnFast").addEventListener("click", async ()=>{
   const emailTyped = $("#loginEmail").value.trim() || `demo-${Date.now()}@demo.local`;
   try{
@@ -777,30 +830,63 @@ $("#btnFast").addEventListener("click", async ()=>{
     const displayName = emailTyped.split('@')[0];
     const photoURL = "https://i.pravatar.cc/100?u="+u.uid;
     await usersCol.doc(u.uid).set({
-      uid: u.uid,
-      emailTyped,
-      displayName,
-      photoURL,
-      role:"rider",
-      approved:false,
-      online:false,
-      demo:true,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      uid: u.uid, emailTyped, displayName, photoURL, role:"rider", approved:false,
+      online:false, demo:true, createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, {merge:true});
-  }catch(_){
-    pill($("#msg"), "No se pudo entrar en modo demo.", "error");
-  }
+  }catch(_){ pill($("#msg"), "No se pudo entrar en modo demo.", "error"); }
 });
 
-/* KYC demo, logout */
-$("#btnVerifySubmit").addEventListener("click", async ()=>{
+/* ===== Ajustes: perfil/tema/rol/sesión ===== */
+$("#btnProfileSave").addEventListener("click", async ()=>{
+  if(!auth.currentUser) return toast("Iniciá sesión");
+  const name = $("#profileName").value.trim();
+  const file = $("#profilePhoto").files[0];
+  let photoURL = currentUser.photoURL || "https://i.pravatar.cc/100?u="+auth.currentUser.uid;
+  if(file){ try{ photoURL = await compressImage(file); }catch(_){ } }
+  try{
+    if(name) await auth.currentUser.updateProfile({displayName:name});
+    await usersCol.doc(auth.currentUser.uid).set({displayName:name||currentUser.displayName, photoURL},{merge:true});
+    currentUser.displayName = name || currentUser.displayName;
+    currentUser.photoURL = photoURL;
+    paintProfile();
+    toast("Perfil guardado");
+  }catch(e){ toast("No se pudo guardar"); }
+});
+function setTheme(theme){
+  currentTheme = theme;
+  localStorage.setItem("taxiya_theme", theme);
+  document.body.classList.toggle("theme-darkblue", theme==="darkBlue");
+  document.body.classList.toggle("theme-light", theme==="light");
+  if(mapRide) applyMapTheme(mapRide, theme);
+  if(mapDriver) applyMapTheme(mapDriver, theme);
+  setTimeout(()=>{ mapRide?.invalidateSize(); mapDriver?.invalidateSize(); }, 100);
+}
+$("#prefThemeDark").addEventListener("change", e=>{ if(e.target.checked) setTheme("darkBlue"); });
+$("#prefThemeLight").addEventListener("change", e=>{ if(e.target.checked) setTheme("light"); });
+
+$("#btnGeoTest").addEventListener("click", ()=>{
+  if(!navigator.geolocation) return toast("Tu dispositivo no ofrece geolocalización");
+  navigator.geolocation.getCurrentPosition(
+    p=>toast(`OK: ${p.coords.latitude.toFixed(4)}, ${p.coords.longitude.toFixed(4)}`),
+    ()=>toast("Permiso denegado o error"),
+    {enableHighAccuracy:true,timeout:6000,maximumAge:0}
+  );
+});
+$("#btnDriverMode").addEventListener("click", async ()=>{
   if(!auth.currentUser) return toast("Iniciá sesión");
   await usersCol.doc(auth.currentUser.uid).set({role:"driver",approved:true},{merge:true});
-  currentUser.approved=true; paintProfile(); refreshTabs(); setTab("driver"); toast("Conductor aprobado (demo)");
+  currentUser.role="driver"; currentUser.approved=true;
+  refreshTabs(); setTab("driver"); toast("Conductor aprobado (demo)");
+});
+$("#btnRiderMode").addEventListener("click", async ()=>{
+  if(!auth.currentUser) return toast("Iniciá sesión");
+  await usersCol.doc(auth.currentUser.uid).set({role:"rider",approved:false,online:false},{merge:true});
+  currentUser.role="rider"; currentUser.approved=false;
+  stopOnline(); refreshTabs(); setTab("ride"); toast("Volviste a Pasajero (demo)");
 });
 $("#btnSignOut").addEventListener("click", ()=> auth.signOut().catch(e=>toast(e.message)));
 
-/* Estado de sesión (SIN bloquear por verificación de correo) */
+/* ===== Sesión ===== */
 auth.onAuthStateChanged(async (u)=>{
   if(!u){
     currentUser=null; paintProfile(); refreshTabs();
@@ -809,8 +895,6 @@ auth.onAuthStateChanged(async (u)=>{
     if(driverMineUnsub)  driverMineUnsub();
     return;
   }
-
-  // Creamos/actualizamos doc de perfil en Firestore si falta
   const ref=usersCol.doc(u.uid);
   const snap=await ref.get();
   if(!snap.exists){
@@ -830,7 +914,7 @@ auth.onAuthStateChanged(async (u)=>{
   ensureRideMap(); riderAttachActiveRide();
 });
 
-/* ================= Historial (simple) ================= */
+/* ===== Historial simple (local) ===== */
 function renderHistory(){
   if(!currentUser) return; const key=`taxiya_rider_history_${currentUser.uid}`; let list=[]; try{list=JSON.parse(localStorage.getItem(key)||"[]");}catch(_){}
   const wrap=$("#riderHistory"); wrap.innerHTML=""; if(!list.length) wrap.innerHTML=`<div class="small muted">Sin viajes.</div>`;
@@ -840,4 +924,3 @@ $("#btnClearRiderHistory").addEventListener("click", ()=>{ if(!currentUser) retu
 </script>
 </body>
 </html>
-```
