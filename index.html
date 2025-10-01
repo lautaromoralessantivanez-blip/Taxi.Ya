@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Taxi Ya — tipo Uber</title>
+<title>Taxi Ya — estilo Uber (cuentas reales + lista de viajes limpia)</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -59,13 +59,13 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
 .tab-btn.active{background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#082532; border-color:transparent}
 .hide{display:none!important}
 
-/* MAPA estilo “Uber-like” (Carto Voyager + filtro azul/gris) */
+/* MAPA “Uber-like”: CARTO Voyager clarito + filtro para tono azulado/gris (no tan oscuro) */
 .map{width:100%;height:62vh;min-height:360px;border-radius:16px;border:1px solid var(--line);overflow:hidden;position:relative}
 .map-top{position:absolute; left:10px; right:10px; top:10px; z-index:400; display:none; padding:8px 12px; border-radius:12px; font-weight:800; border:1px solid var(--line); background:rgba(0,0,0,.28); backdrop-filter: blur(4px)}
 .map-top.show{display:block}
-/* filtro pensado para verse como Google dark (ajustable): */
+/* aclarado / azul suave */
 #mapRide .leaflet-tile, #mapDriver .leaflet-tile{
-  filter: brightness(0.88) contrast(1.05) saturate(1.10) hue-rotate(185deg);
+  filter: brightness(1.06) contrast(1.02) saturate(1.05) hue-rotate(185deg);
 }
 
 /* Barra conductor */
@@ -102,14 +102,39 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
   <!-- ACCESO -->
   <section id="panel-access" class="card">
     <h2>Acceso</h2>
-    <div class="row">
-      <div><label>Correo</label><input id="loginEmail" type="email" placeholder="tucorreo@dominio.com" autocomplete="username"></div>
-      <div><label>Contraseña</label><input id="loginPass" type="password" placeholder="••••••" autocomplete="current-password"></div>
+
+    <div class="row" style="gap:6px;margin-bottom:8px">
+      <button class="btnp" id="goLogin">Iniciar sesión</button>
+      <button class="btn" id="goRegister">Registrarme</button>
     </div>
-    <div class="row" style="margin-top:6px">
-      <button class="btnp" id="btnSignIn" type="button">Entrar</button>
-      <button class="btn"  id="btnCreateDemo" type="button">Crear cuenta demo</button>
+
+    <!-- LOGIN -->
+    <div id="loginBox">
+      <div class="row">
+        <div><label>Correo</label><input id="loginEmail" type="email" placeholder="tucorreo@dominio.com" autocomplete="username"></div>
+        <div><label>Contraseña</label><input id="loginPass" type="password" placeholder="••••••" autocomplete="current-password"></div>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button class="btnp" id="btnSignIn" type="button">Entrar</button>
+        <button class="btn"  id="btnResend" type="button">Reenviar verificación</button>
+      </div>
     </div>
+
+    <!-- REGISTRO (real, con compresión de foto y verificación por email) -->
+    <div id="registerBox" class="hide">
+      <div class="row">
+        <div><label>Nombre</label><input id="regName" placeholder="Tu nombre y apellido"></div>
+        <div><label>Correo</label><input id="regEmail" type="email" placeholder="tucorreo@dominio.com"></div>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <div><label>Contraseña</label><input id="regPass" type="password" placeholder="mín. 6" minlength="6"></div>
+        <div><label>Foto de perfil (obligatoria)</label><input id="regPhoto" type="file" accept="image/*"></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btnp" id="btnSignUp" type="button">Crear cuenta</button>
+      </div>
+    </div>
+
     <div id="msg" class="pill hide" style="margin-top:8px"></div>
   </section>
 
@@ -119,23 +144,17 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
     <div class="row">
       <div><label>Origen</label><input id="riderOrigin" placeholder="Calle y altura"></div>
       <div><label>Destino</label><input id="riderDest" placeholder="Calle y altura"></div>
+      <div><label>&nbsp;</label><button class="btn" id="btnLocate">Ubicarme</button></div>
     </div>
     <div class="row" style="margin-top:6px">
-      <button class="btn" id="btnGeoRO">Buscar origen</button>
-      <button class="btn" id="btnGeoRD">Buscar destino</button>
-      <button class="btn" id="btnLocate">Ubicarme</button>
-    </div>
-    <div class="row" style="margin-top:8px">
       <div><label>Tipo</label><select id="reqType"><option value="auto">Auto</option><option value="moto">Moto</option></select></div>
       <div><label>Pago</label><select id="payMethod"><option value="">Elegir…</option><option value="cash">Efectivo</option><option value="mp">Mercado Pago</option></select></div>
       <div><label>Distancia</label><input id="distance" readonly value="0.00 km"></div>
       <div><label>Tarifa</label><input id="fare" readonly value="$0"></div>
     </div>
-    <div id="payCashBox" class="row hide" style="margin-top:6px"><label><input id="chkCashConfirm" type="checkbox"> Confirmo pago en efectivo</label></div>
-    <div id="payMPBox" class="row hide" style="margin-top:6px"><button class="btn" id="btnPayMP">Simular pago MP</button></div>
-    <div id="payStatus" class="pill hide">Pago pendiente</div>
-
     <div class="row" style="margin-top:10px">
+      <button class="btn" id="btnGeoRO">Buscar origen</button>
+      <button class="btn" id="btnGeoRD">Buscar destino</button>
       <button class="btnp" id="btnUnified" type="button">Pedir viaje</button>
       <button class="btnd hide" id="btnCancel" type="button">Cancelar</button>
     </div>
@@ -151,7 +170,7 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
     </div>
   </section>
 
-  <!-- HISTORIAL -->
+  <!-- HISTORIAL (local simple) -->
   <section id="panel-history" class="card hide">
     <h2>Historial</h2>
     <div class="row" style="justify-content:flex-end"><button class="btn" id="btnClearRiderHistory">Limpiar</button></div>
@@ -201,7 +220,7 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
 <div id="toast" class="toast hide"></div>
 
 <script type="module">
-/* =============== Firebase =============== */
+/* ================= Firebase ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyBu523IOGnIZGfAkdlLdVLcENwLgv5KU9o",
   authDomain: "taxi-ya-3be33.firebaseapp.com",
@@ -217,17 +236,19 @@ const db   = firebase.firestore();
 const usersCol = db.collection("users");
 const ridesCol = db.collection("rides");
 
-/* =============== Utils =============== */
+/* ================= Utils ================= */
 const $=s=>document.querySelector(s);
 const $$=s=>Array.from(document.querySelectorAll(s));
 const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n||0);
 function toast(msg,ms=1700){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hide"); setTimeout(()=>t.classList.add("hide"),ms); }
 function pill(el, text, cls){ el.textContent=text; el.className=`pill ${cls||''}`; el.classList.remove('hide'); }
 const toRad=d=>d*Math.PI/180;
-const km2=(a,b)=>{const R=6371,dLat=toRad(b.lat-a.lat),dLon=toRad(b.lng-a.lng);const la1=toRad(a.lat),la2=toRad(b.lat);const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(h));};
+const km2=(a,b)=>{const R=6371,dLat=toRad(b.lat-a.lat),dLon=toRad(b.lng-a.lng);const la1=toRad(a.lat),la2=toRad(b.lat);const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(Math.pow(Math.sin((dLon)/2),2));return 2*R*Math.asin(Math.sqrt(h));};
 const bearing=(a,b)=>{const φ1=toRad(a.lat), φ2=toRad(b.lat), Δλ=toRad(b.lng-a.lng); const y=Math.sin(Δλ)*Math.cos(φ2); const x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ); return (Math.atan2(y,x)*180/Math.PI+360)%360;}
+function fmtTime(ms){ const s=Math.floor(ms/1000); const h=String(Math.floor(s/3600)).padStart(2,"0"); const m=String(Math.floor((s%3600)/60)).padStart(2,"0"); const ss=String(s%60).padStart(2,"0"); return `${h}:${m}:${ss}`;}
+function showIndexHint(e){ if(e?.message?.toLowerCase?.().includes("index")) pill($("#msg"), "⚠️ Firestore pide crear un índice para esa consulta. Abrí la consola y seguí el link sugerido.", "warn"); }
 
-/* =============== Tabs =============== */
+/* ================= Tabs ================= */
 let currentUser=null;
 const panels=["access","ride","history","driver","settings"];
 function setTab(name){
@@ -240,22 +261,18 @@ function setTab(name){
   if(name==="settings"){ paintProfile(); }
 }
 $$('.tabs .tab-btn').forEach(b=> b.addEventListener('click', ()=> setTab(b.dataset.tab)));
+$("#goLogin").onclick=()=>{ $("#loginBox").classList.remove("hide"); $("#registerBox").classList.add("hide"); };
+$("#goRegister").onclick=()=>{ $("#registerBox").classList.remove("hide"); $("#loginBox").classList.add("hide"); };
 
-/* =============== Tile layer “Uber-like” =============== */
+/* ================= Map tiles ================= */
 function uberTiles(){
-  // CARTO Voyager (parecido a Google). Sin token.
-  const tl = L.tileLayer(
-    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    {maxZoom:19, subdomains:'abcd',
-     attribution:'© OpenStreetMap © CARTO'}
-  );
-  tl.on('tileerror', ()=>{ try{ if(tl._fallback) return; tl._fallback=true;
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(tl._map);
-  }catch(_){ }});
+  const tl=L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    {maxZoom:19,subdomains:'abcd',attribution:'© OpenStreetMap © CARTO'});
+  tl.on('tileerror',()=>{ try{ if(tl._fallback) return; tl._fallback=true; L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(tl._map);}catch(_){ }});
   return tl;
 }
 
-/* =============== OSRM Routing (siguiendo calles) =============== */
+/* ================= OSRM routing ================= */
 async function routeCoords(a,b){
   const url=`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`;
   const r=await fetch(url); if(!r.ok) throw new Error("OSRM off");
@@ -263,7 +280,7 @@ async function routeCoords(a,b){
   return rt.geometry.coordinates.map(([x,y])=>[y,x]);
 }
 
-/* =============== Iconos (SVG, sin emojis) =============== */
+/* ================= Iconos ================= */
 function carIcon(color="#00b3ff"){
   const svg = `
   <div class="car-ico">
@@ -280,7 +297,7 @@ function carIcon(color="#00b3ff"){
 }
 function setCarRotation(marker,deg){ try{ marker.getElement()?.querySelector('.car-ico')?.style.setProperty('--rot', deg+'deg'); }catch(_){ } }
 
-/* =============== PASAJERO =============== */
+/* ================= PASAJERO ================= */
 let mapRide=null, riderMarkers={origin:null,dest:null,driver:null}, riderLines={o2d:null,drv:null};
 let origin=null, dest=null, riderActiveUnsub=null, lastDriverPt=null;
 
@@ -329,18 +346,7 @@ $("#btnLocate").addEventListener("click", ()=>{
   }, ()=>toast("No se pudo ubicar"), {enableHighAccuracy:true,timeout:5000,maximumAge:15000});
 });
 
-/* Pago demo */
-let pay={method:null,status:"pending"};
-$("#payMethod").addEventListener("change", e=>{
-  pay={method:e.target.value||null,status:"pending"};
-  $("#payCashBox").classList.toggle("hide", e.target.value!=="cash");
-  $("#payMPBox").classList.toggle("hide", e.target.value!=="mp");
-  $("#payStatus").classList.toggle("hide", !e.target.value);
-});
-$("#chkCashConfirm").addEventListener("change", e=>{ pay.status=e.target.checked?"cash_confirmed":"pending"; $("#payStatus").className=`pill ${e.target.checked?'ok':''}`; $("#payStatus").textContent=e.target.checked?"Pago en efectivo confirmado":"Pago pendiente"; });
-$("#btnPayMP").addEventListener("click", async ()=>{ const b=$("#btnPayMP"); b.disabled=true; b.textContent="Procesando…"; await new Promise(r=>setTimeout(r,900)); pay.status="approved"; $("#payStatus").className="pill ok"; $("#payStatus").textContent="Pago aprobado (MP)"; b.disabled=false; b.textContent="Simular pago MP"; });
-
-/* Crear viaje y escuchar (pasajero ve al conductor apenas acepta) */
+/* Crear viaje (se crea con driverId:null y reservedBy:null) */
 $("#btnUnified").addEventListener("click", riderCreateRide);
 $("#btnCancel").addEventListener("click", ()=>{});
 
@@ -359,7 +365,9 @@ async function riderCreateRide(){
     originText: $("#riderOrigin").value.trim() || `${origin.lat.toFixed(5)}, ${origin.lng.toFixed(5)}`,
     destText: $("#riderDest").value.trim() || `${dest.lat.toFixed(5)}, ${dest.lng.toFixed(5)}`,
     origin, dest, km, fare, vehicle: $("#reqType").value || "auto",
-    payment: pay, status:"requested", finished:false,
+    payment: {method:$("#payMethod").value||null,status:"pending"},
+    driverId: null, reservedBy: null,      // <<<< clave para filtrar
+    status:"requested", finished:false,
     ts: firebase.firestore.FieldValue.serverTimestamp()
   };
   await ridesCol.add(data);
@@ -372,8 +380,7 @@ function riderAttachActiveRide(){
   .onSnapshot(qs=>{
     if(qs.empty){ $("#driverCard").classList.add("hide"); $("#btnCancel").classList.add("hide"); return; }
     const id=qs.docs[0].id, r=qs.docs[0].data();
-
-    $("#btnCancel").classList.toggle("hide", r.status==="requested"?false:true);
+    $("#btnCancel").classList.toggle("hide", r.status!=="requested");
     $("#btnCancel").onclick = async()=>{ try{ await ridesCol.doc(id).set({status:"cancelled", finished:true},{merge:true}); }catch(e){ toast(e.message) } };
 
     $("#rideMapTop").textContent=`${r.originText} → ${r.destText} · ${(r.km||0).toFixed(1)} km · ${money(r.fare||0)}`;
@@ -401,10 +408,10 @@ function riderAttachActiveRide(){
         routeCoords(cur,target).then(coords=>{ drawRideLine('drv',coords); fitRideBounds(); }).catch(()=>{});
       }else{ fitRideBounds(); }
     }
-  });
+  }, showIndexHint);
 }
 
-/* =============== CONDUCTOR =============== */
+/* ================= CONDUCTOR ================= */
 let mapDriver=null, driverMarker=null, prevDriverPoint=null;
 let activePolylineToPick=null, activePolylineO2D=null;
 let driverAvailUnsub=null, driverMineUnsub=null;
@@ -457,7 +464,6 @@ function setOnlineUI(isOnline){
   $("#btnPauseRoute").disabled = !currentUser?.approved || !online;
   $("#btnStopRoute").disabled  = !currentUser?.approved || !online;
 }
-function fmtTime(ms){ const s=Math.floor(ms/1000); const h=String(Math.floor(s/3600)).padStart(2,"0"); const m=String(Math.floor((s%3600)/60)).padStart(2,"0"); const ss=String(s%60).padStart(2,"0"); return `${h}:${m}:${ss}`;}
 function startTimer(){ onStart=Date.now(); $("#onlineTimer").textContent="00:00:00"; if(onTimer) clearInterval(onTimer); onTimer=setInterval(()=>$("#onlineTimer").textContent=fmtTime(Date.now()-onStart),1000); }
 function stopTimer(reset=true){ if(onTimer) clearInterval(onTimer); if(reset) $("#onlineTimer").textContent="00:00:00"; }
 
@@ -482,12 +488,17 @@ function attachDriverStreams(){
   }
   ensureDriverMap();
 
-  driverAvailUnsub = ridesCol.where("status","==","requested").limit(40)
+  // DISPONIBLES: renderizamos SOLO si no están tomados ni “reservados”
+  driverAvailUnsub = ridesCol.where("status","==","requested").limit(60)
   .onSnapshot(qs=>{
     const wrap=$("#driverAvailable"); wrap.innerHTML="";
     if(qs.empty){ wrap.innerHTML=`<div class="small muted">Sin viajes por ahora…</div>`; return; }
     qs.forEach(doc=>{
       const r=doc.data();
+
+      // filtro de seguridad en cliente (sin requerir índice extra)
+      if(r.reservedBy && r.reservedBy!==auth.currentUser.uid) return;
+
       const item=document.createElement("div"); item.className="item";
       item.innerHTML=`
         <div class="inline-card">
@@ -506,8 +517,9 @@ function attachDriverStreams(){
       item.querySelector('[data-accept]').onclick=()=> driverAcceptRide(doc.id);
       wrap.appendChild(item);
     });
-  });
+  }, showIndexHint);
 
+  // MI ACTIVO
   driverMineUnsub = ridesCol.where("driverId","==", auth.currentUser.uid).where("finished","==",false)
   .onSnapshot(qs=>{
     const wrap=$("#driverMyActive"); wrap.innerHTML="";
@@ -534,7 +546,7 @@ function attachDriverStreams(){
       item.querySelectorAll('[data-next]').forEach(b=> b.onclick=()=> driverAdvance(doc.id,b.dataset.next));
       wrap.appendChild(item);
     });
-  });
+  }, showIndexHint);
 }
 
 async function showRoutePreview(r){
@@ -567,13 +579,24 @@ async function showActiveRoute(r){
   const top=$("#driverMapTop"); top.textContent=`${r.originText} → ${r.destText} · ${(r.km||0).toFixed(1)} km · ${money(r.fare||0)}`; top.classList.add("show"); setTimeout(()=>top.classList.remove("show"),1500);
 }
 
+/* Aceptar: “reserva” y aceptación atómica para que no aparezca tomado por otro */
 async function driverAcceptRide(rideId){
   try{
     await db.runTransaction(async tx=>{
       const ref=ridesCol.doc(rideId); const snap=await tx.get(ref);
       if(!snap.exists) throw new Error("El viaje ya no existe");
-      const r=snap.data(); if(r.status!=="requested") throw new Error("Ya fue tomado");
-      tx.update(ref,{status:"accepted", driverId:auth.currentUser.uid, driverName: currentUser.displayName||currentUser.email, driverPhotoURL: currentUser.photoURL||"", driverRating: currentUser.rating||5});
+      const r=snap.data();
+      if(r.status!=="requested") throw new Error("Ya fue tomado");
+      if(r.reservedBy && r.reservedBy!==auth.currentUser.uid) throw new Error("Reservado por otro conductor");
+      tx.update(ref,{
+        reservedBy: auth.currentUser.uid,
+        reservedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        status:"accepted",
+        driverId: auth.currentUser.uid,
+        driverName: currentUser.displayName || currentUser.email,
+        driverPhotoURL: currentUser.photoURL || "",
+        driverRating: currentUser.rating || 5
+      });
     });
     currentRideId=rideId; toast("Viaje aceptado");
   }catch(e){ toast(e.message); }
@@ -590,7 +613,7 @@ async function driverAdvance(rideId,next){
   }catch(e){ toast(e.message); }
 }
 
-/* =============== Perfil / Auth =============== */
+/* ================= Perfil / Auth (cuentas reales) ================= */
 function paintProfile(){
   const el=$("#profileInfo"), av=$("#profileAvatar"); if(!currentUser){ el.textContent="Sin sesión"; av.src=""; return; }
   av.src=currentUser.photoURL||"https://i.pravatar.cc/100?u=placeholder";
@@ -610,16 +633,57 @@ function refreshTabs(){
   setTab(logged ? "ride" : "access");
 }
 
+/* compresión de imagen para no pasar 1MB en Firestore */
+function compressImage(file, maxBytes=900*1024, maxW=512){
+  return new Promise((resolve,reject)=>{
+    const img=new Image(), rdr=new FileReader();
+    rdr.onload=e=>{ img.src=e.target.result; };
+    img.onload=()=>{
+      const scale=Math.min(1, maxW/img.width);
+      const w=Math.round(img.width*scale), h=Math.round(img.height*scale);
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+      let q=0.92, out;
+      do{ out=c.toDataURL('image/jpeg', q); q-=0.07; }while(out.length>maxBytes && q>0.35);
+      resolve(out);
+    };
+    img.onerror=reject; rdr.readAsDataURL(file);
+  });
+}
+
+/* Registro real + verificación */
+$("#btnSignUp").addEventListener("click", async ()=>{
+  const name=$("#regName").value.trim(), email=$("#regEmail").value.trim(), pass=$("#regPass").value, file=$("#regPhoto").files[0];
+  if(!name || !email || pass.length<6 || !file){ pill($("#msg"),"Completá todos los campos (foto obligatoria).","error"); return; }
+  try{
+    const photoURL = await compressImage(file);
+    const {user}=await auth.createUserWithEmailAndPassword(email,pass);
+    await user.updateProfile({displayName:name, photoURL});
+    await user.sendEmailVerification();
+    await usersCol.doc(user.uid).set({uid:user.uid,email:user.email,displayName:name,photoURL,role:"rider",approved:false,online:false,createdAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    pill($("#msg"),"Cuenta creada. Te enviamos un correo para verificar. Verifícala y luego inicia sesión.","ok");
+  }catch(e){ pill($("#msg"),e.message,"error"); }
+});
+
+/* Login: SOLO si el correo está verificado */
 $("#btnSignIn").addEventListener("click", async ()=>{
   const email=$("#loginEmail").value.trim(), pass=$("#loginPass").value;
-  try{ await auth.signInWithEmailAndPassword(email,pass); }catch(e){ pill($("#msg"),e.message,"error"); }
-});
-$("#btnCreateDemo").addEventListener("click", async ()=>{
   try{
-    const email=`demo${Math.floor(Math.random()*1e6)}@mail.com`; const pass="123456";
-    const {user}=await auth.createUserWithEmailAndPassword(email,pass);
-    await usersCol.doc(user.uid).set({uid:user.uid,email:user.email,displayName:"Demo",photoURL:"https://i.pravatar.cc/100?img=15",role:"rider",approved:false,online:false,createdAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-    pill($("#msg"),`Cuenta demo creada. Usuario: ${email} / Clave: 123456`,"ok");
+    const {user}=await auth.signInWithEmailAndPassword(email,pass);
+    if(!user.emailVerified){
+      await auth.signOut();
+      pill($("#msg"),"Tu correo no está verificado. Revisa tu bandeja o pulsa “Reenviar verificación”.","warn");
+    }
+  }catch(e){ pill($("#msg"),e.message,"error"); }
+});
+$("#btnResend").addEventListener("click", async ()=>{
+  const email=$("#loginEmail").value.trim(), pass=$("#loginPass").value;
+  if(!email||!pass) return pill($("#msg"),"Completá email y contraseña para reenviar.","warn");
+  try{
+    const {user}=await auth.signInWithEmailAndPassword(email,pass);
+    await user.sendEmailVerification();
+    await auth.signOut();
+    pill($("#msg"),"Verificación reenviada. Revisá tu correo.","ok");
   }catch(e){ pill($("#msg"),e.message,"error"); }
 });
 
@@ -638,6 +702,11 @@ auth.onAuthStateChanged(async (u)=>{
     if(driverMineUnsub)  driverMineUnsub();
     stopOnline(); return;
   }
+  if(!u.emailVerified){
+    await auth.signOut();
+    pill($("#msg"),"Tu correo no está verificado. Verifícalo para usar la app.","warn");
+    return;
+  }
   const ref=usersCol.doc(u.uid); const snap=await ref.get();
   if(!snap.exists) await ref.set({uid:u.uid,email:u.email,displayName:u.displayName||"",photoURL:u.photoURL||"",role:"rider",approved:false,online:false,createdAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
   currentUser=(await ref.get()).data();
@@ -645,16 +714,14 @@ auth.onAuthStateChanged(async (u)=>{
   ensureRideMap(); riderAttachActiveRide();
 });
 
-/* =============== Historial (placeholder) =============== */
+/* ================= Historial (placeholder) ================= */
 function renderHistory(){
-  if(!currentUser) return;
-  const key=`taxiya_rider_history_${currentUser.email}`; let list=[]; try{list=JSON.parse(localStorage.getItem(key)||"[]");}catch(_){}
-  const wrap=$("#riderHistory"); wrap.innerHTML="";
-  if(!list.length) wrap.innerHTML=`<div class="small muted">Sin viajes.</div>`;
+  if(!currentUser) return; const key=`taxiya_rider_history_${currentUser.email}`; let list=[]; try{list=JSON.parse(localStorage.getItem(key)||"[]");}catch(_){}
+  const wrap=$("#riderHistory"); wrap.innerHTML=""; if(!list.length) wrap.innerHTML=`<div class="small muted">Sin viajes.</div>`;
 }
 $("#btnClearRiderHistory").addEventListener("click", ()=>{ if(!currentUser) return; localStorage.setItem(`taxiya_rider_history_${currentUser.email}`,"[]"); renderHistory(); toast("OK"); });
 
-/* =============== Misceláneo =============== */
+/* ================= Misceláneo ================= */
 window.addEventListener("focus", ()=>{ try{mapRide&&mapRide.invalidateSize(); mapDriver&&mapDriver.invalidateSize();}catch(_){}});
 
 </script>
