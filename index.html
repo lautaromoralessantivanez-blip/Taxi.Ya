@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Taxi Ya — estilo Uber (cuentas reales + lista limpia)</title>
+<title>Taxi Ya — estilo Uber (fix login)</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -19,14 +19,14 @@
 <style>
 :root{
   --bg:#0e1116; --panel:#111722; --ink:#f6f8fb; --muted:#93a6b7; --line:#243445;
-  --accent:#00b3ff; --accent2:#ffd34d; --ok:#17c964; --danger:#ef4444; --link:#76c8ff;
+  --accent:#00b3ff; --accent2:#ffd34d; --ok:#17c964; --danger:#ef4444;
   --radius:16px; --shadow:0 16px 40px rgba(0,0,0,.45);
 }
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Poppins,system-ui,Arial}
 header{position:sticky;top:0;z-index:30;background:rgba(14,17,22,.8);backdrop-filter:blur(6px);padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
-.brand{font-weight:800;letter-spacing:.2px}
+.brand{font-weight:800}
 .badge{border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px;opacity:.9}
 
 main{max-width:1200px;margin:16px auto;padding:0 12px;display:grid;gap:12px}
@@ -58,17 +58,15 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
 .tab-btn.active{background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#082532; border-color:transparent}
 .hide{display:none!important}
 
-/* MAPA CARTO Voyager aclarado */
+/* Map */
 .map{width:100%;height:62vh;min-height:360px;border-radius:16px;border:1px solid var(--line);overflow:hidden;position:relative}
 .map-top{position:absolute; left:10px; right:10px; top:10px; z-index:400; display:none; padding:8px 12px; border-radius:12px; font-weight:800; border:1px solid var(--line); background:rgba(0,0,0,.28); backdrop-filter: blur(4px)}
 .map-top.show{display:block}
 #mapRide .leaflet-tile, #mapDriver .leaflet-tile{ filter: brightness(1.06) contrast(1.02) saturate(1.05) hue-rotate(185deg); }
 
-/* Barra conductor */
+/* Conductor */
 .ctrlbar{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px}
 .ctrlbar .timer{justify-self:center;border:1px solid var(--line);padding:8px 14px;border-radius:999px;font-weight:800;background:rgba(255,255,255,.06)}
-
-/* Marcador auto (SVG) */
 .car-ico{width:38px;height:38px;display:grid;place-items:center;transform: translate(-50%,-50%);}
 .car-ico svg{width:32px;height:32px;filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); transform: rotate(var(--rot,0deg));}
 
@@ -115,7 +113,7 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
       </div>
     </div>
 
-    <!-- REGISTRO (con compresión de foto + verificación) -->
+    <!-- REGISTRO -->
     <div id="registerBox" class="hide">
       <div class="row">
         <div><label>Nombre</label><input id="regName" placeholder="Tu nombre y apellido"></div>
@@ -240,16 +238,13 @@ function pill(el, text, cls){ el.textContent=text; el.className=`pill ${cls||''}
 const normalizeEmail = e => String(e||"").trim().toLowerCase();
 
 const toRad=d=>d*Math.PI/180;
-const km2=(a,b)=>{ // Haversine
-  const R=6371, dLat=toRad(b.lat-a.lat), dLon=toRad(b.lng-a.lng);
+const km2=(a,b)=>{ const R=6371, dLat=toRad(b.lat-a.lat), dLon=toRad(b.lng-a.lng);
   const la1=toRad(a.lat), la2=toRad(b.lat);
   const h=Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;
-  return 2*R*Math.asin(Math.sqrt(h));
-};
-const bearing=(a,b)=>{const φ1=toRad(a.lat), φ2=toRad(b.lat), Δλ=toRad(b.lng-a.lng); const y=Math.sin(Δλ)*mathCos(φ2); const x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ); return (Math.atan2(y,x)*180/Math.PI+360)%360;}
-function mathCos(x){return Math.cos(x);} // helper minúsculo para compresores
-function fmtTime(ms){ const s=Math.floor(ms/1000); const h=String(Math.floor(s/3600)).padStart(2,"0"); const m=String(Math.floor((s%3600)/60)).padStart(2,"0"); const ss=String(s%60).padStart(2,"0"); return `${h}:${m}:${ss}`;}
-function showIndexHint(e){ if(e?.message?.toLowerCase?.().includes("index")) pill($("#msg"), "⚠️ Firestore pide crear un índice para esa consulta. Abrí la consola y seguí el link sugerido.", "warn"); }
+  return 2*R*Math.asin(Math.sqrt(h)); };
+const bearing=(a,b)=>{const φ1=toRad(a.lat), φ2=toRad(b.lat), Δλ=toRad(b.lng-a.lng);
+  const y=Math.sin(Δλ)*Math.cos(φ2); const x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;};
 
 /* ================= Tabs ================= */
 let currentUser=null;
@@ -300,7 +295,7 @@ function carIcon(color="#00b3ff"){
 }
 function setCarRotation(marker,deg){ try{ marker.getElement()?.querySelector('.car-ico')?.style.setProperty('--rot', deg+'deg'); }catch(_){ } }
 
-/* ================= PASAJERO ================= */
+/* ================= PASAJERO (mapa y viajes) ================= */
 let mapRide=null, riderMarkers={origin:null,dest:null,driver:null}, riderLines={o2d:null,drv:null};
 let origin=null, dest=null, riderActiveUnsub=null, lastDriverPt=null;
 
@@ -408,7 +403,7 @@ function riderAttachActiveRide(){
         routeCoords(cur,target).then(coords=>{ drawRideLine('drv',coords); fitRideBounds(); }).catch(()=>{});
       }else{ fitRideBounds(); }
     }
-  }, showIndexHint);
+  });
 }
 
 /* ================= CONDUCTOR ================= */
@@ -488,14 +483,13 @@ function attachDriverStreams(){
   }
   ensureDriverMap();
 
-  // SOLO viajes realmente disponibles
   driverAvailUnsub = ridesCol.where("status","==","requested").limit(60)
   .onSnapshot(qs=>{
     const wrap=$("#driverAvailable"); wrap.innerHTML="";
     if(qs.empty){ wrap.innerHTML=`<div class="small muted">Sin viajes por ahora…</div>`; return; }
     qs.forEach(doc=>{
       const r=doc.data();
-      if(r.reservedBy && r.reservedBy!==auth.currentUser.uid) return; // ocultar si otro los “tiene en mano”
+      if(r.reservedBy && r.reservedBy!==auth.currentUser.uid) return;
       const item=document.createElement("div"); item.className="item";
       item.innerHTML=`
         <div class="inline-card">
@@ -514,7 +508,7 @@ function attachDriverStreams(){
       item.querySelector('[data-accept]').onclick=()=> driverAcceptRide(doc.id);
       wrap.appendChild(item);
     });
-  }, showIndexHint);
+  });
 
   driverMineUnsub = ridesCol.where("driverId","==", auth.currentUser.uid).where("finished","==",false)
   .onSnapshot(qs=>{
@@ -542,71 +536,7 @@ function attachDriverStreams(){
       item.querySelectorAll('[data-next]').forEach(b=> b.onclick=()=> driverAdvance(doc.id,b.dataset.next));
       wrap.appendChild(item);
     });
-  }, showIndexHint);
-}
-
-async function showRoutePreview(r){
-  centerOnMeOnce(); clearActiveRoute();
-  if(!driverMarker || !r.origin) return;
-  try{
-    const cur=driverMarker.getLatLng();
-    const toPick = await routeCoords({lat:cur.lat,lng:cur.lng}, r.origin);
-    activePolylineToPick = L.polyline(toPick,{weight:5}).addTo(mapDriver);
-    if(r.dest){ const o2d = await routeCoords(r.origin, r.dest); activePolylineO2D = L.polyline(o2d,{weight:4,opacity:.6}).addTo(mapDriver); }
-    const b=L.latLngBounds([[cur.lat,cur.lng],[r.origin.lat,r.origin.lng]]); if(r.dest) b.extend([r.dest.lat,r.dest.lng]); mapDriver.fitBounds(b,{padding:[24,24]});
-    const top=$("#driverMapTop"); top.textContent=`${r.originText} → ${r.destText} · ${(r.km||0).toFixed(1)} km · ${money(r.fare)}`; top.classList.add("show"); setTimeout(()=>top.classList.remove("show"),1600);
-  }catch(_){}
-}
-async function showActiveRoute(r){
-  ensureDriverMap(); centerOnMeOnce(); clearActiveRoute();
-  if(r.driverLoc){
-    const cur={lat:r.driverLoc.latitude,lng:r.driverLoc.longitude};
-    if(prevDriverPoint){ setCarRotation(driverMarker, bearing(prevDriverPoint,cur)); }
-    driverMarker?.setLatLng([cur.lat,cur.lng]); prevDriverPoint=cur;
-  }
-  if(r.origin){
-    try{
-      const from = r.status==="in_trip" ? r.origin : (r.driverLoc? {lat:r.driverLoc.latitude,lng:r.driverLoc.longitude} : null);
-      if(from){ const toPick = await routeCoords(from, r.status==="in_trip"? r.dest : r.origin); activePolylineToPick = L.polyline(toPick,{weight:5}).addTo(mapDriver); }
-      if(r.dest){ const o2d = await routeCoords(r.origin, r.dest); activePolylineO2D = L.polyline(o2d,{weight:4,opacity:.6}).addTo(mapDriver); }
-      const b=L.latLngBounds([]); if(driverMarker) b.extend(driverMarker.getLatLng()); b.extend([r.origin.lat,r.origin.lng]); if(r.dest) b.extend([r.dest.lat,r.dest.lng]); if(b.isValid()) mapDriver.fitBounds(b,{padding:[24,24]});
-    }catch(_){}
-  }
-  const top=$("#driverMapTop"); top.textContent=`${r.originText} → ${r.destText} · ${(r.km||0).toFixed(1)} km · ${money(r.fare||0)}`; top.classList.add("show"); setTimeout(()=>top.classList.remove("show"),1500);
-}
-
-/* Aceptar: transacción con “reservedBy” para que no aparezca a otros */
-async function driverAcceptRide(rideId){
-  try{
-    await db.runTransaction(async tx=>{
-      const ref=ridesCol.doc(rideId); const snap=await tx.get(ref);
-      if(!snap.exists) throw new Error("El viaje ya no existe");
-      const r=snap.data();
-      if(r.status!=="requested") throw new Error("Ya fue tomado");
-      if(r.reservedBy && r.reservedBy!==auth.currentUser.uid) throw new Error("Reservado por otro conductor");
-      tx.update(ref,{
-        reservedBy: auth.currentUser.uid,
-        reservedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        status:"accepted",
-        driverId: auth.currentUser.uid,
-        driverName: currentUser.displayName || currentUser.email,
-        driverPhotoURL: currentUser.photoURL || "",
-        driverRating: currentUser.rating || 5
-      });
-    });
-    currentRideId=rideId; toast("Viaje aceptado");
-  }catch(e){ toast(e.message); }
-}
-async function driverAdvance(rideId,next){
-  const ord=["requested","accepted","arrived","in_trip","completed"];
-  try{
-    await db.runTransaction(async tx=>{
-      const ref=ridesCol.doc(rideId); const snap=await tx.get(ref); if(!snap.exists) throw new Error("No existe");
-      const r=snap.data(); if(ord.indexOf(next)!==ord.indexOf(r.status)+1) throw new Error("Secuencia inválida");
-      const upd={status:next}; if(next==="completed") upd.finished=true; tx.update(ref,upd);
-    });
-    if(next==="completed"){ currentRideId=null; clearActiveRoute(); }
-  }catch(e){ toast(e.message); }
+  });
 }
 
 /* ================= Perfil / Auth (cuentas reales) ================= */
@@ -629,7 +559,7 @@ function refreshTabs(){
   setTab(logged ? "ride" : "access");
 }
 
-/* compresión de imagen para que Firestore no rechace (>1MB) */
+/* compresión de imagen */
 function compressImage(file, maxBytes=900*1024, maxW=512){
   return new Promise((resolve,reject)=>{
     const img=new Image(), rdr=new FileReader();
@@ -647,7 +577,7 @@ function compressImage(file, maxBytes=900*1024, maxW=512){
   });
 }
 
-/* Registro REAL sin prechequeo (evita "ya registrado" falso) */
+/* Registro */
 $("#btnSignUp").addEventListener("click", async ()=>{
   const name = $("#regName").value.trim();
   const email = normalizeEmail($("#regEmail").value);
@@ -678,23 +608,20 @@ $("#btnSignUp").addEventListener("click", async ()=>{
     }, { merge: true });
 
     pill($("#msg"), "Cuenta creada. Te enviamos un correo para verificar. Verifícala y luego inicia sesión.", "ok");
-    await auth.signOut(); // obliga a verificar
+    await auth.signOut();
     $("#goLogin").click();
     $("#loginEmail").value = email;
 
   }catch(e){
-    if(e?.code === "auth/email-already-in-use"){
+    const code=e?.code||"";
+    if(code==="auth/email-already-in-use"){
       $("#goLogin").click();
       $("#loginEmail").value = email;
       pill($("#msg"), "Ese correo ya está registrado. Iniciá sesión o restablecé tu contraseña.", "warn");
-    }else if(e?.code === "auth/invalid-email"){
+    }else if(code==="auth/invalid-email"){
       pill($("#msg"), "Correo inválido.", "error");
-    }else if(e?.code === "auth/operation-not-allowed"){
-      pill($("#msg"), "El registro está deshabilitado en este proyecto.", "error");
-    }else if(e?.code === "auth/network-request-failed"){
-      pill($("#msg"), "Error de red. Revisá tu conexión.", "error");
     }else{
-      pill($("#msg"), e.message || "Error al registrar.", "error");
+      pill($("#msg"), "No se pudo crear la cuenta.", "error");
     }
   }
 });
@@ -713,12 +640,13 @@ $("#btnResend").addEventListener("click", async ()=>{
     await auth.signOut();
     pill($("#msg"), "Verificación reenviada. Revisá tu correo.", "ok");
   }catch(e){
-    if(e?.code === "auth/user-not-found"){
+    const code=e?.code||"";
+    if(code==="auth/user-not-found"){
       pill($("#msg"), "Ese correo no tiene cuenta. Registrate primero.", "warn");
-    }else if(e?.code === "auth/wrong-password"){
-      pill($("#msg"), "Contraseña incorrecta.", "error");
+    }else if(code==="auth/wrong-password" || code==="auth/invalid-credential"){
+      pill($("#msg"), "Correo o contraseña incorrectos.", "error");
     }else{
-      pill($("#msg"), e.message || "No se pudo reenviar la verificación.", "error");
+      pill($("#msg"), "No se pudo reenviar la verificación.", "error");
     }
   }
 });
@@ -728,10 +656,10 @@ $("#btnForgot").addEventListener("click", async ()=>{
   const email = normalizeEmail($("#loginEmail").value);
   if(!email) return pill($("#msg"),"Escribí tu correo para enviar el enlace.","warn");
   try{ await auth.sendPasswordResetEmail(email); pill($("#msg"),"Te envié un correo para restablecer tu contraseña.","ok"); }
-  catch(e){ pill($("#msg"),e.message,"error"); }
+  catch(_){ pill($("#msg"),"No se pudo enviar el correo. Verificá el email.","error"); }
 });
 
-/* Login: solo si el correo está verificado */
+/* Login: ahora mapea auth/invalid-credential como credenciales incorrectas */
 $("#btnSignIn").addEventListener("click", async ()=>{
   const email = normalizeEmail($("#loginEmail").value);
   const pass  = $("#loginPass").value;
@@ -742,12 +670,13 @@ $("#btnSignIn").addEventListener("click", async ()=>{
       pill($("#msg"), "Tu correo no está verificado. Revisá tu bandeja o pulsa “Reenviar verificación”.", "warn");
     }
   }catch(e){
-    if(e?.code === "auth/user-not-found"){
+    const code=e?.code||"";
+    if(code==="auth/user-not-found"){
       pill($("#msg"), "No existe una cuenta con ese correo. Registrate.", "warn");
-    }else if(e?.code === "auth/wrong-password"){
-      pill($("#msg"), "Contraseña incorrecta.", "error");
+    }else if(code==="auth/wrong-password" || code==="auth/invalid-credential"){
+      pill($("#msg"), "Correo o contraseña incorrectos.", "error");
     }else{
-      pill($("#msg"), e.message || "No se pudo iniciar sesión.", "error");
+      pill($("#msg"), "No se pudo iniciar sesión.", "error");
     }
   }
 });
@@ -765,7 +694,7 @@ auth.onAuthStateChanged(async (u)=>{
     if(riderActiveUnsub) riderActiveUnsub();
     if(driverAvailUnsub) driverAvailUnsub();
     if(driverMineUnsub)  driverMineUnsub();
-    stopOnline(); return;
+    return;
   }
   if(!u.emailVerified){
     await auth.signOut();
@@ -786,8 +715,12 @@ function renderHistory(){
 }
 $("#btnClearRiderHistory").addEventListener("click", ()=>{ if(!currentUser) return; localStorage.setItem(`taxiya_rider_history_${currentUser.email}`,"[]"); renderHistory(); toast("OK"); });
 
-/* ================= Misceláneo ================= */
-window.addEventListener("focus", ()=>{ try{mapRide&&mapRide.invalidateSize(); mapDriver&&mapDriver.invalidateSize();}catch(_){}});
+/* ================= Map instances ================= */
+let mapRideInstantiated=false,mapDriverInstantiated=false;
+function ensureRideMap(){ if(mapRideInstantiated) return; mapRideInstantiated=true;
+  mapRide=L.map('mapRide',{zoomControl:false}); L.control.zoom({position:'bottomright'}).addTo(mapRide); uberTiles().addTo(mapRide); mapRide.setView([-31.5375,-68.5364],12); }
+function ensureDriverMap(){ if(mapDriverInstantiated) return; mapDriverInstantiated=true;
+  mapDriver=L.map('mapDriver',{zoomControl:false}); L.control.zoom({position:'bottomright'}).addTo(mapDriver); uberTiles().addTo(mapDriver); mapDriver.setView([-31.5375,-68.5364],13); }
 
 </script>
 </body>
