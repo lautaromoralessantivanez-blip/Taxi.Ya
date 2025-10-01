@@ -237,14 +237,17 @@ const $$=s=>Array.from(document.querySelectorAll(s));
 const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n||0);
 function toast(msg,ms=1700){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hide"); setTimeout(()=>t.classList.add("hide"),ms); }
 function pill(el, text, cls){ el.textContent=text; el.className=`pill ${cls||''}`; el.classList.remove('hide'); }
+const normalizeEmail = e => String(e||"").trim().toLowerCase();
+
 const toRad=d=>d*Math.PI/180;
-const km2=(a,b)=>{ // Haversine (arreglo del error)
+const km2=(a,b)=>{ // Haversine
   const R=6371, dLat=toRad(b.lat-a.lat), dLon=toRad(b.lng-a.lng);
   const la1=toRad(a.lat), la2=toRad(b.lat);
   const h=Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;
   return 2*R*Math.asin(Math.sqrt(h));
 };
-const bearing=(a,b)=>{const φ1=toRad(a.lat), φ2=toRad(b.lat), Δλ=toRad(b.lng-a.lng); const y=Math.sin(Δλ)*Math.cos(φ2); const x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ); return (Math.atan2(y,x)*180/Math.PI+360)%360;}
+const bearing=(a,b)=>{const φ1=toRad(a.lat), φ2=toRad(b.lat), Δλ=toRad(b.lng-a.lng); const y=Math.sin(Δλ)*mathCos(φ2); const x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ); return (Math.atan2(y,x)*180/Math.PI+360)%360;}
+function mathCos(x){return Math.cos(x);} // helper minúsculo para compresores
 function fmtTime(ms){ const s=Math.floor(ms/1000); const h=String(Math.floor(s/3600)).padStart(2,"0"); const m=String(Math.floor((s%3600)/60)).padStart(2,"0"); const ss=String(s%60).padStart(2,"0"); return `${h}:${m}:${ss}`;}
 function showIndexHint(e){ if(e?.message?.toLowerCase?.().includes("index")) pill($("#msg"), "⚠️ Firestore pide crear un índice para esa consulta. Abrí la consola y seguí el link sugerido.", "warn"); }
 
@@ -644,66 +647,109 @@ function compressImage(file, maxBytes=900*1024, maxW=512){
   });
 }
 
-/* helper: chequear si el correo ya existe */
-async function emailExists(email){
-  try{ const m=await auth.fetchSignInMethodsForEmail(email); return Array.isArray(m)&&m.length>0; }catch(_){ return false; }
-}
-
-/* Registro real + verificación + prechequeo “ya en uso” */
+/* Registro REAL sin prechequeo (evita "ya registrado" falso) */
 $("#btnSignUp").addEventListener("click", async ()=>{
-  const name=$("#regName").value.trim(), email=$("#regEmail").value.trim(), pass=$("#regPass").value, file=$("#regPhoto").files[0];
-  if(!name || !email || pass.length<6 || !file){ pill($("#msg"),"Completá todos los campos (foto obligatoria).","error"); return; }
+  const name = $("#regName").value.trim();
+  const email = normalizeEmail($("#regEmail").value);
+  const pass = $("#regPass").value;
+  const file = $("#regPhoto").files[0];
+
+  if(!name || !email || pass.length<6 || !file){
+    pill($("#msg"), "Completá todos los campos (foto obligatoria).", "error"); 
+    return;
+  }
+
   try{
-    if(await emailExists(email)){
-      $("#loginEmail").value=email; $("#loginPass").focus();
-      pill($("#msg"),"Ese correo ya tiene cuenta. Iniciá sesión o usá “Olvidé mi contraseña”.","warn");
-      $("#goLogin").click();
-      return;
-    }
     const photoURL = await compressImage(file);
-    const {user}=await auth.createUserWithEmailAndPassword(email,pass);
-    await user.updateProfile({displayName:name, photoURL});
+    const { user } = await auth.createUserWithEmailAndPassword(email, pass);
+
+    await user.updateProfile({ displayName: name, photoURL });
     await user.sendEmailVerification();
-    await usersCol.doc(user.uid).set({uid:user.uid,email:user.email,displayName:name,photoURL,role:"rider",approved:false,online:false,createdAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-    pill($("#msg"),"Cuenta creada. Te enviamos un correo para verificar. Verifícala y luego inicia sesión.","ok");
+
+    await usersCol.doc(user.uid).set({
+      uid: user.uid,
+      email: user.email,
+      displayName: name,
+      photoURL,
+      role: "rider",
+      approved: false,
+      online: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    pill($("#msg"), "Cuenta creada. Te enviamos un correo para verificar. Verifícala y luego inicia sesión.", "ok");
+    await auth.signOut(); // obliga a verificar
+    $("#goLogin").click();
+    $("#loginEmail").value = email;
+
   }catch(e){
-    if(e?.code==="auth/email-already-in-use"){
-      $("#loginEmail").value=$("#regEmail").value.trim();
+    if(e?.code === "auth/email-already-in-use"){
       $("#goLogin").click();
-      pill($("#msg"),"Ese correo ya está registrado. Iniciá sesión o restablecé tu contraseña.","warn");
+      $("#loginEmail").value = email;
+      pill($("#msg"), "Ese correo ya está registrado. Iniciá sesión o restablecé tu contraseña.", "warn");
+    }else if(e?.code === "auth/invalid-email"){
+      pill($("#msg"), "Correo inválido.", "error");
+    }else if(e?.code === "auth/operation-not-allowed"){
+      pill($("#msg"), "El registro está deshabilitado en este proyecto.", "error");
+    }else if(e?.code === "auth/network-request-failed"){
+      pill($("#msg"), "Error de red. Revisá tu conexión.", "error");
     }else{
-      pill($("#msg"),e.message,"error");
+      pill($("#msg"), e.message || "Error al registrar.", "error");
     }
   }
 });
 
-/* Login: SOLO si el correo está verificado */
-$("#btnSignIn").addEventListener("click", async ()=>{
-  const email=$("#loginEmail").value.trim(), pass=$("#loginPass").value;
-  try{
-    const {user}=await auth.signInWithEmailAndPassword(email,pass);
-    if(!user.emailVerified){
-      await auth.signOut();
-      pill($("#msg"),"Tu correo no está verificado. Revisá tu bandeja o pulsa “Reenviar verificación”.","warn");
-    }
-  }catch(e){ pill($("#msg"),e.message,"error"); }
-});
+/* Reenviar verificación (login temporal) */
 $("#btnResend").addEventListener("click", async ()=>{
-  const email=$("#loginEmail").value.trim(), pass=$("#loginPass").value;
-  if(!email||!pass) return pill($("#msg"),"Completá email y contraseña para reenviar.","warn");
+  const email = normalizeEmail($("#loginEmail").value);
+  const pass  = $("#loginPass").value;
+  if(!email || !pass){
+    pill($("#msg"), "Completá email y contraseña para reenviar verificación.", "warn");
+    return;
+  }
   try{
-    const {user}=await auth.signInWithEmailAndPassword(email,pass);
+    const { user } = await auth.signInWithEmailAndPassword(email, pass);
     await user.sendEmailVerification();
     await auth.signOut();
-    pill($("#msg"),"Verificación reenviada. Revisá tu correo.","ok");
-  }catch(e){ pill($("#msg"),e.message,"error"); }
+    pill($("#msg"), "Verificación reenviada. Revisá tu correo.", "ok");
+  }catch(e){
+    if(e?.code === "auth/user-not-found"){
+      pill($("#msg"), "Ese correo no tiene cuenta. Registrate primero.", "warn");
+    }else if(e?.code === "auth/wrong-password"){
+      pill($("#msg"), "Contraseña incorrecta.", "error");
+    }else{
+      pill($("#msg"), e.message || "No se pudo reenviar la verificación.", "error");
+    }
+  }
 });
+
 /* OLVIDÉ MI CONTRASEÑA */
 $("#btnForgot").addEventListener("click", async ()=>{
-  const email=$("#loginEmail").value.trim();
+  const email = normalizeEmail($("#loginEmail").value);
   if(!email) return pill($("#msg"),"Escribí tu correo para enviar el enlace.","warn");
   try{ await auth.sendPasswordResetEmail(email); pill($("#msg"),"Te envié un correo para restablecer tu contraseña.","ok"); }
   catch(e){ pill($("#msg"),e.message,"error"); }
+});
+
+/* Login: solo si el correo está verificado */
+$("#btnSignIn").addEventListener("click", async ()=>{
+  const email = normalizeEmail($("#loginEmail").value);
+  const pass  = $("#loginPass").value;
+  try{
+    const { user } = await auth.signInWithEmailAndPassword(email, pass);
+    if(!user.emailVerified){
+      await auth.signOut();
+      pill($("#msg"), "Tu correo no está verificado. Revisá tu bandeja o pulsa “Reenviar verificación”.", "warn");
+    }
+  }catch(e){
+    if(e?.code === "auth/user-not-found"){
+      pill($("#msg"), "No existe una cuenta con ese correo. Registrate.", "warn");
+    }else if(e?.code === "auth/wrong-password"){
+      pill($("#msg"), "Contraseña incorrecta.", "error");
+    }else{
+      pill($("#msg"), e.message || "No se pudo iniciar sesión.", "error");
+    }
+  }
 });
 
 $("#btnVerifySubmit").addEventListener("click", async ()=>{
