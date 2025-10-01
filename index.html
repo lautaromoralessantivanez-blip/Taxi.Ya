@@ -1,9 +1,10 @@
+```html
 <!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Taxi Ya • Panel pasajero y conductor</title>
+<title>Taxi Ya — tipo Uber</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -24,7 +25,7 @@
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:radial-gradient(1200px 700px at 20% -10%,rgba(0,179,255,.10),transparent 50%),var(--bg);color:var(--ink);font-family:Poppins,system-ui,Arial}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Poppins,system-ui,Arial}
 header{position:sticky;top:0;z-index:30;background:rgba(14,17,22,.8);backdrop-filter:blur(6px);padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
 .brand{font-weight:800;letter-spacing:.2px}
 .badge{border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px;opacity:.9}
@@ -58,22 +59,22 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
 .tab-btn.active{background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#082532; border-color:transparent}
 .hide{display:none!important}
 
-/* Mapas: estilo “dark suave” tipo Google Maps */
+/* MAPA estilo “Uber-like” (Carto Voyager + filtro azul/gris) */
 .map{width:100%;height:62vh;min-height:360px;border-radius:16px;border:1px solid var(--line);overflow:hidden;position:relative}
 .map-top{position:absolute; left:10px; right:10px; top:10px; z-index:400; display:none; padding:8px 12px; border-radius:12px; font-weight:800; border:1px solid var(--line); background:rgba(0,0,0,.28); backdrop-filter: blur(4px)}
 .map-top.show{display:block}
-/* aclarar dark_all para que parezca el screenshot: */
+/* filtro pensado para verse como Google dark (ajustable): */
 #mapRide .leaflet-tile, #mapDriver .leaflet-tile{
-  filter: brightness(1.18) contrast(0.93) saturate(1.12) hue-rotate(190deg);
+  filter: brightness(0.88) contrast(1.05) saturate(1.10) hue-rotate(185deg);
 }
 
-/* Driver control bar */
+/* Barra conductor */
 .ctrlbar{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px}
 .ctrlbar .timer{justify-self:center;border:1px solid var(--line);padding:8px 14px;border-radius:999px;font-weight:800;background:rgba(255,255,255,.06)}
 .ctrlbar .l{justify-self:start}
 .ctrlbar .r{justify-self:end}
 
-/* Car (autito) svg marker */
+/* Marcador auto (SVG profesional) */
 .car-ico{width:38px;height:38px;display:grid;place-items:center;transform: translate(-50%,-50%);}
 .car-ico svg{width:32px;height:32px;filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); transform: rotate(var(--rot,0deg));}
 
@@ -200,7 +201,7 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
 <div id="toast" class="toast hide"></div>
 
 <script type="module">
-/* ================= Firebase ================= */
+/* =============== Firebase =============== */
 const firebaseConfig = {
   apiKey: "AIzaSyBu523IOGnIZGfAkdlLdVLcENwLgv5KU9o",
   authDomain: "taxi-ya-3be33.firebaseapp.com",
@@ -216,7 +217,7 @@ const db   = firebase.firestore();
 const usersCol = db.collection("users");
 const ridesCol = db.collection("rides");
 
-/* ================= Utils ================= */
+/* =============== Utils =============== */
 const $=s=>document.querySelector(s);
 const $$=s=>Array.from(document.querySelectorAll(s));
 const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n||0);
@@ -226,7 +227,7 @@ const toRad=d=>d*Math.PI/180;
 const km2=(a,b)=>{const R=6371,dLat=toRad(b.lat-a.lat),dLon=toRad(b.lng-a.lng);const la1=toRad(a.lat),la2=toRad(b.lat);const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(h));};
 const bearing=(a,b)=>{const φ1=toRad(a.lat), φ2=toRad(b.lat), Δλ=toRad(b.lng-a.lng); const y=Math.sin(Δλ)*Math.cos(φ2); const x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ); return (Math.atan2(y,x)*180/Math.PI+360)%360;}
 
-/* ================= Tabs ================= */
+/* =============== Tabs =============== */
 let currentUser=null;
 const panels=["access","ride","history","driver","settings"];
 function setTab(name){
@@ -240,16 +241,21 @@ function setTab(name){
 }
 $$('.tabs .tab-btn').forEach(b=> b.addEventListener('click', ()=> setTab(b.dataset.tab)));
 
-/* ================= Map tiles (dark suave) ================= */
-function darkTileLayer(){
-  const tl = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-    maxZoom:19, attribution:'© OpenStreetMap, © CARTO'
-  });
-  tl.on('tileerror', ()=>{ try{ if(tl._fallback) return; tl._fallback=true; L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(tl._map); }catch(_){ } });
+/* =============== Tile layer “Uber-like” =============== */
+function uberTiles(){
+  // CARTO Voyager (parecido a Google). Sin token.
+  const tl = L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    {maxZoom:19, subdomains:'abcd',
+     attribution:'© OpenStreetMap © CARTO'}
+  );
+  tl.on('tileerror', ()=>{ try{ if(tl._fallback) return; tl._fallback=true;
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(tl._map);
+  }catch(_){ }});
   return tl;
 }
 
-/* ================= OSRM Routing (siguiendo calles) ================= */
+/* =============== OSRM Routing (siguiendo calles) =============== */
 async function routeCoords(a,b){
   const url=`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`;
   const r=await fetch(url); if(!r.ok) throw new Error("OSRM off");
@@ -257,26 +263,24 @@ async function routeCoords(a,b){
   return rt.geometry.coordinates.map(([x,y])=>[y,x]);
 }
 
-/* ================= ICONOS (profesional: SVG, sin emojis) ================= */
+/* =============== Iconos (SVG, sin emojis) =============== */
 function carIcon(color="#00b3ff"){
   const svg = `
   <div class="car-ico">
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="${color}"/><stop offset="1" stop-color="#5fd2ff"/></linearGradient></defs>
-      <g>
-        <rect x="14" y="24" width="36" height="18" rx="6" fill="url(#g)" />
-        <path d="M18 24 l7-10 h14 l7 10 z" fill="#0d1b24"/>
-        <circle cx="22" cy="44" r="6" fill="#0d1b24"/><circle cx="42" cy="44" r="6" fill="#0d1b24"/>
-        <circle cx="22" cy="44" r="2" fill="#9ecbe6"/><circle cx="42" cy="44" r="2" fill="#9ecbe6"/>
-        <rect x="20" y="26" width="24" height="8" rx="2" fill="#8ad4ff" opacity=".9"/>
-      </g>
+      <rect x="14" y="24" width="36" height="18" rx="6" fill="url(#g)" />
+      <path d="M18 24 l7-10 h14 l7 10 z" fill="#0d1b24"/>
+      <circle cx="22" cy="44" r="6" fill="#0d1b24"/><circle cx="42" cy="44" r="6" fill="#0d1b24"/>
+      <circle cx="22" cy="44" r="2" fill="#9ecbe6"/><circle cx="42" cy="44" r="2" fill="#9ecbe6"/>
+      <rect x="20" y="26" width="24" height="8" rx="2" fill="#8ad4ff" opacity=".9"/>
     </svg>
   </div>`;
   return L.divIcon({html:svg, className:'', iconSize:[38,38], iconAnchor:[19,19]});
 }
 function setCarRotation(marker,deg){ try{ marker.getElement()?.querySelector('.car-ico')?.style.setProperty('--rot', deg+'deg'); }catch(_){ } }
 
-/* ================= PASAJERO ================= */
+/* =============== PASAJERO =============== */
 let mapRide=null, riderMarkers={origin:null,dest:null,driver:null}, riderLines={o2d:null,drv:null};
 let origin=null, dest=null, riderActiveUnsub=null, lastDriverPt=null;
 
@@ -284,7 +288,7 @@ function ensureRideMap(){
   if(mapRide) return;
   mapRide=L.map('mapRide',{zoomControl:false});
   L.control.zoom({position:'bottomright'}).addTo(mapRide);
-  darkTileLayer().addTo(mapRide);
+  uberTiles().addTo(mapRide);
   mapRide.setView([-31.5375,-68.5364],12);
 }
 function setRideMarker(kind, lat, lng, label){
@@ -338,7 +342,7 @@ $("#btnPayMP").addEventListener("click", async ()=>{ const b=$("#btnPayMP"); b.d
 
 /* Crear viaje y escuchar (pasajero ve al conductor apenas acepta) */
 $("#btnUnified").addEventListener("click", riderCreateRide);
-$("#btnCancel").addEventListener("click", ()=>{}); // se setea al adjuntar
+$("#btnCancel").addEventListener("click", ()=>{});
 
 async function riderCreateRide(){
   if(!currentUser) return toast("Iniciá sesión");
@@ -375,7 +379,6 @@ function riderAttachActiveRide(){
     $("#rideMapTop").textContent=`${r.originText} → ${r.destText} · ${(r.km||0).toFixed(1)} km · ${money(r.fare||0)}`;
     $("#rideMapTop").classList.add("show"); setTimeout(()=>$("#rideMapTop").classList.remove("show"),1200);
 
-    // tarjeta conductor pro
     if(r.driverId){
       $("#driverCard").classList.remove("hide");
       $("#driverName").textContent = `${r.driverName||"Conductor"} — ${money(r.fare)} · ★${(r.driverRating||5).toFixed(1)}`;
@@ -383,7 +386,6 @@ function riderAttachActiveRide(){
       $("#driverExtra").textContent = r.status==="accepted"?"En camino al origen": r.status==="arrived"?"Llegó al origen": r.status==="in_trip"?"En viaje": r.status==="completed"?"Finalizado":"—";
     }
 
-    // mapa con rutas por calles
     ensureRideMap();
     if(r.origin){ origin=r.origin; setRideMarker('origin',origin.lat,origin.lng,'Origen'); }
     if(r.dest){ dest=r.dest; setRideMarker('dest',dest.lat,dest.lng,'Destino'); }
@@ -402,7 +404,7 @@ function riderAttachActiveRide(){
   });
 }
 
-/* ================= CONDUCTOR ================= */
+/* =============== CONDUCTOR =============== */
 let mapDriver=null, driverMarker=null, prevDriverPoint=null;
 let activePolylineToPick=null, activePolylineO2D=null;
 let driverAvailUnsub=null, driverMineUnsub=null;
@@ -413,7 +415,7 @@ function ensureDriverMap(){
   if(mapDriver) return;
   mapDriver=L.map('mapDriver',{zoomControl:false});
   L.control.zoom({position:'bottomright'}).addTo(mapDriver);
-  darkTileLayer().addTo(mapDriver);
+  uberTiles().addTo(mapDriver);
   mapDriver.setView([-31.5375,-68.5364],13);
 }
 function centerOnMeOnce(){
@@ -480,7 +482,6 @@ function attachDriverStreams(){
   }
   ensureDriverMap();
 
-  // Disponibles
   driverAvailUnsub = ridesCol.where("status","==","requested").limit(40)
   .onSnapshot(qs=>{
     const wrap=$("#driverAvailable"); wrap.innerHTML="";
@@ -507,7 +508,6 @@ function attachDriverStreams(){
     });
   });
 
-  // Mi activo
   driverMineUnsub = ridesCol.where("driverId","==", auth.currentUser.uid).where("finished","==",false)
   .onSnapshot(qs=>{
     const wrap=$("#driverMyActive"); wrap.innerHTML="";
@@ -590,7 +590,7 @@ async function driverAdvance(rideId,next){
   }catch(e){ toast(e.message); }
 }
 
-/* ================= Perfil / Auth ================= */
+/* =============== Perfil / Auth =============== */
 function paintProfile(){
   const el=$("#profileInfo"), av=$("#profileAvatar"); if(!currentUser){ el.textContent="Sin sesión"; av.src=""; return; }
   av.src=currentUser.photoURL||"https://i.pravatar.cc/100?u=placeholder";
@@ -645,7 +645,7 @@ auth.onAuthStateChanged(async (u)=>{
   ensureRideMap(); riderAttachActiveRide();
 });
 
-/* ================= Historial (local simple) ================= */
+/* =============== Historial (placeholder) =============== */
 function renderHistory(){
   if(!currentUser) return;
   const key=`taxiya_rider_history_${currentUser.email}`; let list=[]; try{list=JSON.parse(localStorage.getItem(key)||"[]");}catch(_){}
@@ -654,9 +654,10 @@ function renderHistory(){
 }
 $("#btnClearRiderHistory").addEventListener("click", ()=>{ if(!currentUser) return; localStorage.setItem(`taxiya_rider_history_${currentUser.email}`,"[]"); renderHistory(); toast("OK"); });
 
-/* ================= Misc ================= */
+/* =============== Misceláneo =============== */
 window.addEventListener("focus", ()=>{ try{mapRide&&mapRide.invalidateSize(); mapDriver&&mapDriver.invalidateSize();}catch(_){}});
 
 </script>
 </body>
 </html>
+```
