@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Taxi Ya — acceso libre (demo, completo)</title>
+<title>Taxi Ya — acceso libre (con fallback local)</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -25,7 +25,7 @@
 *{box-sizing:border-box} html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Poppins,system-ui,Arial}
 header{position:sticky;top:0;z-index:30;background:rgba(14,17,22,.8);backdrop-filter:blur(6px);padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
-.brand{font-weight:800}
+.brand{font-weight:800;display:flex;gap:10px;align-items:center}
 .badge{border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px;opacity:.9}
 
 main{max-width:1240px;margin:16px auto;padding:0 12px;display:grid;gap:12px}
@@ -80,7 +80,7 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
 </head>
 <body>
 <header>
-  <div class="brand">Taxi Ya</div>
+  <div class="brand">Taxi Ya <span id="modeBadge" class="pill warn hide">DEMO LOCAL</span></div>
   <div id="authPill" class="badge">Sin sesión</div>
 </header>
 
@@ -102,7 +102,9 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
     </div>
     <div class="row" style="margin-top:6px">
       <div><label>Foto (opcional)</label><input id="freePhoto" type="file" accept="image/*"></div>
-      <div><label>&nbsp;</label><button id="btnFreeEnter" class="btnp" type="button">Entrar ahora</button></div>
+      <div><label>&nbsp;</label>
+        <button id="btnFreeEnter" class="btnp" type="button">Entrar ahora</button>
+      </div>
     </div>
     <div id="msg" class="pill hide" style="margin-top:8px"></div>
   </section>
@@ -131,10 +133,7 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
 
     <div class="inline-card hide" id="driverCard" style="margin-top:10px">
       <img id="driverAvatar" class="avatar" alt="Conductor">
-      <div>
-        <b id="driverName">Conductor</b>
-        <div class="small muted" id="driverExtra">—</div>
-      </div>
+      <div><b id="driverName">Conductor</b><div class="small muted" id="driverExtra">—</div></div>
     </div>
 
     <div style="position:relative; margin-top:10px">
@@ -205,7 +204,7 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
 <div id="toast" class="toast hide"></div>
 
 <script type="module">
-/* =============== Firebase =============== */
+/* ================= Firebase ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyBu523IOGnIZGfAkdlLdVLcENwLgv5KU9o",
   authDomain: "taxi-ya-3be33.firebaseapp.com",
@@ -221,7 +220,24 @@ const db   = firebase.firestore();
 const usersCol = db.collection("users");
 const ridesCol = db.collection("rides");
 
-/* =============== Utils =============== */
+/* ================= Fallback Local (sin Firebase) ================= */
+let MODE = "cloud"; // "cloud" | "local"
+const bc = ("BroadcastChannel" in self) ? new BroadcastChannel("taxiya-demo") : null;
+const LS_RIDES = "taxiya_local_rides";
+const LS_USER  = "taxiya_local_user";
+function localLoadRides(){ try{return JSON.parse(localStorage.getItem(LS_RIDES)||"[]");}catch(_){return[]} }
+function localSaveRides(list){ localStorage.setItem(LS_RIDES, JSON.stringify(list)); bc?.postMessage({type:"rides"}); }
+function localGetUser(){ try{return JSON.parse(localStorage.getItem(LS_USER)||"null");}catch(_){return null} }
+function localSetUser(u){ localStorage.setItem(LS_USER, JSON.stringify(u)); bc?.postMessage({type:"user"}); }
+function switchToLocalDemo(reason=""){
+  MODE="local";
+  document.getElementById("modeBadge").classList.remove("hide");
+  pill($("#msg"), "Entraste en DEMO LOCAL. Para usar la nube: Firebase Auth → Anonymous → Enable.", "warn");
+}
+window.addEventListener("storage", (e)=>{ if(e.key===LS_RIDES || e.key===LS_USER){ renderAll(); }});
+bc?.addEventListener("message", (e)=>{ if(e.data?.type){ renderAll(); }});
+
+/* ================= Utils ================= */
 const $=s=>document.querySelector(s);
 const $$=s=>Array.from(document.querySelectorAll(s));
 function toast(msg,ms=1700){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hide"); setTimeout(()=>t.classList.add("hide"),ms); }
@@ -236,8 +252,9 @@ const bearing=(a,b)=>{const φ1=toRad(a.lat), φ2=toRad(b.lat), Δλ=toRad(b.lng
   const y=Math.sin(Δλ)*Math.cos(φ2); const x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
   return (Math.atan2(y,x)*180/Math.PI+360)%360;};
 function fmtTime(ms){ const s=Math.floor(ms/1000); const h=String(Math.floor(s/3600)).padStart(2,"0"); const m=String(Math.floor((s%3600)/60)).padStart(2,"0"); const ss=String(s%60).padStart(2,"0"); return `${h}:${m}:${ss}`;}
+function uid(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
 
-/* =============== Tabs =============== */
+/* ================= Tabs ================= */
 let currentUser=null;
 const panels=["access","ride","history","driver","settings"];
 function setTab(name){
@@ -252,7 +269,7 @@ function setTab(name){
 }
 $$('.tabs .tab-btn').forEach(b=> b.addEventListener('click', ()=> setTab(b.dataset.tab)));
 
-/* =============== Map tiles =============== */
+/* ================= Map tiles ================= */
 function uberTiles(){
   const tl=L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
     {maxZoom:19,subdomains:'abcd',attribution:'© OpenStreetMap © CARTO'});
@@ -260,7 +277,7 @@ function uberTiles(){
   return tl;
 }
 
-/* =============== Ruteo OSRM (coords + resumen) =============== */
+/* ================= Ruteo OSRM ================= */
 async function routeSummary(a,b){
   const url=`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`;
   const r=await fetch(url); if(!r.ok) throw new Error("OSRM off");
@@ -271,7 +288,7 @@ async function routeSummary(a,b){
   return {coords, km: meters/1000, min: Math.round(seconds/60)};
 }
 
-/* =============== Icono auto =============== */
+/* ================= Icono auto ================= */
 function carIcon(color="#00b3ff"){
   const svg = `
   <div class="car-ico">
@@ -288,14 +305,13 @@ function carIcon(color="#00b3ff"){
 }
 function setCarRotation(marker,deg){ try{ marker.getElement()?.querySelector('.car-ico')?.style.setProperty('--rot', deg+'deg'); }catch(_){ } }
 
-/* =============== Precio =============== */
+/* ================= Precio ================= */
 function estimateFare(km, min){
   const base=990, perKm=660, perMin=99;
-  const total = Math.max(800, Math.round(base + km*perKm + min*perMin));
-  return total;
+  return Math.max(800, Math.round(base + km*perKm + min*perMin));
 }
 
-/* =============== PASAJERO (mapa y viajes) =============== */
+/* ================= PASAJERO ================= */
 let mapRide=null, riderMarkers={origin:null,dest:null,driver:null}, riderLines={o2d:null,drv:null};
 let origin=null, dest=null, riderActiveUnsub=null, lastDriverPt=null;
 
@@ -330,6 +346,69 @@ function updateEstimateFields(km,min){
   $("#fare").value = money(estimateFare(km||0,min||0));
 }
 
+/* ================== Data Layer (cloud/local) ================== */
+function dataAddRide(obj){
+  if(MODE==="cloud"){ return ridesCol.add(obj); }
+  // local
+  const list = localLoadRides();
+  list.push({...obj, _id: uid()});
+  localSaveRides(list);
+  return Promise.resolve();
+}
+function dataQueryMyActiveAsRider(cb){
+  if(MODE==="cloud"){
+    if(riderActiveUnsub) riderActiveUnsub();
+    riderActiveUnsub = ridesCol.where("riderId","==", currentUser.uid).orderBy("ts","desc").limit(20)
+      .onSnapshot(qs=>{
+        const doc = qs.docs.find(d=>{ const r=d.data(); return !r.finished && r.status!=="cancelled" && r.status!=="completed"; });
+        cb(doc? {id:doc.id, data:doc.data()} : null);
+      });
+    return;
+  }
+  // local
+  const run=()=>{ const list=localLoadRides().slice().reverse();
+    const r = list.find(x=> x.riderId===currentUser.uid && !x.finished && x.status!=="cancelled" && x.status!=="completed");
+    cb(r? {id:r._id, data:r} : null);
+  };
+  run(); // inicial
+  // updates por storage/broadcast ya llaman renderAll()
+  // Para asegurar, agregamos un polling liviano
+  const t = setInterval(run, 800);
+  riderActiveUnsub = ()=> clearInterval(t);
+}
+function dataUpdateRide(id, changes){
+  if(MODE==="cloud"){ return ridesCol.doc(id).set(changes,{merge:true}); }
+  const list = localLoadRides();
+  const i=list.findIndex(x=>x._id===id);
+  if(i>=0){ list[i]={...list[i], ...changes}; localSaveRides(list); }
+  return Promise.resolve();
+}
+function dataStreamAvailable(cb){
+  if(MODE==="cloud"){
+    return ridesCol.where("status","==","requested").limit(60).onSnapshot(qs=>{
+      const arr=[]; qs.forEach(doc=>{ arr.push({id:doc.id, data:doc.data()}); }); cb(arr);
+    });
+  }
+  // local
+  const run=()=>{ const list=localLoadRides().filter(r=>r.status==="requested"); cb(list.map(r=>({id:r._id, data:r}))); };
+  run();
+  const t=setInterval(run,800);
+  return ()=>clearInterval(t);
+}
+function dataStreamMyActiveAsDriver(cb){
+  if(MODE==="cloud"){
+    return ridesCol.where("driverId","==", auth.currentUser.uid).orderBy("ts","desc").limit(20)
+      .onSnapshot(qs=>{
+        const arr=[]; qs.forEach(doc=>arr.push({id:doc.id,data:doc.data()})); cb(arr);
+      });
+  }
+  const run=()=>{ const me=currentUser?.uid; const list=localLoadRides().filter(r=>r.driverId===me).sort((a,b)=>(b.ts?.toMillis?.?.()||0)-(a.ts?.toMillis?.?.()||0)); cb(list.map(r=>({id:r._id,data:r}))); };
+  run();
+  const t=setInterval(run,800);
+  return ()=>clearInterval(t);
+}
+
+/* ================= Acciones PASAJERO ================= */
 $("#btnGeoRO").addEventListener("click", async ()=>{
   ensureRideMap(); const loc=await geocode($("#riderOrigin").value.trim()); if(!loc) return toast("Origen no encontrado");
   origin=loc; setRideMarker('origin',loc.lat,loc.lng,'Origen'); mapRide.setView([loc.lat,loc.lng],15);
@@ -350,20 +429,12 @@ $("#btnLocate").addEventListener("click", ()=>{
   }, ()=>toast("No se pudo ubicar"), {enableHighAccuracy:true,timeout:5000,maximumAge:15000});
 });
 
-/* Crear / cancelar viaje */
 $("#btnUnified").addEventListener("click", riderCreateRide);
 $("#btnCancel").addEventListener("click", ()=>{});
 
 async function riderCreateRide(){
   if(!currentUser) return toast("Iniciá sesión");
   if(!origin||!dest) return toast("Elegí origen y destino");
-
-  // Buscar si ya hay alguno activo (evita índice compuesto: filtramos en cliente)
-  const snap = await ridesCol.where("riderId","==", currentUser.uid).orderBy("ts","desc").limit(20).get().catch(()=>null);
-  if(snap && !snap.empty){
-    const active = snap.docs.find(d=>{ const r=d.data(); return !r.finished && r.status!=="cancelled" && r.status!=="completed"; });
-    if(active) return toast("Ya tenés un viaje activo");
-  }
 
   let km=0, min=0, path=null;
   try{ const r=await routeSummary(origin,dest); km=r.km; min=r.min; path=r.coords; }catch(_){ km=km2(origin,dest); min=Math.round(km/24*60); }
@@ -379,26 +450,22 @@ async function riderCreateRide(){
     destText: $("#riderDest").value.trim() || `${dest.lat.toFixed(5)}, ${dest.lng.toFixed(5)}`,
     origin, dest, km, min, fare, vehicle: $("#reqType").value || "auto",
     payment: {method:$("#payMethod").value||null,status:"pending"},
-    routePreview: path ? path.slice(0,50) : null, // recortado para no cargar tanto
+    routePreview: path ? path.slice(0,50) : null,
     driverId: null, reservedBy: null,
     status:"requested", finished:false,
-    ts: firebase.firestore.FieldValue.serverTimestamp()
+    ts: MODE==="cloud" ? firebase.firestore.FieldValue.serverTimestamp() : {toMillis:()=>Date.now()}
   };
-  await ridesCol.add(data);
+  await dataAddRide(data);
   toast("Solicitud enviada");
 }
 
 function riderAttachActiveRide(){
-  if(riderActiveUnsub) riderActiveUnsub();
-  riderActiveUnsub = ridesCol.where("riderId","==", currentUser.uid).orderBy("ts","desc").limit(20)
-  .onSnapshot(qs=>{
-    // tomar el más reciente no terminado
-    const doc = qs.docs.find(d=>{ const r=d.data(); return !r.finished && r.status!=="cancelled" && r.status!=="completed"; });
+  dataQueryMyActiveAsRider(async (doc)=>{
     if(!doc){ $("#driverCard").classList.add("hide"); $("#btnCancel").classList.add("hide"); $("#rideMapTop").classList.remove("show"); return; }
-    const id=doc.id, r=doc.data();
+    const id=doc.id, r=doc.data;
 
     $("#btnCancel").classList.toggle("hide", r.status!=="requested");
-    $("#btnCancel").onclick = async()=>{ try{ await ridesCol.doc(id).set({status:"cancelled", finished:true, cancelledAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); }catch(e){ toast(e.message) } };
+    $("#btnCancel").onclick = async()=>{ try{ await dataUpdateRide(id,{status:"cancelled", finished:true, cancelledAt: MODE==="cloud"? firebase.firestore.FieldValue.serverTimestamp() : {toMillis:()=>Date.now()}}); }catch(e){ toast(e.message) } };
 
     $("#rideMapTop").textContent=`${r.originText} → ${r.destText} · ${(r.km||0).toFixed(1)} km · ${Math.max(1,Math.round(r.min||0))} min · ${money(r.fare||0)}`;
     $("#rideMapTop").classList.add("show"); setTimeout(()=>$("#rideMapTop").classList.remove("show"),1300);
@@ -417,7 +484,7 @@ function riderAttachActiveRide(){
     (async ()=>{ try{ const rsum=await routeSummary(origin,dest); drawRideLine('o2d',rsum.coords); }catch(_){}})();
 
     if(r.driverLoc){
-      const cur={lat:r.driverLoc.latitude,lng:r.driverLoc.longitude};
+      const cur={lat:r.driverLoc.latitude||r.driverLoc.lat,lng:r.driverLoc.longitude||r.driverLoc.lng};
       setRideMarker('driver',cur.lat,cur.lng,'');
       if(lastDriverPt){ setCarRotation(riderMarkers.driver, bearing(lastDriverPt,cur)); }
       lastDriverPt=cur;
@@ -429,7 +496,7 @@ function riderAttachActiveRide(){
   });
 }
 
-/* =============== CONDUCTOR =============== */
+/* ================= CONDUCTOR ================= */
 let mapDriver=null, driverMarker=null, prevDriverPoint=null;
 let activePolylineToPick=null, activePolylineO2D=null;
 let driverAvailUnsub=null, driverMineUnsub=null;
@@ -470,7 +537,11 @@ function startGeoWatch(){
     const now=Date.now();
     if(currentRideId && now-lastPush>2500){
       lastPush=now;
-      await ridesCol.doc(currentRideId).set({driverLoc:new firebase.firestore.GeoPoint(lat,lng), driverLocAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+      if(MODE==="cloud"){
+        await dataUpdateRide(currentRideId,{driverLoc:new firebase.firestore.GeoPoint(lat,lng), driverLocAt: firebase.firestore.FieldValue.serverTimestamp()});
+      }else{
+        await dataUpdateRide(currentRideId,{driverLoc:{lat,lng}, driverLocAt:{toMillis:()=>Date.now()}});
+      }
     }
   }, console.warn, {enableHighAccuracy:true, maximumAge:2000, timeout:15000});
 }
@@ -486,9 +557,9 @@ function setOnlineUI(isOnline){
 function startTimer(){ onStart=Date.now(); $("#onlineTimer").textContent="00:00:00"; if(onTimer) clearInterval(onTimer); onTimer=setInterval(()=>$("#onlineTimer").textContent=fmtTime(Date.now()-onStart),1000); }
 function stopTimer(reset=true){ if(onTimer) clearInterval(onTimer); if(reset) $("#onlineTimer").textContent="00:00:00"; }
 
-async function goOnline(){ await usersCol.doc(auth.currentUser.uid).set({online:true},{merge:true}); setOnlineUI(true); startTimer(); ensureDriverMap(); centerOnMeOnce(); startGeoWatch(); attachDriverStreams(); toast("Conectado"); refreshEarningsToday(); }
-async function pauseOnline(){ await usersCol.doc(auth.currentUser.uid).set({online:false},{merge:true}); setOnlineUI(false); stopTimer(false); stopGeoWatch(); toast("Pausado"); }
-async function stopOnline(){ await usersCol.doc(auth.currentUser.uid).set({online:false},{merge:true}); setOnlineUI(false); stopTimer(true); stopGeoWatch(); clearActiveRoute(); $("#driverAvailable").innerHTML=""; $("#driverMyActive").innerHTML=""; toast("Desconectado"); }
+async function goOnline(){ if(MODE==="cloud") await usersCol.doc(auth.currentUser.uid).set({online:true},{merge:true}); setOnlineUI(true); startTimer(); ensureDriverMap(); centerOnMeOnce(); startGeoWatch(); attachDriverStreams(); toast("Conectado"); refreshEarningsToday(); }
+async function pauseOnline(){ if(MODE==="cloud") await usersCol.doc(auth.currentUser.uid).set({online:false},{merge:true}); setOnlineUI(false); stopTimer(false); stopGeoWatch(); toast("Pausado"); }
+async function stopOnline(){ if(MODE==="cloud") await usersCol.doc(auth.currentUser.uid).set({online:false},{merge:true}); setOnlineUI(false); stopTimer(true); stopGeoWatch(); clearActiveRoute(); $("#driverAvailable").innerHTML=""; $("#driverMyActive").innerHTML=""; toast("Desconectado"); }
 $("#btnStartRoute").addEventListener("click", goOnline);
 $("#btnPauseRoute").addEventListener("click", pauseOnline);
 $("#btnStopRoute").addEventListener("click", stopOnline);
@@ -511,13 +582,13 @@ async function showRoutePreview(r){
 async function showActiveRoute(r){
   ensureDriverMap(); centerOnMeOnce(); clearActiveRoute();
   if(r.driverLoc){
-    const cur={lat:r.driverLoc.latitude,lng:r.driverLoc.longitude};
+    const cur={lat:r.driverLoc.latitude||r.driverLoc.lat,lng:r.driverLoc.longitude||r.driverLoc.lng};
     if(prevDriverPoint){ setCarRotation(driverMarker, bearing(prevDriverPoint,cur)); }
     driverMarker?.setLatLng([cur.lat,cur.lng]); prevDriverPoint=cur;
   }
   if(r.origin){
     try{
-      const from = r.status==="in_trip" ? r.origin : (r.driverLoc? {lat:r.driverLoc.latitude,lng:r.driverLoc.longitude} : null);
+      const from = r.status==="in_trip" ? r.origin : (r.driverLoc? {lat:r.driverLoc.latitude||r.driverLoc.lat,lng:r.driverLoc.longitude||r.driverLoc.lng} : null);
       if(from){ const toPick = await routeSummary(from, r.status==="in_trip"? r.dest : r.origin); activePolylineToPick = L.polyline(toPick.coords,{weight:5}).addTo(mapDriver); }
       if(r.dest){ const o2d = await routeSummary(r.origin, r.dest); activePolylineO2D = L.polyline(o2d.coords,{weight:4,opacity:.6}).addTo(mapDriver); }
       const b=L.latLngBounds([]); if(driverMarker) b.extend(driverMarker.getLatLng()); b.extend([r.origin.lat,r.origin.lng]); if(r.dest) b.extend([r.dest.lat,r.dest.lng]); if(b.isValid()) mapDriver.fitBounds(b,{padding:[24,24]});
@@ -526,40 +597,66 @@ async function showActiveRoute(r){
   const top=$("#driverMapTop"); top.textContent=`${r.originText} → ${r.destText} · ${(r.km||0).toFixed(1)} km · ${money(r.fare||0)}`; top.classList.add("show"); setTimeout(()=>top.classList.remove("show"),1500);
 }
 
-/* Aceptar/avanzar */
+/* Aceptar / avanzar */
 async function driverAcceptRide(rideId){
   try{
-    await db.runTransaction(async tx=>{
-      const ref=ridesCol.doc(rideId); const snap=await tx.get(ref);
-      if(!snap.exists) throw new Error("El viaje ya no existe");
-      const r=snap.data();
+    if(MODE==="cloud"){
+      await db.runTransaction(async tx=>{
+        const ref=ridesCol.doc(rideId); const snap=await tx.get(ref);
+        if(!snap.exists) throw new Error("El viaje ya no existe");
+        const r=snap.data();
+        if(r.status!=="requested") throw new Error("Ya fue tomado");
+        if(r.reservedBy && r.reservedBy!==auth.currentUser.uid) throw new Error("Reservado por otro conductor");
+        tx.update(ref,{
+          reservedBy: auth.currentUser.uid,
+          reservedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          status:"accepted",
+          driverId: auth.currentUser.uid,
+          driverName: currentUser.displayName || currentUser.emailTyped || "Conductor",
+          driverPhotoURL: currentUser.photoURL || "",
+          driverRating: currentUser.rating || 5,
+          acceptedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+    }else{
+      const list=localLoadRides();
+      const i=list.findIndex(x=>x._id===rideId);
+      if(i<0) throw new Error("No existe");
+      const r=list[i];
       if(r.status!=="requested") throw new Error("Ya fue tomado");
-      if(r.reservedBy && r.reservedBy!==auth.currentUser.uid) throw new Error("Reservado por otro conductor");
-      tx.update(ref,{
-        reservedBy: auth.currentUser.uid,
-        reservedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      if(r.reservedBy && r.reservedBy!==currentUser.uid) throw new Error("Reservado");
+      list[i]={...r,
+        reservedBy: currentUser.uid,
         status:"accepted",
-        driverId: auth.currentUser.uid,
+        driverId: currentUser.uid,
         driverName: currentUser.displayName || currentUser.emailTyped || "Conductor",
         driverPhotoURL: currentUser.photoURL || "",
-        driverRating: currentUser.rating || 5,
-        acceptedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    });
+        driverRating: currentUser.rating || 5
+      };
+      localSaveRides(list);
+    }
     currentRideId=rideId; toast("Viaje aceptado");
   }catch(e){ toast(e.message); }
 }
 async function driverAdvance(rideId,next){
   const ord=["requested","accepted","arrived","in_trip","completed"];
   try{
-    await db.runTransaction(async tx=>{
-      const ref=ridesCol.doc(rideId); const snap=await tx.get(ref); if(!snap.exists) throw new Error("No existe");
-      const r=snap.data(); if(ord.indexOf(next)!==ord.indexOf(r.status)+1) throw new Error("Secuencia inválida");
-      const upd={status:next};
-      if(next==="in_trip"){ upd.startedAt = firebase.firestore.FieldValue.serverTimestamp(); }
-      if(next==="completed"){ upd.finished=true; upd.completedAt = firebase.firestore.FieldValue.serverTimestamp(); upd["payment.status"]= r.payment?.method==="cash" ? "collected":"pending"; }
-      tx.update(ref,upd);
-    });
+    if(MODE==="cloud"){
+      await db.runTransaction(async tx=>{
+        const ref=ridesCol.doc(rideId); const snap=await tx.get(ref); if(!snap.exists) throw new Error("No existe");
+        const r=snap.data(); if(ord.indexOf(next)!==ord.indexOf(r.status)+1) throw new Error("Secuencia inválida");
+        const upd={status:next};
+        if(next==="in_trip"){ upd.startedAt = firebase.firestore.FieldValue.serverTimestamp(); }
+        if(next==="completed"){ upd.finished=true; upd.completedAt = firebase.firestore.FieldValue.serverTimestamp(); upd["payment.status"]= r.payment?.method==="cash" ? "collected":"pending"; }
+        tx.update(ref,upd);
+      });
+    }else{
+      const list=localLoadRides();
+      const i=list.findIndex(x=>x._id===rideId); if(i<0) throw new Error("No existe");
+      const r=list[i]; if(ord.indexOf(next)!==ord.indexOf(r.status)+1) throw new Error("Secuencia inválida");
+      const upd={...r, status:next}; if(next==="completed"){ upd.finished=true; upd.completedAt=Date.now(); upd.payment={...(r.payment||{}), status: (r.payment?.method==="cash"?"collected":"pending")}; }
+      list[i]=upd; localSaveRides(list);
+    }
     if(next==="completed"){ currentRideId=null; clearActiveRoute(); refreshEarningsToday(); }
   }catch(e){ toast(e.message); }
 }
@@ -576,13 +673,11 @@ function attachDriverStreams(){
   }
   ensureDriverMap();
 
-  driverAvailUnsub = ridesCol.where("status","==","requested").limit(60)
-  .onSnapshot(qs=>{
+  driverAvailUnsub = dataStreamAvailable(arr=>{
     const wrap=$("#driverAvailable"); wrap.innerHTML="";
-    if(qs.empty){ wrap.innerHTML=`<div class="small muted">Sin viajes por ahora…</div>`; return; }
-    qs.forEach(doc=>{
-      const r=doc.data();
-      if(r.reservedBy && r.reservedBy!==auth.currentUser.uid) return;
+    if(!arr.length){ wrap.innerHTML=`<div class="small muted">Sin viajes por ahora…</div>`; return; }
+    arr.forEach(({id,data:r})=>{
+      if(r.reservedBy && r.reservedBy!==(MODE==="cloud"?auth.currentUser.uid:currentUser.uid)) return;
       const item=document.createElement("div"); item.className="item";
       item.innerHTML=`
         <div class="inline-card">
@@ -598,18 +693,16 @@ function attachDriverStreams(){
           <button class="btnp" data-accept>Aceptar</button>
         </div>`;
       item.querySelector('[data-view]').onclick=()=> showRoutePreview(r);
-      item.querySelector('[data-accept]').onclick=()=> driverAcceptRide(doc.id);
+      item.querySelector('[data-accept]').onclick=()=> driverAcceptRide(id);
       wrap.appendChild(item);
     });
   });
 
-  driverMineUnsub = ridesCol.where("driverId","==", auth.currentUser.uid).orderBy("ts","desc").limit(20)
-  .onSnapshot(qs=>{
+  driverMineUnsub = dataStreamMyActiveAsDriver(arr=>{
     const wrap=$("#driverMyActive"); wrap.innerHTML="";
-    // activo = el primero no terminado
-    const activeDoc = qs.docs.find(d=>{ const r=d.data(); return !r.finished && r.status!=="cancelled" && r.status!=="completed"; });
-    if(!activeDoc){ currentRideId=null; wrap.innerHTML=`<div class="small muted">Sin viajes activos.</div>`; clearActiveRoute(); return; }
-    const r=activeDoc.data(); currentRideId=activeDoc.id; showActiveRoute(r);
+    const active = arr.find(x=>{ const r=x.data; return !r.finished && r.status!=="cancelled" && r.status!=="completed"; });
+    if(!active){ currentRideId=null; wrap.innerHTML=`<div class="small muted">Sin viajes activos.</div>`; clearActiveRoute(); return; }
+    const {id, data:r} = active; currentRideId=id; showActiveRoute(r);
 
     const order=["requested","accepted","arrived","in_trip","completed"];
     const can=n=> order.indexOf(n)===order.indexOf(r.status)+1;
@@ -628,12 +721,12 @@ function attachDriverStreams(){
         <button class="btn${can('in_trip')?' btnp':''}" data-next="in_trip" ${can('in_trip')?'':'disabled'}>Iniciar</button>
         <button class="btn${can('completed')?' btnp':''}" data-next="completed" ${can('completed')?'':'disabled'}>Finalizar</button>
       </div>`;
-    item.querySelectorAll('[data-next]').forEach(b=> b.onclick=()=> driverAdvance(activeDoc.id,b.dataset.next));
+    item.querySelectorAll('[data-next]').forEach(b=> b.onclick=()=> driverAdvance(id,b.dataset.next));
     wrap.appendChild(item);
   });
 }
 
-/* =============== Perfil / Auth (acceso libre) =============== */
+/* ================= Perfil / Auth ================= */
 function paintProfile(){
   const el=$("#profileInfo"), av=$("#profileAvatar"); if(!currentUser){ el.textContent="Sin sesión"; av.src=""; return; }
   av.src=currentUser.photoURL||"https://i.pravatar.cc/100?u="+(currentUser.uid||'placeholder');
@@ -651,11 +744,11 @@ function refreshTabs(){
   $("#drvKycStatus").className = "pill " + (currentUser?.approved?"ok":"warn");
   $("#drvKycStatus").textContent = currentUser?.approved?"Aprobado":"No solicitado";
   const labelEmail = currentUser?.emailTyped || currentUser?.email || "";
-  $("#authPill").textContent = logged ? `${currentUser.displayName||labelEmail||'Usuario'} — ${(currentUser.role||'rider')}${currentUser.approved?' (KYC✓)':''}${currentUser.demo?' (demo)':''}` : "Sin sesión";
+  const cloudLocal = (MODE==="local") ? " (LOCAL)" : "";
+  $("#authPill").textContent = logged ? `${currentUser.displayName||labelEmail||'Usuario'} — ${(currentUser.role||'rider')}${currentUser.approved?' (KYC✓)':''}${currentUser.demo?' (demo)':''}${cloudLocal}` : "Sin sesión";
   setTab(logged ? "ride" : "access");
 }
 
-/* compresión opcional de imagen */
 function compressImage(file, maxBytes=900*1024, maxW=512){
   return new Promise((resolve,reject)=>{
     const img=new Image(), rdr=new FileReader();
@@ -673,7 +766,7 @@ function compressImage(file, maxBytes=900*1024, maxW=512){
   });
 }
 
-/* ENTRAR LIBRE (anónimo + etiqueta de correo/nombre) */
+/* ENTRAR LIBRE */
 let pendingFreeData=null;
 $("#btnFreeEnter").addEventListener("click", async ()=>{
   const emailTyped = $("#freeEmail").value.trim() || `demo-${Date.now()}@demo.local`;
@@ -684,6 +777,8 @@ $("#btnFreeEnter").addEventListener("click", async ()=>{
   try{
     pendingFreeData={emailTyped, nameTyped, photoData:null};
     if(file){ pendingFreeData.photoData = await compressImage(file); }
+
+    // Plan A: nube anónima
     const cred = await auth.signInAnonymously();
     const u = cred.user;
     const photoURL = pendingFreeData.photoData || "https://i.pravatar.cc/100?u="+u.uid;
@@ -700,9 +795,19 @@ $("#btnFreeEnter").addEventListener("click", async ()=>{
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, {merge:true});
 
-    pill($("#msg"), "¡Listo! Entraste en modo libre.", "ok");
-  }catch(_){
-    pill($("#msg"), "No se pudo iniciar sesión libre.", "error");
+    pill($("#msg"), "¡Listo! Entraste (nube).", "ok");
+  }catch(e){
+    // Fallback inmediato a local ante: operation-not-allowed, network, etc
+    switchToLocalDemo(e?.code||"");
+    const localUser = {
+      uid: "local-"+uid(),
+      emailTyped, displayName: nameTyped,
+      photoURL: pendingFreeData?.photoData || "https://i.pravatar.cc/100?u="+Date.now(),
+      role:"rider", approved:false, online:false, demo:true
+    };
+    localSetUser(localUser);
+    currentUser = localUser;
+    paintProfile(); refreshTabs(); riderAttachActiveRide();
   }finally{
     pendingFreeData=null;
   }
@@ -710,22 +815,31 @@ $("#btnFreeEnter").addEventListener("click", async ()=>{
 
 /* KYC demo y logout */
 $("#btnVerifySubmit").addEventListener("click", async ()=>{
-  if(!auth.currentUser) return toast("Iniciá sesión");
-  await usersCol.doc(auth.currentUser.uid).set({role:"driver",approved:true},{merge:true});
+  if(!currentUser) return toast("Iniciá sesión");
+  if(MODE==="cloud"){
+    await usersCol.doc(auth.currentUser.uid).set({role:"driver",approved:true},{merge:true});
+  }else{
+    currentUser.approved=true; localSetUser(currentUser);
+  }
   currentUser.approved=true; paintProfile(); refreshTabs(); setTab("driver"); toast("Conductor aprobado (demo)");
 });
-$("#btnSignOut").addEventListener("click", ()=> auth.signOut().catch(e=>toast(e.message)));
+$("#btnSignOut").addEventListener("click", async ()=>{
+  if(MODE==="cloud"){ await auth.signOut().catch(e=>toast(e.message)); }
+  currentUser=null; localStorage.removeItem(LS_USER);
+  paintProfile(); refreshTabs();
+});
 
-/* Estado de sesión */
+/* Estado de sesión (cloud) */
 auth.onAuthStateChanged(async (u)=>{
+  if(MODE==="local") return; // si ya caímos a local ignoramos cambios cloud
   if(!u){
     currentUser=null; paintProfile(); refreshTabs();
     if(riderActiveUnsub) riderActiveUnsub();
-    if(driverAvailUnsub) driverAvailUnsub();
-    if(driverMineUnsub)  driverMineUnsub();
+    if(driverAvailUnsub) driverAvailUnsub?.();
+    if(driverMineUnsub)  driverMineUnsub?.();
     return;
   }
-  // Anónimo permitido (sin verificación)
+  // anónimo permitido
   const ref=usersCol.doc(u.uid);
   const snap=await ref.get();
   if(!snap.exists){
@@ -747,69 +861,152 @@ auth.onAuthStateChanged(async (u)=>{
   ensureRideMap(); riderAttachActiveRide();
 });
 
-/* =============== Historial (consultas reales) =============== */
+/* ================= Historial ================= */
 async function loadHistory(){
   if(!currentUser) return;
-  // Como pasajero
-  const riderSnap = await ridesCol.where("riderId","==", currentUser.uid).orderBy("ts","desc").limit(30).get().catch(()=>null);
+  // Pasajero
   const riderWrap = $("#riderHistory"); riderWrap.innerHTML = "";
   let sumRider=0;
-  if(riderSnap && !riderSnap.empty){
-    riderSnap.forEach(d=>{
-      const r=d.data();
-      const isDone = r.status==="completed";
-      if(isDone) sumRider += Number(r.fare||0);
-      const el=document.createElement("div"); el.className="item";
-      el.innerHTML = `
-        <div class="inline-card">
-          <img class="avatar" src="${r.driverPhotoURL||'https://i.pravatar.cc/100?img=3'}" alt="Conductor">
-          <div>
-            <b>${r.originText}</b> → <b>${r.destText}</b>
-            <div class="small muted">${(r.km||0).toFixed(1)} km · ${Math.max(1,Math.round(r.min||0))} min · ${r.vehicle||'auto'} · ${money(r.fare||0)}</div>
-            <div class="small">Estado: <b>${r.status}</b>${r.payment?.method?` · Pago: ${r.payment.method} (${r.payment.status||'—'})`:''}</div>
-          </div>
-        </div>`;
-      riderWrap.appendChild(el);
-    });
+
+  if(MODE==="cloud"){
+    const riderSnap = await ridesCol.where("riderId","==", currentUser.uid).orderBy("ts","desc").limit(30).get().catch(()=>null);
+    if(riderSnap && !riderSnap.empty){
+      riderSnap.forEach(d=>{
+        const r=d.data();
+        if(r.status==="completed") sumRider += Number(r.fare||0);
+        riderWrap.appendChild(renderHistoryItem(r,true));
+      });
+    }else{
+      riderWrap.innerHTML = `<div class="small muted">Sin viajes como pasajero.</div>`;
+    }
   }else{
-    riderWrap.innerHTML = `<div class="small muted">Sin viajes como pasajero.</div>`;
+    const list = localLoadRides().filter(r=>r.riderId===currentUser.uid).sort((a,b)=>(b.completedAt||0)-(a.completedAt||0));
+    if(!list.length) riderWrap.innerHTML = `<div class="small muted">Sin viajes como pasajero.</div>`;
+    list.forEach(r=>{ if(r.status==="completed") sumRider+=Number(r.fare||0); riderWrap.appendChild(renderHistoryItem(r,true)); });
   }
   $("#sumRider").textContent = `Pasajero — Total: ${money(sumRider)}`;
 
-  // Como conductor
-  const driverSnap = await ridesCol.where("driverId","==", currentUser.uid).orderBy("ts","desc").limit(50).get().catch(()=>null);
+  // Conductor
   const driverWrap = $("#driverHistory"); driverWrap.innerHTML = "";
   let sumDriverToday=0, tripsToday=0;
-  const today = new Date(); today.setHours(0,0,0,0);
-  if(driverSnap && !driverSnap.empty){
-    driverSnap.forEach(d=>{
-      const r=d.data();
-      const el=document.createElement("div"); el.className="item";
-      el.innerHTML = `
-        <div class="inline-card">
-          <img class="avatar" src="${r.riderPhotoURL||'https://i.pravatar.cc/100?img=12'}" alt="Pasajero">
-          <div>
-            <b>${r.originText}</b> → <b>${r.destText}</b>
-            <div class="small muted">${(r.km||0).toFixed(1)} km · ${Math.max(1,Math.round(r.min||0))} min · ${r.vehicle||'auto'} · ${money(r.fare||0)}</div>
-            <div class="small">Estado: <b>${r.status}</b>${r.payment?.method?` · Pago: ${r.payment.method} (${r.payment.status||'—'})`:''}</div>
-          </div>
-        </div>`;
-      driverWrap.appendChild(el);
+  const startDay = new Date(); startDay.setHours(0,0,0,0);
 
-      // Resumen del día (filtrado en cliente para evitar índice compuesto)
-      const ts = r.completedAt?.toDate?.() || r.ts?.toDate?.() || null;
-      if(ts && ts>=today && r.status==="completed"){
-        tripsToday++; sumDriverToday += Number(r.fare||0);
-      }
-    });
+  const driverList = [];
+  if(MODE==="cloud"){
+    const driverSnap = await ridesCol.where("driverId","==", currentUser.uid).orderBy("ts","desc").limit(50).get().catch(()=>null);
+    if(driverSnap && !driverSnap.empty) driverSnap.forEach(d=>driverList.push(d.data()));
   }else{
-    driverWrap.innerHTML = `<div class="small muted">Sin viajes como conductor.</div>`;
+    localLoadRides().forEach(r=>{ if(r.driverId===currentUser.uid) driverList.push(r); });
   }
+  if(!driverList.length) driverWrap.innerHTML = `<div class="small muted">Sin viajes como conductor.</div>`;
+  driverList.forEach(r=>{
+    const el=renderHistoryItem(r,false); driverWrap.appendChild(el);
+    const ts = (r.completedAt && (r.completedAt.toDate?.()||new Date(r.completedAt))) || null;
+    if(ts && ts>=startDay && r.status==="completed"){ tripsToday++; sumDriverToday+=Number(r.fare||0); }
+  });
   $("#drvStatEarnings").textContent = `Ganado hoy: ${money(sumDriverToday)}`;
   $("#drvStatTrips").textContent = `Viajes hoy: ${tripsToday}`;
   $("#sumDriver").textContent = `Conductor — Ganado hoy: ${money(sumDriverToday)}`;
 }
-async function refreshEarningsToday(){ if(currentUser) { await loadHistory(); } }
+function renderHistoryItem(r,isRider){
+  const el=document.createElement("div"); el.className="item";
+  el.innerHTML = `
+    <div class="inline-card">
+      <img class="avatar" src="${(isRider?r.driverPhotoURL:r.riderPhotoURL)||'https://i.pravatar.cc/100?img=12'}" alt="${isRider?'Conductor':'Pasajero'}">
+      <div>
+        <b>${r.originText}</b> → <b>${r.destText}</b>
+        <div class="small muted">${(r.km||0).toFixed(1)} km · ${Math.max(1,Math.round(r.min||0))} min · ${r.vehicle||'auto'} · ${money(r.fare||0)}</div>
+        <div class="small">Estado: <b>${r.status}</b>${r.payment?.method?` · Pago: ${r.payment.method} (${r.payment.status||'—'})`:''}</div>
+      </div>
+    </div>`;
+  return el;
+}
+async function refreshEarningsToday(){ if(currentUser) await loadHistory(); }
+
+/* ============== Driver streams attach ============== */
+function attachDriverStreams(){
+  if(driverAvailUnsub) driverAvailUnsub();
+  if(driverMineUnsub)  driverMineUnsub();
+
+  if(!online){
+    $("#driverAvailable").innerHTML=`<div class="small muted">Presioná “Iniciar”.</div>`;
+    $("#driverMyActive").innerHTML=`<div class="small muted">Sin viajes activos.</div>`;
+    return;
+  }
+  ensureDriverMap();
+
+  driverAvailUnsub = dataStreamAvailable(arr=>{
+    const wrap=$("#driverAvailable"); wrap.innerHTML="";
+    if(!arr.length){ wrap.innerHTML=`<div class="small muted">Sin viajes por ahora…</div>`; return; }
+    arr.forEach(({id,data:r})=>{
+      if(r.reservedBy && r.reservedBy!==(MODE==="cloud"?auth.currentUser.uid:currentUser.uid)) return;
+      const item=document.createElement("div"); item.className="item";
+      item.innerHTML=`
+        <div class="inline-card">
+          <img class="avatar" src="${r.riderPhotoURL||'https://i.pravatar.cc/100?img=12'}" alt="Pasajero">
+          <div>
+            <b>${r.riderName||'Pasajero'}</b> — ${money(r.fare)} · ★${(r.riderRating||5).toFixed(1)}
+            <div class="small">${r.originText} → ${r.destText}</div>
+            <div class="small muted">${(r.km||0).toFixed(1)} km · ${r.vehicle||'auto'} · Pago: ${r.payment?.method||'—'}</div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <button class="btn" data-view>Ver ruta</button>
+          <button class="btnp" data-accept>Aceptar</button>
+        </div>`;
+      item.querySelector('[data-view]').onclick=()=> showRoutePreview(r);
+      item.querySelector('[data-accept]').onclick=()=> driverAcceptRide(id);
+      wrap.appendChild(item);
+    });
+  });
+
+  driverMineUnsub = dataStreamMyActiveAsDriver(arr=>{
+    const wrap=$("#driverMyActive"); wrap.innerHTML="";
+    const active = arr.find(x=>{ const r=x.data; return !r.finished && r.status!=="cancelled" && r.status!=="completed"; });
+    if(!active){ currentRideId=null; wrap.innerHTML=`<div class="small muted">Sin viajes activos.</div>`; clearActiveRoute(); return; }
+    const {id, data:r} = active; currentRideId=id; showActiveRoute(r);
+
+    const order=["requested","accepted","arrived","in_trip","completed"];
+    const can=n=> order.indexOf(n)===order.indexOf(r.status)+1;
+    const item=document.createElement("div"); item.className="item";
+    item.innerHTML=`
+      <div class="inline-card">
+        <img class="avatar" src="${r.riderPhotoURL||'https://i.pravatar.cc/100?img=12'}" alt="Pasajero">
+        <div>
+          <b>${r.riderName||'Pasajero'}</b> — ${money(r.fare)} · ★${(r.riderRating||5).toFixed(1)}
+          <div class="small">${r.originText} → ${r.destText}</div>
+          <div class="small muted">${(r.km||0).toFixed(1)} km · ${r.vehicle||'auto'} · Estado: <b>${r.status}</b></div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button class="btn${can('arrived')?' btnp':''}" data-next="arrived" ${can('arrived')?'':'disabled'}>Llegué</button>
+        <button class="btn${can('in_trip')?' btnp':''}" data-next="in_trip" ${can('in_trip')?'':'disabled'}>Iniciar</button>
+        <button class="btn${can('completed')?' btnp':''}" data-next="completed" ${can('completed')?'':'disabled'}>Finalizar</button>
+      </div>`;
+    item.querySelectorAll('[data-next]').forEach(b=> b.onclick=()=> driverAdvance(id,b.dataset.next));
+    wrap.appendChild(item);
+  });
+}
+
+/* ================= Render helper ================= */
+function renderAll(){
+  if(currentUser){ paintProfile(); refreshTabs(); }
+}
+
+/* ================= Historial botones ================= */
+$("#btnClearRiderHistory").addEventListener("click", ()=>{
+  // (limpia solo visual — los datos reales quedan)
+  $("#riderHistory").innerHTML=`<div class="small muted">Sin viajes.</div>`;
+  toast("OK");
+});
+
+/* ================= Inicio (si ya había local) ================= */
+const remembered = localGetUser();
+if(remembered){
+  switchToLocalDemo();
+  currentUser = remembered;
+  paintProfile(); refreshTabs(); riderAttachActiveRide();
+}
 </script>
 </body>
 </html>
