@@ -1,10 +1,9 @@
-
 <!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Taxi Ya — estilo Uber (cuentas reales + lista de viajes limpia)</title>
+<title>Taxi Ya — estilo Uber (cuentas reales + lista limpia)</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -53,28 +52,23 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:800;cursor:poin
 .item{border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(255,255,255,.02)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;z-index:9999;background:rgba(24,30,38,.95);color:#fff;padding:10px 14px;border-radius:12px;border:1px solid #000;font-weight:700}
 
-/* Tabs (sin emojis) */
+/* Tabs */
 nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid var(--line); display:flex; gap:8px; padding:8px; border-radius:12px; backdrop-filter: blur(6px)}
 .tab-btn{flex:1 1 0; min-width:100px; height:44px; display:flex; align-items:center; justify-content:center; gap:6px; border-radius:999px; font-weight:800; cursor:pointer; background:transparent; border:1px solid var(--line); color:var(--ink)}
 .tab-btn.active{background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#082532; border-color:transparent}
 .hide{display:none!important}
 
-/* MAPA “Uber-like”: CARTO Voyager clarito + filtro para tono azulado/gris (no tan oscuro) */
+/* MAPA CARTO Voyager aclarado */
 .map{width:100%;height:62vh;min-height:360px;border-radius:16px;border:1px solid var(--line);overflow:hidden;position:relative}
 .map-top{position:absolute; left:10px; right:10px; top:10px; z-index:400; display:none; padding:8px 12px; border-radius:12px; font-weight:800; border:1px solid var(--line); background:rgba(0,0,0,.28); backdrop-filter: blur(4px)}
 .map-top.show{display:block}
-/* aclarado / azul suave */
-#mapRide .leaflet-tile, #mapDriver .leaflet-tile{
-  filter: brightness(1.06) contrast(1.02) saturate(1.05) hue-rotate(185deg);
-}
+#mapRide .leaflet-tile, #mapDriver .leaflet-tile{ filter: brightness(1.06) contrast(1.02) saturate(1.05) hue-rotate(185deg); }
 
 /* Barra conductor */
 .ctrlbar{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px}
 .ctrlbar .timer{justify-self:center;border:1px solid var(--line);padding:8px 14px;border-radius:999px;font-weight:800;background:rgba(255,255,255,.06)}
-.ctrlbar .l{justify-self:start}
-.ctrlbar .r{justify-self:end}
 
-/* Marcador auto (SVG profesional) */
+/* Marcador auto (SVG) */
 .car-ico{width:38px;height:38px;display:grid;place-items:center;transform: translate(-50%,-50%);}
 .car-ico svg{width:32px;height:32px;filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); transform: rotate(var(--rot,0deg));}
 
@@ -117,10 +111,11 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
       <div class="row" style="margin-top:6px">
         <button class="btnp" id="btnSignIn" type="button">Entrar</button>
         <button class="btn"  id="btnResend" type="button">Reenviar verificación</button>
+        <button class="btn"  id="btnForgot" type="button">Olvidé mi contraseña</button>
       </div>
     </div>
 
-    <!-- REGISTRO (real, con compresión de foto y verificación por email) -->
+    <!-- REGISTRO (con compresión de foto + verificación) -->
     <div id="registerBox" class="hide">
       <div class="row">
         <div><label>Nombre</label><input id="regName" placeholder="Tu nombre y apellido"></div>
@@ -170,7 +165,7 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
     </div>
   </section>
 
-  <!-- HISTORIAL (local simple) -->
+  <!-- HISTORIAL -->
   <section id="panel-history" class="card hide">
     <h2>Historial</h2>
     <div class="row" style="justify-content:flex-end"><button class="btn" id="btnClearRiderHistory">Limpiar</button></div>
@@ -181,9 +176,9 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
   <section id="panel-driver" class="card hide">
     <h2>Conductor</h2>
     <div class="ctrlbar">
-      <div class="l"><button class="btnp" id="btnStartRoute" disabled>Iniciar</button></div>
+      <div><button class="btnp" id="btnStartRoute" disabled>Iniciar</button></div>
       <div class="timer" id="onlineTimer">00:00:00</div>
-      <div class="r">
+      <div>
         <div class="row" style="gap:6px">
           <button class="btn" id="btnPauseRoute" disabled>Pausar</button>
           <button class="btnd" id="btnStopRoute" disabled>Terminar</button>
@@ -243,7 +238,12 @@ const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',ma
 function toast(msg,ms=1700){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hide"); setTimeout(()=>t.classList.add("hide"),ms); }
 function pill(el, text, cls){ el.textContent=text; el.className=`pill ${cls||''}`; el.classList.remove('hide'); }
 const toRad=d=>d*Math.PI/180;
-const km2=(a,b)=>{const R=6371,dLat=toRad(b.lat-a.lat),dLon=toRad(b.lng-a.lng);const la1=toRad(a.lat),la2=toRad(b.lat);const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(Math.pow(Math.sin((dLon)/2),2));return 2*R*Math.asin(Math.sqrt(h));};
+const km2=(a,b)=>{ // Haversine (arreglo del error)
+  const R=6371, dLat=toRad(b.lat-a.lat), dLon=toRad(b.lng-a.lng);
+  const la1=toRad(a.lat), la2=toRad(b.lat);
+  const h=Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+};
 const bearing=(a,b)=>{const φ1=toRad(a.lat), φ2=toRad(b.lat), Δλ=toRad(b.lng-a.lng); const y=Math.sin(Δλ)*Math.cos(φ2); const x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ); return (Math.atan2(y,x)*180/Math.PI+360)%360;}
 function fmtTime(ms){ const s=Math.floor(ms/1000); const h=String(Math.floor(s/3600)).padStart(2,"0"); const m=String(Math.floor((s%3600)/60)).padStart(2,"0"); const ss=String(s%60).padStart(2,"0"); return `${h}:${m}:${ss}`;}
 function showIndexHint(e){ if(e?.message?.toLowerCase?.().includes("index")) pill($("#msg"), "⚠️ Firestore pide crear un índice para esa consulta. Abrí la consola y seguí el link sugerido.", "warn"); }
@@ -346,7 +346,7 @@ $("#btnLocate").addEventListener("click", ()=>{
   }, ()=>toast("No se pudo ubicar"), {enableHighAccuracy:true,timeout:5000,maximumAge:15000});
 });
 
-/* Crear viaje (se crea con driverId:null y reservedBy:null) */
+/* Crear viaje */
 $("#btnUnified").addEventListener("click", riderCreateRide);
 $("#btnCancel").addEventListener("click", ()=>{});
 
@@ -357,16 +357,13 @@ async function riderCreateRide(){
   if(existing && !existing.empty) return toast("Ya tenés un viaje activo");
   const km=km2(origin,dest), fare=estimateFareRaw(km);
   const data={
-    riderId: currentUser.uid,
-    riderName: currentUser.displayName || currentUser.email,
-    riderPhotoURL: currentUser.photoURL || "",
-    riderRating: currentUser.rating || 5,
-    riderEmail: currentUser.email,
+    riderId: currentUser.uid, riderName: currentUser.displayName || currentUser.email,
+    riderPhotoURL: currentUser.photoURL || "", riderRating: currentUser.rating || 5, riderEmail: currentUser.email,
     originText: $("#riderOrigin").value.trim() || `${origin.lat.toFixed(5)}, ${origin.lng.toFixed(5)}`,
     destText: $("#riderDest").value.trim() || `${dest.lat.toFixed(5)}, ${dest.lng.toFixed(5)}`,
     origin, dest, km, fare, vehicle: $("#reqType").value || "auto",
     payment: {method:$("#payMethod").value||null,status:"pending"},
-    driverId: null, reservedBy: null,      // <<<< clave para filtrar
+    driverId: null, reservedBy: null,
     status:"requested", finished:false,
     ts: firebase.firestore.FieldValue.serverTimestamp()
   };
@@ -488,17 +485,14 @@ function attachDriverStreams(){
   }
   ensureDriverMap();
 
-  // DISPONIBLES: renderizamos SOLO si no están tomados ni “reservados”
+  // SOLO viajes realmente disponibles
   driverAvailUnsub = ridesCol.where("status","==","requested").limit(60)
   .onSnapshot(qs=>{
     const wrap=$("#driverAvailable"); wrap.innerHTML="";
     if(qs.empty){ wrap.innerHTML=`<div class="small muted">Sin viajes por ahora…</div>`; return; }
     qs.forEach(doc=>{
       const r=doc.data();
-
-      // filtro de seguridad en cliente (sin requerir índice extra)
-      if(r.reservedBy && r.reservedBy!==auth.currentUser.uid) return;
-
+      if(r.reservedBy && r.reservedBy!==auth.currentUser.uid) return; // ocultar si otro los “tiene en mano”
       const item=document.createElement("div"); item.className="item";
       item.innerHTML=`
         <div class="inline-card">
@@ -519,7 +513,6 @@ function attachDriverStreams(){
     });
   }, showIndexHint);
 
-  // MI ACTIVO
   driverMineUnsub = ridesCol.where("driverId","==", auth.currentUser.uid).where("finished","==",false)
   .onSnapshot(qs=>{
     const wrap=$("#driverMyActive"); wrap.innerHTML="";
@@ -579,7 +572,7 @@ async function showActiveRoute(r){
   const top=$("#driverMapTop"); top.textContent=`${r.originText} → ${r.destText} · ${(r.km||0).toFixed(1)} km · ${money(r.fare||0)}`; top.classList.add("show"); setTimeout(()=>top.classList.remove("show"),1500);
 }
 
-/* Aceptar: “reserva” y aceptación atómica para que no aparezca tomado por otro */
+/* Aceptar: transacción con “reservedBy” para que no aparezca a otros */
 async function driverAcceptRide(rideId){
   try{
     await db.runTransaction(async tx=>{
@@ -633,7 +626,7 @@ function refreshTabs(){
   setTab(logged ? "ride" : "access");
 }
 
-/* compresión de imagen para no pasar 1MB en Firestore */
+/* compresión de imagen para que Firestore no rechace (>1MB) */
 function compressImage(file, maxBytes=900*1024, maxW=512){
   return new Promise((resolve,reject)=>{
     const img=new Image(), rdr=new FileReader();
@@ -651,18 +644,37 @@ function compressImage(file, maxBytes=900*1024, maxW=512){
   });
 }
 
-/* Registro real + verificación */
+/* helper: chequear si el correo ya existe */
+async function emailExists(email){
+  try{ const m=await auth.fetchSignInMethodsForEmail(email); return Array.isArray(m)&&m.length>0; }catch(_){ return false; }
+}
+
+/* Registro real + verificación + prechequeo “ya en uso” */
 $("#btnSignUp").addEventListener("click", async ()=>{
   const name=$("#regName").value.trim(), email=$("#regEmail").value.trim(), pass=$("#regPass").value, file=$("#regPhoto").files[0];
   if(!name || !email || pass.length<6 || !file){ pill($("#msg"),"Completá todos los campos (foto obligatoria).","error"); return; }
   try{
+    if(await emailExists(email)){
+      $("#loginEmail").value=email; $("#loginPass").focus();
+      pill($("#msg"),"Ese correo ya tiene cuenta. Iniciá sesión o usá “Olvidé mi contraseña”.","warn");
+      $("#goLogin").click();
+      return;
+    }
     const photoURL = await compressImage(file);
     const {user}=await auth.createUserWithEmailAndPassword(email,pass);
     await user.updateProfile({displayName:name, photoURL});
     await user.sendEmailVerification();
     await usersCol.doc(user.uid).set({uid:user.uid,email:user.email,displayName:name,photoURL,role:"rider",approved:false,online:false,createdAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
     pill($("#msg"),"Cuenta creada. Te enviamos un correo para verificar. Verifícala y luego inicia sesión.","ok");
-  }catch(e){ pill($("#msg"),e.message,"error"); }
+  }catch(e){
+    if(e?.code==="auth/email-already-in-use"){
+      $("#loginEmail").value=$("#regEmail").value.trim();
+      $("#goLogin").click();
+      pill($("#msg"),"Ese correo ya está registrado. Iniciá sesión o restablecé tu contraseña.","warn");
+    }else{
+      pill($("#msg"),e.message,"error");
+    }
+  }
 });
 
 /* Login: SOLO si el correo está verificado */
@@ -672,7 +684,7 @@ $("#btnSignIn").addEventListener("click", async ()=>{
     const {user}=await auth.signInWithEmailAndPassword(email,pass);
     if(!user.emailVerified){
       await auth.signOut();
-      pill($("#msg"),"Tu correo no está verificado. Revisa tu bandeja o pulsa “Reenviar verificación”.","warn");
+      pill($("#msg"),"Tu correo no está verificado. Revisá tu bandeja o pulsa “Reenviar verificación”.","warn");
     }
   }catch(e){ pill($("#msg"),e.message,"error"); }
 });
@@ -685,6 +697,13 @@ $("#btnResend").addEventListener("click", async ()=>{
     await auth.signOut();
     pill($("#msg"),"Verificación reenviada. Revisá tu correo.","ok");
   }catch(e){ pill($("#msg"),e.message,"error"); }
+});
+/* OLVIDÉ MI CONTRASEÑA */
+$("#btnForgot").addEventListener("click", async ()=>{
+  const email=$("#loginEmail").value.trim();
+  if(!email) return pill($("#msg"),"Escribí tu correo para enviar el enlace.","warn");
+  try{ await auth.sendPasswordResetEmail(email); pill($("#msg"),"Te envié un correo para restablecer tu contraseña.","ok"); }
+  catch(e){ pill($("#msg"),e.message,"error"); }
 });
 
 $("#btnVerifySubmit").addEventListener("click", async ()=>{
@@ -714,7 +733,7 @@ auth.onAuthStateChanged(async (u)=>{
   ensureRideMap(); riderAttachActiveRide();
 });
 
-/* ================= Historial (placeholder) ================= */
+/* ================= Historial (simple) ================= */
 function renderHistory(){
   if(!currentUser) return; const key=`taxiya_rider_history_${currentUser.email}`; let list=[]; try{list=JSON.parse(localStorage.getItem(key)||"[]");}catch(_){}
   const wrap=$("#riderHistory"); wrap.innerHTML=""; if(!list.length) wrap.innerHTML=`<div class="small muted">Sin viajes.</div>`;
@@ -727,5 +746,3 @@ window.addEventListener("focus", ()=>{ try{mapRide&&mapRide.invalidateSize(); ma
 </script>
 </body>
 </html>
-
-
