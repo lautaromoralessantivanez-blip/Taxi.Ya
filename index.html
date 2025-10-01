@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Taxi Ya — estilo Uber (fix login)</title>
+<title>Taxi Ya — demo login libre</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -103,13 +103,16 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
     <!-- LOGIN -->
     <div id="loginBox">
       <div class="row">
-        <div><label>Correo</label><input id="loginEmail" type="email" placeholder="tucorreo@dominio.com" autocomplete="username"></div>
+        <div><label>Correo (o escribe cualquiera para demo)</label><input id="loginEmail" type="email" placeholder="tucorreo@dominio.com" autocomplete="username"></div>
         <div><label>Contraseña</label><input id="loginPass" type="password" placeholder="••••••" autocomplete="current-password"></div>
       </div>
       <div class="row" style="margin-top:6px">
         <button class="btnp" id="btnSignIn" type="button">Entrar</button>
         <button class="btn"  id="btnResend" type="button">Reenviar verificación</button>
         <button class="btn"  id="btnForgot" type="button">Olvidé mi contraseña</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button class="btn" id="btnFast" type="button">Entrar rápido (demo, cualquier correo)</button>
       </div>
     </div>
 
@@ -236,7 +239,6 @@ const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',ma
 function toast(msg,ms=1700){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hide"); setTimeout(()=>t.classList.add("hide"),ms); }
 function pill(el, text, cls){ el.textContent=text; el.className=`pill ${cls||''}`; el.classList.remove('hide'); }
 const normalizeEmail = e => String(e||"").trim().toLowerCase();
-
 const toRad=d=>d*Math.PI/180;
 const km2=(a,b)=>{ const R=6371, dLat=toRad(b.lat-a.lat), dLon=toRad(b.lng-a.lng);
   const la1=toRad(a.lat), la2=toRad(b.lat);
@@ -355,8 +357,8 @@ async function riderCreateRide(){
   if(existing && !existing.empty) return toast("Ya tenés un viaje activo");
   const km=km2(origin,dest), fare=estimateFareRaw(km);
   const data={
-    riderId: currentUser.uid, riderName: currentUser.displayName || currentUser.email,
-    riderPhotoURL: currentUser.photoURL || "", riderRating: currentUser.rating || 5, riderEmail: currentUser.email,
+    riderId: currentUser.uid, riderName: currentUser.displayName || currentUser.email || "Pasajero",
+    riderPhotoURL: currentUser.photoURL || "", riderRating: currentUser.rating || 5, riderEmail: currentUser.email || currentUser.emailTyped || "demo@demo",
     originText: $("#riderOrigin").value.trim() || `${origin.lat.toFixed(5)}, ${origin.lng.toFixed(5)}`,
     destText: $("#riderDest").value.trim() || `${dest.lat.toFixed(5)}, ${dest.lng.toFixed(5)}`,
     origin, dest, km, fare, vehicle: $("#reqType").value || "auto",
@@ -459,6 +461,7 @@ function setOnlineUI(isOnline){
   $("#btnPauseRoute").disabled = !currentUser?.approved || !online;
   $("#btnStopRoute").disabled  = !currentUser?.approved || !online;
 }
+function fmtTime(ms){ const s=Math.floor(ms/1000); const h=String(Math.floor(s/3600)).padStart(2,"0"); const m=String(Math.floor((s%3600)/60)).padStart(2,"0"); const ss=String(s%60).padStart(2,"0"); return `${h}:${m}:${ss}`;}
 function startTimer(){ onStart=Date.now(); $("#onlineTimer").textContent="00:00:00"; if(onTimer) clearInterval(onTimer); onTimer=setInterval(()=>$("#onlineTimer").textContent=fmtTime(Date.now()-onStart),1000); }
 function stopTimer(reset=true){ if(onTimer) clearInterval(onTimer); if(reset) $("#onlineTimer").textContent="00:00:00"; }
 
@@ -539,11 +542,12 @@ function attachDriverStreams(){
   });
 }
 
-/* ================= Perfil / Auth (cuentas reales) ================= */
+/* ================= Perfil / Auth ================= */
 function paintProfile(){
   const el=$("#profileInfo"), av=$("#profileAvatar"); if(!currentUser){ el.textContent="Sin sesión"; av.src=""; return; }
-  av.src=currentUser.photoURL||"https://i.pravatar.cc/100?u=placeholder";
-  el.innerHTML=`Nombre: <b>${currentUser.displayName||"—"}</b> · Correo: <b>${currentUser.email}</b><br>Rol: <b>${currentUser.role||'rider'}</b> · KYC: <b>${currentUser.approved?'Aprobado':'No'}</b>`;
+  av.src=currentUser.photoURL||"https://i.pravatar.cc/100?u="+(currentUser.uid||'placeholder');
+  const tagDemo = currentUser.demo ? " (demo)" : "";
+  el.innerHTML=`Nombre: <b>${currentUser.displayName||"—"}</b> · Correo: <b>${currentUser.email||currentUser.emailTyped||"—"}</b>${tagDemo}<br>Rol: <b>${currentUser.role||'rider'}</b> · KYC: <b>${currentUser.approved?'Aprobado':'No'}</b>`;
 }
 function refreshTabs(){
   const logged=!!currentUser;
@@ -555,7 +559,8 @@ function refreshTabs(){
   $("#btnStartRoute").disabled = !(logged && currentUser.approved);
   $("#drvKycStatus").className = "pill " + (currentUser?.approved?"ok":"warn");
   $("#drvKycStatus").textContent = currentUser?.approved?"Aprobado":"No solicitado";
-  $("#authPill").textContent = logged ? `${currentUser.displayName||currentUser.email} — ${(currentUser.role||'rider')}${currentUser.approved?' (KYC✓)':''}` : "Sin sesión";
+  const labelEmail = currentUser?.email || currentUser?.emailTyped || "";
+  $("#authPill").textContent = logged ? `${currentUser.displayName||labelEmail||'Usuario'} — ${(currentUser.role||'rider')}${currentUser.approved?' (KYC✓)':''}${currentUser.demo?' (demo)':''}` : "Sin sesión";
   setTab(logged ? "ride" : "access");
 }
 
@@ -577,7 +582,7 @@ function compressImage(file, maxBytes=900*1024, maxW=512){
   });
 }
 
-/* Registro */
+/* Registro normal (con verificación) */
 $("#btnSignUp").addEventListener("click", async ()=>{
   const name = $("#regName").value.trim();
   const email = normalizeEmail($("#regEmail").value);
@@ -617,7 +622,7 @@ $("#btnSignUp").addEventListener("click", async ()=>{
     if(code==="auth/email-already-in-use"){
       $("#goLogin").click();
       $("#loginEmail").value = email;
-      pill($("#msg"), "Ese correo ya está registrado. Iniciá sesión o restablecé tu contraseña.", "warn");
+      pill($("#msg"), "Ese correo ya está registrado. Podés usar “Entrar rápido (demo)” para continuar igual.", "warn");
     }else if(code==="auth/invalid-email"){
       pill($("#msg"), "Correo inválido.", "error");
     }else{
@@ -626,7 +631,7 @@ $("#btnSignUp").addEventListener("click", async ()=>{
   }
 });
 
-/* Reenviar verificación (login temporal) */
+/* Reenviar verificación */
 $("#btnResend").addEventListener("click", async ()=>{
   const email = normalizeEmail($("#loginEmail").value);
   const pass  = $("#loginPass").value;
@@ -642,7 +647,7 @@ $("#btnResend").addEventListener("click", async ()=>{
   }catch(e){
     const code=e?.code||"";
     if(code==="auth/user-not-found"){
-      pill($("#msg"), "Ese correo no tiene cuenta. Registrate primero.", "warn");
+      pill($("#msg"), "Ese correo no tiene cuenta. Registrate o usa “Entrar rápido (demo)”.", "warn");
     }else if(code==="auth/wrong-password" || code==="auth/invalid-credential"){
       pill($("#msg"), "Correo o contraseña incorrectos.", "error");
     }else{
@@ -659,7 +664,7 @@ $("#btnForgot").addEventListener("click", async ()=>{
   catch(_){ pill($("#msg"),"No se pudo enviar el correo. Verificá el email.","error"); }
 });
 
-/* Login: ahora mapea auth/invalid-credential como credenciales incorrectas */
+/* Login normal (mapea invalid-credential) */
 $("#btnSignIn").addEventListener("click", async ()=>{
   const email = normalizeEmail($("#loginEmail").value);
   const pass  = $("#loginPass").value;
@@ -667,12 +672,12 @@ $("#btnSignIn").addEventListener("click", async ()=>{
     const { user } = await auth.signInWithEmailAndPassword(email, pass);
     if(!user.emailVerified){
       await auth.signOut();
-      pill($("#msg"), "Tu correo no está verificado. Revisá tu bandeja o pulsa “Reenviar verificación”.", "warn");
+      pill($("#msg"), "Tu correo no está verificado. Revisá tu bandeja o usa “Entrar rápido (demo)”.", "warn");
     }
   }catch(e){
     const code=e?.code||"";
     if(code==="auth/user-not-found"){
-      pill($("#msg"), "No existe una cuenta con ese correo. Registrate.", "warn");
+      pill($("#msg"), "No existe una cuenta con ese correo. Registrate o usa “Entrar rápido (demo)”.", "warn");
     }else if(code==="auth/wrong-password" || code==="auth/invalid-credential"){
       pill($("#msg"), "Correo o contraseña incorrectos.", "error");
     }else{
@@ -681,6 +686,32 @@ $("#btnSignIn").addEventListener("click", async ()=>{
   }
 });
 
+/* ✨ ENTRAR RÁPIDO (DEMO): anónimo + guarda nombre/correo que escribiste */
+$("#btnFast").addEventListener("click", async ()=>{
+  const emailTyped = $("#loginEmail").value.trim() || `demo-${Date.now()}@demo.local`;
+  try{
+    const cred = await auth.signInAnonymously();
+    const u = cred.user;
+    const displayName = emailTyped.split('@')[0];
+    const photoURL = "https://i.pravatar.cc/100?u="+u.uid;
+    await usersCol.doc(u.uid).set({
+      uid: u.uid,
+      emailTyped,                // guardamos el correo que escribiste (no verificado)
+      displayName,
+      photoURL,
+      role:"rider",
+      approved:false,
+      online:false,
+      demo:true,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, {merge:true});
+    // onAuthStateChanged se encargará del resto
+  }catch(_){
+    pill($("#msg"), "No se pudo entrar en modo demo.", "error");
+  }
+});
+
+/* KYC demo, logout */
 $("#btnVerifySubmit").addEventListener("click", async ()=>{
   if(!auth.currentUser) return toast("Iniciá sesión");
   await usersCol.doc(auth.currentUser.uid).set({role:"driver",approved:true},{merge:true});
@@ -688,6 +719,7 @@ $("#btnVerifySubmit").addEventListener("click", async ()=>{
 });
 $("#btnSignOut").addEventListener("click", ()=> auth.signOut().catch(e=>toast(e.message)));
 
+/* Estado de sesión */
 auth.onAuthStateChanged(async (u)=>{
   if(!u){
     currentUser=null; paintProfile(); refreshTabs();
@@ -696,13 +728,26 @@ auth.onAuthStateChanged(async (u)=>{
     if(driverMineUnsub)  driverMineUnsub();
     return;
   }
-  if(!u.emailVerified){
+  // Para usuarios reales, exigir verificación; para anónimos, permitir.
+  if(!u.isAnonymous && !u.emailVerified){
     await auth.signOut();
-    pill($("#msg"),"Tu correo no está verificado. Verifícalo para usar la app.","warn");
+    pill($("#msg"),"Tu correo no está verificado. Verifícalo o usa “Entrar rápido (demo)”.","warn");
     return;
   }
-  const ref=usersCol.doc(u.uid); const snap=await ref.get();
-  if(!snap.exists) await ref.set({uid:u.uid,email:u.email,displayName:u.displayName||"",photoURL:u.photoURL||"",role:"rider",approved:false,online:false,createdAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  const ref=usersCol.doc(u.uid);
+  const snap=await ref.get();
+  if(!snap.exists){
+    await ref.set({
+      uid:u.uid,
+      email: u.email || null,
+      emailTyped: null,
+      displayName: u.displayName || (u.email ? u.email.split('@')[0] : 'Invitado'),
+      photoURL: u.photoURL || "https://i.pravatar.cc/100?u="+u.uid,
+      role:"rider", approved:false, online:false,
+      demo: u.isAnonymous===true,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, {merge:true});
+  }
   currentUser=(await ref.get()).data();
   paintProfile(); refreshTabs();
   ensureRideMap(); riderAttachActiveRide();
@@ -710,10 +755,10 @@ auth.onAuthStateChanged(async (u)=>{
 
 /* ================= Historial (simple) ================= */
 function renderHistory(){
-  if(!currentUser) return; const key=`taxiya_rider_history_${currentUser.email}`; let list=[]; try{list=JSON.parse(localStorage.getItem(key)||"[]");}catch(_){}
+  if(!currentUser) return; const key=`taxiya_rider_history_${currentUser.uid}`; let list=[]; try{list=JSON.parse(localStorage.getItem(key)||"[]");}catch(_){}
   const wrap=$("#riderHistory"); wrap.innerHTML=""; if(!list.length) wrap.innerHTML=`<div class="small muted">Sin viajes.</div>`;
 }
-$("#btnClearRiderHistory").addEventListener("click", ()=>{ if(!currentUser) return; localStorage.setItem(`taxiya_rider_history_${currentUser.email}`,"[]"); renderHistory(); toast("OK"); });
+$("#btnClearRiderHistory").addEventListener("click", ()=>{ if(!currentUser) return; localStorage.setItem(`taxiya_rider_history_${currentUser.uid}`,"[]"); renderHistory(); toast("OK"); });
 
 /* ================= Map instances ================= */
 let mapRideInstantiated=false,mapDriverInstantiated=false;
@@ -721,7 +766,6 @@ function ensureRideMap(){ if(mapRideInstantiated) return; mapRideInstantiated=tr
   mapRide=L.map('mapRide',{zoomControl:false}); L.control.zoom({position:'bottomright'}).addTo(mapRide); uberTiles().addTo(mapRide); mapRide.setView([-31.5375,-68.5364],12); }
 function ensureDriverMap(){ if(mapDriverInstantiated) return; mapDriverInstantiated=true;
   mapDriver=L.map('mapDriver',{zoomControl:false}); L.control.zoom({position:'bottomright'}).addTo(mapDriver); uberTiles().addTo(mapDriver); mapDriver.setView([-31.5375,-68.5364],13); }
-
 </script>
 </body>
 </html>
