@@ -35,7 +35,7 @@ header{position:sticky;top:0;z-index:60;background:rgba(11,15,21,.88);
 .brand{font-weight:800;letter-spacing:.2px}
 .badge{border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px;opacity:.9}
 
-/* Desktop: tabs arriba (sticky) */
+/* Desktop: tabs arriba */
 nav.tabs{position:sticky; top:0; background:rgba(15,20,29,.75);
   border:1px solid var(--line); display:flex; gap:8px; padding:8px; border-radius:12px;
   backdrop-filter: blur(6px); z-index:50}
@@ -77,34 +77,44 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:800;cursor:poin
 .map-top{position:absolute; left:10px; right:10px; top:10px; z-index:400; display:none; padding:8px 12px; border-radius:12px; font-weight:800; border:1px solid var(--line); background:rgba(0,0,0,.28); backdrop-filter: blur(4px)}
 .map-top.show{display:block}
 
+/* Overlay selector origen/destino */
+.pick-chooser{position:absolute; left:10px; right:10px; top:56px; z-index:450; display:none; gap:8px;
+  align-items:center; justify-content:space-between; padding:8px; border-radius:12px; border:1px solid var(--line); background:rgba(0,0,0,.55); backdrop-filter:blur(6px)}
+.pick-chooser.show{display:flex}
+
 /* Tema (clases en <body>) */
 body.theme-darkblue #mapRide .leaflet-tile,
-body.theme-darkblue #mapDriver .leaflet-tile{
-  filter: brightness(1.1) contrast(1.15) saturate(1.25) hue-rotate(205deg);
-}
-body.theme-light #mapRide .leaflet-tile,
-body.theme-light #mapDriver .leaflet-tile{ filter:none }
+body.theme-darkblue #mapDriver .leaflet-tile{ filter: brightness(1.1) contrast(1.15) saturate(1.25) hue-rotate(205deg) }
+body.theme-light    #mapRide .leaflet-tile,
+body.theme-light    #mapDriver .leaflet-tile{ filter:none }
 
 /* Icono auto */
 .car-ico{width:38px;height:38px;display:grid;place-items:center;transform: translate(-50%,-50%);}
 .car-ico svg{width:32px;height:32px;filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); transform: rotate(var(--rot,0deg));}
 
-/* ====== Mobile fix: tabs abajo SIEMPRE ====== */
+/* ====== Chat ====== */
+.chat-wrap{margin-top:10px}
+.chat-list{display:flex;flex-direction:column;gap:6px;max-height:32svh;overflow:auto;padding:8px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02)}
+.chat-msg{padding:8px 10px;border-radius:12px;max-width:80%}
+.chat-msg.me{align-self:flex-end;background:linear-gradient(180deg,var(--accent),var(--accent2));color:#082532}
+.chat-msg.other{align-self:flex-start;background:rgba(255,255,255,.06)}
+.chat-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.chat-input-row{display:flex;gap:6px;margin-top:6px}
+.chat-input-row input{flex:1 1 auto}
+
+/* ====== Mobile: tabs abajo sin solapes ====== */
 @media (max-width:900px){
-  /* Importante: anular el top heredado para que NO quede arriba */
   nav.tabs{
     position:fixed;
-    top:auto !important;            /* <- FIX clave */
+    top:auto !important;
     bottom:calc(10px + var(--safe-bottom));
     left:12px; right:12px;
     z-index:70;
   }
-  body{padding-bottom:calc(110px + var(--safe-bottom))}
-  .map{height:calc(100svh - 300px)} /* evita que la barra tape el mapa */
+  body{padding-bottom:calc(120px + var(--safe-bottom))}
+  .map{height:calc(100svh - 320px)}
 }
-@media (min-width:901px){
-  .map{height:62vh}
-}
+@media (min-width:901px){ .map{height:62vh} }
 
 /* ====== Subpestañas Ajustes ====== */
 .subtabs{display:flex; gap:6px; flex-wrap:wrap; margin:8px 0}
@@ -113,6 +123,11 @@ body.theme-light #mapDriver .leaflet-tile{ filter:none }
 .subtab-btn.active{background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#082532; border-color:transparent}
 .settings-pane{display:none}
 .settings-pane.active{display:block}
+
+/* ====== Trofeos ====== */
+.trophy-shelf{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.trophy{display:grid;place-items:center;width:64px;height:64px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:28px}
+.trophy.lock{opacity:.35;filter:grayscale(1)}
 </style>
 </head>
 <body class="theme-darkblue">
@@ -189,23 +204,6 @@ body.theme-light #mapDriver .leaflet-tile{ filter:none }
       <div><label>Tarifa</label><input id="fare" readonly value="$0"></div>
     </div>
 
-    <!-- Marcar en mapa -->
-    <div class="row" style="margin-top:10px">
-      <div style="flex:2 1 320px">
-        <label>Marcar en mapa</label>
-        <div class="inline-card" role="radiogroup" aria-label="Seleccionar en mapa">
-          <label style="display:flex;align-items:center;gap:6px"><input type="radio" name="pick" id="pickNone" value="none" checked/> Ninguno</label>
-          <label style="display:flex;align-items:center;gap:6px"><input type="radio" name="pick" id="pickOrigin" value="origin"/> Origen</label>
-          <label style="display:flex;align-items:center;gap:6px"><input type="radio" name="pick" id="pickDest" value="dest"/> Destino</label>
-        </div>
-        <div class="small muted">Tocá el mapa para fijar el punto seleccionado.</div>
-      </div>
-      <div style="flex:1 1 160px;align-self:flex-end"><button class="btn" id="btnGeoRO">Buscar origen</button></div>
-      <div style="flex:1 1 160px;align-self:flex-end"><button class="btn" id="btnGeoRD">Buscar destino</button></div>
-      <div style="flex:1 1 160px;align-self:flex-end"><button class="btnp" id="btnUnified" type="button">Pedir viaje</button></div>
-      <div style="flex:1 1 120px;align-self:flex-end"><button class="btnd hide" id="btnCancel" type="button">Cancelar</button></div>
-    </div>
-
     <div class="inline-card hide" id="driverCard" style="margin-top:10px">
       <img id="driverAvatar" class="avatar" alt="Conductor">
       <div><b id="driverName">Conductor</b><div class="small muted" id="driverExtra">—</div></div>
@@ -214,6 +212,26 @@ body.theme-light #mapDriver .leaflet-tile{ filter:none }
     <div style="position:relative; margin-top:10px">
       <div id="mapRide" class="map" aria-label="Mapa del pasajero"></div>
       <div id="rideMapTop" class="map-top"></div>
+      <!-- selector Origen/Destino en overlay -->
+      <div id="pickChooser" class="pick-chooser">
+        <span>¿Usar este punto como…?</span>
+        <div class="row" style="gap:6px;flex:0 0 auto">
+          <button id="btnPickAsOrigin" class="btn">Origen</button>
+          <button id="btnPickAsDest" class="btn">Destino</button>
+          <button id="btnPickCancel" class="btnd">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat pasajero -->
+    <div id="chatWrapRider" class="chat-wrap hide" aria-live="polite">
+      <h3>Chat con conductor</h3>
+      <div id="chatListRider" class="chat-list" aria-label="Mensajes"></div>
+      <div class="chat-input-row">
+        <input id="chatInputRider" placeholder="Escribe un mensaje (moderado)…" maxlength="500">
+        <button id="chatSendRider" class="btnp" type="button">Enviar</button>
+      </div>
+      <div class="small muted">No se permiten insultos ni lenguaje inapropiado.</div>
     </div>
   </section>
 
@@ -227,7 +245,7 @@ body.theme-light #mapDriver .leaflet-tile{ filter:none }
   <!-- ====== CONDUCTOR ====== -->
   <section id="panel-driver" class="card hide">
     <h2>Conductor</h2>
-    <div class="ctrlbar row" style="align-items:center">
+    <div class="row" style="align-items:center">
       <button class="btnp" id="btnStartRoute" disabled>Iniciar</button>
       <div class="pill" id="onlineTimer">00:00:00</div>
       <div class="row" style="gap:6px;flex:1 1 280px">
@@ -245,6 +263,17 @@ body.theme-light #mapDriver .leaflet-tile{ filter:none }
 
     <h3>Mi viaje activo</h3>
     <div id="driverMyActive" class="list"></div>
+
+    <!-- Chat conductor -->
+    <div id="chatWrapDriver" class="chat-wrap hide" aria-live="polite">
+      <h3>Chat con pasajero</h3>
+      <div id="chatListDriver" class="chat-list"></div>
+      <div class="chat-input-row">
+        <input id="chatInputDriver" placeholder="Escribe un mensaje (moderado)…" maxlength="500">
+        <button id="chatSendDriver" class="btnp" type="button">Enviar</button>
+      </div>
+      <div class="small muted">No se permiten insultos ni lenguaje inapropiado.</div>
+    </div>
   </section>
 
   <!-- ====== AJUSTES ====== -->
@@ -257,6 +286,7 @@ body.theme-light #mapDriver .leaflet-tile{ filter:none }
       <button class="subtab-btn" data-stab="account">Cuenta</button>
     </div>
 
+    <!-- Perfil (incluye Cerrar sesión) -->
     <div id="stab-profile" class="settings-pane active">
       <div class="inline-card">
         <img id="profileAvatar" class="avatar" alt="Avatar">
@@ -267,8 +297,12 @@ body.theme-light #mapDriver .leaflet-tile{ filter:none }
         <div><label>Foto de perfil</label><input id="profilePhoto" type="file" accept="image/*"/></div>
         <div style="flex:0 0 180px;align-self:flex-end"><button class="btnp" id="btnProfileSave" type="button">Guardar perfil</button></div>
       </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btnd" id="btnSignOut" type="button">Cerrar sesión</button>
+      </div>
     </div>
 
+    <!-- Preferencias -->
     <div id="stab-prefs" class="settings-pane">
       <div class="row">
         <div>
@@ -281,6 +315,7 @@ body.theme-light #mapDriver .leaflet-tile{ filter:none }
       </div>
     </div>
 
+    <!-- Roles/Permisos -->
     <div id="stab-roles" class="settings-pane">
       <div class="row" style="gap:6px">
         <button class="btn" id="btnGeoTest" type="button">Probar geolocalización</button>
@@ -292,8 +327,17 @@ body.theme-light #mapDriver .leaflet-tile{ filter:none }
       </div>
     </div>
 
+    <!-- Cuenta: rating + estrellas + trofeos -->
     <div id="stab-account" class="settings-pane">
-      <div class="row"><button class="btnd" id="btnSignOut" type="button">Cerrar sesión</button></div>
+      <div class="inline-card">
+        <div class="pill">Calificación: <b id="ratingValue">★5.0</b></div>
+        <div class="pill">Estrellas: <b id="starsCount">0</b></div>
+        <div class="pill">Trofeo: <b id="trophyLabel">—</b></div>
+      </div>
+      <div class="trophy-shelf">
+        <div id="trophy1" class="trophy lock" title="1000 estrellas">🏆</div>
+        <div id="trophy2" class="trophy lock" title="5000 estrellas">🏆✨</div>
+      </div>
     </div>
   </section>
 </main>
@@ -344,7 +388,7 @@ function setTab(name){
   });
   if(name==="ride"){ ensureRideMap(); setTimeout(()=> mapRide.invalidateSize(), 120); }
   if(name==="driver"){ ensureDriverMap(); setTimeout(()=> mapDriver.invalidateSize(), 120); }
-  if(name==="settings"){ paintProfile(); }
+  if(name==="settings"){ paintProfile(); renderAccount(); }
 }
 $$('.tabs .tab-btn').forEach(b=> b.addEventListener('click', ()=> setTab(b.dataset.tab)));
 $("#goLogin").onclick=()=>{ $("#loginBox").classList.remove("hide"); $("#registerBox").classList.add("hide"); };
@@ -365,13 +409,9 @@ document.body.classList.toggle("theme-light", currentTheme==="light");
 let mapRide=null, mapDriver=null;
 let riderMarkers={origin:null,dest:null,driver:null}, riderLines={o2d:null,drv:null};
 let origin=null, dest=null, riderActiveUnsub=null, lastDriverPt=null;
+let pickPendingPt=null;
 
-/* Selector de punto en mapa */
-let pickMode="none";
-$("#pickNone").onchange = e=> { if(e.target.checked) pickMode="none"; };
-$("#pickOrigin").onchange= e=> { if(e.target.checked) pickMode="origin"; };
-$("#pickDest").onchange  = e=> { if(e.target.checked) pickMode="dest"; };
-
+/* Tiles */
 function tileLayerFor(theme){
   if(theme==="darkBlue"){
     return L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
@@ -385,28 +425,42 @@ function applyMapTheme(map, theme){
   toRemove.forEach(l=>map.removeLayer(l));
   tileLayerFor(theme).addTo(map);
 }
+
+/* Map Ride */
 function ensureRideMap(){
   if(mapRide) return;
   mapRide=L.map('mapRide',{zoomControl:false});
   L.control.zoom({position:'bottomright'}).addTo(mapRide);
   applyMapTheme(mapRide, currentTheme);
   mapRide.setView([-31.5375,-68.5364],12);
-  mapRide.on('click', async (e)=>{
-    if(pickMode==="none") return toast("Elegí Origen o Destino para marcar");
-    const pt={lat:e.latlng.lat, lng:e.latlng.lng};
-    if(pickMode==="origin"){
-      origin=pt; setRideMarker('origin',pt.lat,pt.lng,'Origen');
-      $("#riderOrigin").value = `${pt.lat.toFixed(5)}, ${pt.lng.toFixed(5)}`;
-    }else{
-      dest=pt; setRideMarker('dest',pt.lat,pt.lng,'Destino');
-      $("#riderDest").value = `${pt.lat.toFixed(5)}, ${pt.lng.toFixed(5)}`;
-    }
-    updateEstimate();
-    if(origin && dest){
-      try{ const c=await routeCoords(origin,dest); drawRideLine('o2d',c); fitRideBounds(); }catch(_){}
-    }
+
+  // Click -> siempre preguntar
+  mapRide.on('click', (e)=>{
+    pickPendingPt = {lat:e.latlng.lat, lng:e.latlng.lng};
+    $("#pickChooser").classList.add("show");
   });
 }
+$("#btnPickAsOrigin").onclick = async()=>{
+  if(!pickPendingPt) return;
+  origin=pickPendingPt; pickPendingPt=null;
+  setRideMarker('origin',origin.lat,origin.lng,'Origen');
+  $("#riderOrigin").value = `${origin.lat.toFixed(5)}, ${origin.lng.toFixed(5)}`;
+  $("#pickChooser").classList.remove("show");
+  updateEstimate();
+  if(origin && dest){ try{ const c=await routeCoords(origin,dest); drawRideLine('o2d',c); fitRideBounds(); }catch(_){ } }
+};
+$("#btnPickAsDest").onclick = async()=>{
+  if(!pickPendingPt) return;
+  dest=pickPendingPt; pickPendingPt=null;
+  setRideMarker('dest',dest.lat,dest.lng,'Destino');
+  $("#riderDest").value = `${dest.lat.toFixed(5)}, ${dest.lng.toFixed(5)}`;
+  $("#pickChooser").classList.remove("show");
+  updateEstimate();
+  if(origin && dest){ try{ const c=await routeCoords(origin,dest); drawRideLine('o2d',c); fitRideBounds(); }catch(_){ } }
+};
+$("#btnPickCancel").onclick = ()=>{ pickPendingPt=null; $("#pickChooser").classList.remove("show"); };
+
+/* Map Driver */
 function ensureDriverMap(){
   if(mapDriver) return;
   mapDriver=L.map('mapDriver',{zoomControl:false});
@@ -463,7 +517,15 @@ async function geocode(q){ try{const u=new URL("https://nominatim.openstreetmap.
 function estimateFareRaw(km){ const base=990, perKm=660, perMin=99; const mins=(km/24)*60; return Math.max(800, Math.round(base + km*perKm + mins*perMin)); }
 function updateEstimate(){ const dist=$("#distance"), fare=$("#fare"); if(!origin||!dest){ dist.value="0.00 km"; fare.value="$0"; return; } const km=km2(origin,dest); dist.value=`${km.toFixed(2)} km`; fare.value=money(estimateFareRaw(km)); }
 
-/* Pasajero */
+/* ========= Pasajero ========= */
+$("#btnLocate").addEventListener("click", ()=>{
+  if(!navigator.geolocation){ toast("Sin geolocalización"); return; }
+  ensureRideMap();
+  navigator.geolocation.getCurrentPosition(p=>{
+    origin={lat:p.coords.latitude,lng:p.coords.longitude};
+    setRideMarker('origin',origin.lat,origin.lng,'Origen'); mapRide.setView([origin.lat,origin.lng],15); updateEstimate();
+  }, ()=>toast("No se pudo ubicar (abrí por https)"), {enableHighAccuracy:true,timeout:5000,maximumAge:15000});
+});
 $("#btnGeoRO").addEventListener("click", async ()=>{
   ensureRideMap(); const loc=await geocode($("#riderOrigin").value.trim()); if(!loc) return toast("Origen no encontrado");
   origin=loc; setRideMarker('origin',loc.lat,loc.lng,'Origen'); mapRide.setView([loc.lat,loc.lng],15); updateEstimate();
@@ -472,14 +534,6 @@ $("#btnGeoRD").addEventListener("click", async ()=>{
   ensureRideMap(); const loc=await geocode($("#riderDest").value.trim()); if(!loc) return toast("Destino no encontrado");
   dest=loc; setRideMarker('dest',loc.lat,loc.lng,'Destino'); mapRide.setView([loc.lat,loc.lng],15); updateEstimate();
   if(origin){ try{ const c=await routeCoords(origin,dest); drawRideLine('o2d',c); fitRideBounds(); }catch(_){ } }
-});
-$("#btnLocate").addEventListener("click", ()=>{
-  if(!navigator.geolocation){ toast("Sin geolocalización"); return; }
-  ensureRideMap();
-  navigator.geolocation.getCurrentPosition(p=>{
-    origin={lat:p.coords.latitude,lng:p.coords.longitude};
-    setRideMarker('origin',origin.lat,origin.lng,'Origen'); mapRide.setView([origin.lat,origin.lng],15); updateEstimate();
-  }, ()=>toast("No se pudo ubicar (abrí por https)"), {enableHighAccuracy:true,timeout:5000,maximumAge:15000});
 });
 $("#btnUnified").addEventListener("click", riderCreateRide);
 $("#btnCancel").addEventListener("click", ()=>{});
@@ -503,12 +557,84 @@ async function riderCreateRide(){
   await ridesCol.add(data);
   toast("Solicitud enviada");
 }
+
+/* ====== Chat (compartido) ====== */
+let activeRideId=null, chatUnsub=null;
+function normalizeNoAccents(s){ return s.normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+const banned = [
+  "puta","puto","mierda","pendejo","cabron","imbecil","idiota","estupido","concha","forro",
+  "fuck","shit","bitch","asshole","bastard","dick","cunt","fag"
+];
+function containsBadWords(text){
+  const t = normalizeNoAccents(String(text||'').toLowerCase());
+  return banned.some(w=> new RegExp(`\\b${w}\\b`,'i').test(t));
+}
+function renderMsg(elList, m){
+  const mine = m.from===auth.currentUser?.uid;
+  const box=document.createElement('div');
+  box.className='chat-msg '+(mine?'me':'other');
+  box.textContent=m.text;
+  const meta=document.createElement('div'); meta.className='chat-meta';
+  const dt = m.ts?.toDate?.() || new Date();
+  meta.textContent = `${m.name||'Usuario'} · ${dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+  const wrap=document.createElement('div');
+  wrap.appendChild(box); wrap.appendChild(meta);
+  elList.appendChild(wrap);
+  elList.scrollTop = elList.scrollHeight;
+}
+function attachChat(rideId){
+  if(chatUnsub) chatUnsub();
+  if(!rideId){ $("#chatWrapRider").classList.add("hide"); $("#chatWrapDriver").classList.add("hide"); return; }
+  // Mostrar ambos contenedores según rol
+  if(currentUser?.role==='driver') $("#chatWrapDriver").classList.remove("hide");
+  else $("#chatWrapRider").classList.remove("hide");
+
+  const listR = $("#chatListRider");
+  const listD = $("#chatListDriver");
+  if(listR) listR.innerHTML="";
+  if(listD) listD.innerHTML="";
+
+  chatUnsub = ridesCol.doc(rideId).collection("chat").orderBy("ts","asc")
+  .onSnapshot(qs=>{
+    (listR && (listR.innerHTML="")); (listD && (listD.innerHTML=""));
+    qs.forEach(doc=>{
+      const m=doc.data();
+      if(listR) renderMsg(listR,m);
+      if(listD) renderMsg(listD,m);
+    });
+  });
+}
+async function sendChatMessage(inputEl){
+  const text = inputEl.value.trim();
+  if(!text) return;
+  if(containsBadWords(text)){ toast("Mensaje no permitido (lenguaje inapropiado)"); return; }
+  if(!activeRideId){ toast("No hay un viaje activo"); return; }
+  try{
+    await ridesCol.doc(activeRideId).collection("chat").add({
+      text, from: auth.currentUser.uid,
+      name: currentUser.displayName || (currentUser.email||currentUser.emailTyped||'Usuario'),
+      role: currentUser.role || 'rider',
+      ts: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    inputEl.value="";
+  }catch(_){ toast("No se pudo enviar el mensaje"); }
+}
+$("#chatSendRider").onclick = ()=> sendChatMessage($("#chatInputRider"));
+$("#chatSendDriver").onclick = ()=> sendChatMessage($("#chatInputDriver"));
+$("#chatInputRider").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#chatSendRider").click(); });
+$("#chatInputDriver").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#chatSendDriver").click(); });
+
+/* ====== Rider: attach a viaje activo y chat ====== */
 function riderAttachActiveRide(){
   if(riderActiveUnsub) riderActiveUnsub();
   riderActiveUnsub = ridesCol.where("riderId","==", auth.currentUser.uid).where("finished","==", false).limit(1)
   .onSnapshot(qs=>{
-    if(qs.empty){ $("#driverCard").classList.add("hide"); $("#btnCancel").classList.add("hide"); return; }
-    const id=qs.docs[0].id, r=qs.docs[0].data();
+    if(qs.empty){
+      $("#driverCard").classList.add("hide"); $("#btnCancel").classList.add("hide");
+      attachChat(null); activeRideId=null; return;
+    }
+    const id=qs.docs[0].id, r=qs.docs[0].data(); activeRideId=id; attachChat(id);
+
     $("#btnCancel").classList.toggle("hide", r.status!=="requested");
     $("#btnCancel").onclick = async()=>{ try{ await ridesCol.doc(id).set({status:"cancelled", finished:true},{merge:true}); }catch(e){ toast(e.message) } };
 
@@ -540,11 +666,11 @@ function riderAttachActiveRide(){
   });
 }
 
-/* ================= Conductor ================= */
+/* ========= Conductor ========= */
 let driverMarker=null, prevDriverPoint=null;
 let activePolylineToPick=null, activePolylineO2D=null;
 let driverAvailUnsub=null, driverMineUnsub=null;
-let geoWatchId=null, lastPush=0, currentRideId=null;
+let geoWatchId=null, lastPush=0;
 let online=false, onTimer=null, onStart=null;
 
 function centerOnMeOnce(){
@@ -572,9 +698,9 @@ function startGeoWatch(){
     }
     prevDriverPoint=nowPoint;
     const now=Date.now();
-    if(currentRideId && now-lastPush>2500){
+    if(activeRideId && now-lastPush>2500){
       lastPush=now;
-      await ridesCol.doc(currentRideId).set({driverLoc:new firebase.firestore.GeoPoint(lat,lng), driverLocAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+      await ridesCol.doc(activeRideId).set({driverLoc:new firebase.firestore.GeoPoint(lat,lng), driverLocAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
     }
   }, console.warn, {enableHighAccuracy:true, maximumAge:2000, timeout:15000});
 }
@@ -591,7 +717,7 @@ function stopTimer(reset=true){ if(onTimer) clearInterval(onTimer); if(reset) $(
 
 async function goOnline(){ await usersCol.doc(auth.currentUser.uid).set({online:true},{merge:true}); setOnlineUI(true); startTimer(); ensureDriverMap(); centerOnMeOnce(); startGeoWatch(); attachDriverStreams(); toast("Conectado"); }
 async function pauseOnline(){ await usersCol.doc(auth.currentUser.uid).set({online:false},{merge:true}); setOnlineUI(false); stopTimer(false); stopGeoWatch(); toast("Pausado"); }
-async function stopOnline(){ await usersCol.doc(auth.currentUser.uid).set({online:false},{merge:true}); setOnlineUI(false); stopTimer(true); stopGeoWatch(); clearActiveRoute(); $("#driverAvailable").innerHTML=""; $("#driverMyActive").innerHTML=""; toast("Desconectado"); }
+async function stopOnline(){ await usersCol.doc(auth.currentUser.uid).set({online:false},{merge:true}); setOnlineUI(false); stopTimer(true); stopGeoWatch(); clearActiveRoute(); $("#driverAvailable").innerHTML=""; $("#driverMyActive").innerHTML=""; attachChat(null); activeRideId=null; toast("Desconectado"); }
 $("#btnStartRoute").addEventListener("click", goOnline);
 $("#btnPauseRoute").addEventListener("click", pauseOnline);
 $("#btnStopRoute").addEventListener("click", stopOnline);
@@ -648,7 +774,7 @@ async function driverAcceptRide(rideId){
         driverRating: currentUser.rating || 5
       });
     });
-    currentRideId=rideId; toast("Viaje aceptado");
+    activeRideId=rideId; attachChat(rideId); toast("Viaje aceptado");
   }catch(e){ toast(e.message); }
 }
 async function driverAdvance(rideId,next){
@@ -659,7 +785,7 @@ async function driverAdvance(rideId,next){
       const r=snap.data(); if(ord.indexOf(next)!==ord.indexOf(r.status)+1) throw new Error("Secuencia inválida");
       const upd={status:next}; if(next==="completed") upd.finished=true; tx.update(ref,upd);
     });
-    if(next==="completed"){ currentRideId=null; clearActiveRoute(); }
+    if(next==="completed"){ activeRideId=null; clearActiveRoute(); attachChat(null); }
   }catch(e){ toast(e.message); }
 }
 
@@ -671,6 +797,7 @@ function attachDriverStreams(){
   if(!online){
     $("#driverAvailable").innerHTML=`<div class="small muted">Presioná “Iniciar”.</div>`;
     $("#driverMyActive").innerHTML=`<div class="small muted">Sin viajes activos.</div>`;
+    $("#chatWrapDriver").classList.add("hide");
     return;
   }
   ensureDriverMap();
@@ -705,9 +832,14 @@ function attachDriverStreams(){
   driverMineUnsub = ridesCol.where("driverId","==", auth.currentUser.uid).where("finished","==",false)
   .onSnapshot(qs=>{
     const wrap=$("#driverMyActive"); wrap.innerHTML="";
-    if(qs.empty){ currentRideId=null; wrap.innerHTML=`<div class="small muted">Sin viajes activos.</div>`; clearActiveRoute(); return; }
+    if(qs.empty){
+      wrap.innerHTML=`<div class="small muted">Sin viajes activos.</div>`;
+      activeRideId=null; attachChat(null); clearActiveRoute();
+      $("#chatWrapDriver").classList.add("hide");
+      return;
+    }
     qs.forEach((doc,i)=>{
-      const r=doc.data(); if(i===0){ currentRideId=doc.id; showActiveRoute(r); }
+      const r=doc.data(); if(i===0){ activeRideId=doc.id; showActiveRoute(r); attachChat(doc.id); $("#chatWrapDriver").classList.remove("hide"); }
       const order=["requested","accepted","arrived","in_trip","completed"];
       const can=n=> order.indexOf(n)===order.indexOf(r.status)+1;
       const item=document.createElement("div"); item.className="item";
@@ -731,7 +863,7 @@ function attachDriverStreams(){
   });
 }
 
-/* ================= Ajustes / Sesión ================= */
+/* ================= Perfil / Ajustes / Sesión ================= */
 function paintProfile(){
   const el=$("#profileInfo"), av=$("#profileAvatar"); if(!currentUser){ el.textContent="Sin sesión"; av.src=""; return; }
   av.src=currentUser.photoURL||"https://i.pravatar.cc/100?u="+(currentUser.uid||'placeholder');
@@ -740,6 +872,18 @@ function paintProfile(){
   $("#profileName").value = currentUser.displayName||"";
   $("#prefThemeDark").checked = (currentTheme==="darkBlue");
   $("#prefThemeLight").checked = (currentTheme==="light");
+}
+function renderAccount(){
+  const rating = Number(currentUser?.rating ?? 5).toFixed(1);
+  const stars  = Number(currentUser?.stars ?? 0);
+  $("#ratingValue").textContent = `★${rating}`;
+  $("#starsCount").textContent = String(stars);
+
+  const t1 = $("#trophy1"), t2=$("#trophy2");
+  const has1 = stars>=1000, has2=stars>=5000;
+  t1.classList.toggle("lock", !has1);
+  t2.classList.toggle("lock", !has2);
+  $("#trophyLabel").textContent = has2 ? "Élite 5000" : has1 ? "Básico 1000" : "—";
 }
 function refreshTabs(){
   const logged=!!currentUser;
@@ -754,15 +898,6 @@ function refreshTabs(){
   const labelEmail = currentUser?.email || currentUser?.emailTyped || "";
   $("#authPill").textContent = logged ? `${currentUser.displayName||labelEmail||'Usuario'} — ${(currentUser.role||'rider')}${currentUser.approved?' (KYC✓)':''}${currentUser.demo?' (demo)':''}` : "Sin sesión";
   setTab(logged ? "ride" : "access");
-}
-function setTheme(theme){
-  currentTheme = theme;
-  localStorage.setItem("taxiya_theme", theme);
-  document.body.classList.toggle("theme-darkblue", theme==="darkBlue");
-  document.body.classList.toggle("theme-light", theme==="light");
-  if(mapRide) applyMapTheme(mapRide, theme);
-  if(mapDriver) applyMapTheme(mapDriver, theme);
-  setTimeout(()=>{ mapRide?.invalidateSize(); mapDriver?.invalidateSize(); }, 80);
 }
 
 /* compresión de imagen */
@@ -811,7 +946,7 @@ $("#btnSignUp").addEventListener("click", async ()=>{
 
     await usersCol.doc(user.uid).set({
       uid: user.uid, email: user.email, displayName: name || (email.split('@')[0]),
-      photoURL, role: "rider", approved: false, online: false, demo: false,
+      photoURL, role: "rider", approved: false, online: false, demo: false, rating: 5, stars: 0,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
@@ -865,7 +1000,8 @@ $("#btnFast").addEventListener("click", async ()=>{
     const photoURL = "https://i.pravatar.cc/100?u="+u.uid;
     await usersCol.doc(u.uid).set({
       uid: u.uid, emailTyped, displayName, photoURL, role:"rider", approved:false,
-      online:false, demo:true, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      online:false, demo:true, rating:5, stars:0,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, {merge:true});
   }catch(_){ pill($("#msg"), "No se pudo entrar en modo demo.", "error"); }
 });
@@ -886,6 +1022,17 @@ $("#btnProfileSave").addEventListener("click", async ()=>{
     toast("Perfil guardado");
   }catch(e){ toast("No se pudo guardar"); }
 });
+$("#btnSignOut").addEventListener("click", ()=> auth.signOut().catch(e=>toast(e.message)));
+
+function setTheme(theme){
+  currentTheme = theme;
+  localStorage.setItem("taxiya_theme", theme);
+  document.body.classList.toggle("theme-darkblue", theme==="darkBlue");
+  document.body.classList.toggle("theme-light", theme==="light");
+  if(mapRide) applyMapTheme(mapRide, theme);
+  if(mapDriver) applyMapTheme(mapDriver, theme);
+  setTimeout(()=>{ mapRide?.invalidateSize(); mapDriver?.invalidateSize(); }, 80);
+}
 $("#prefThemeDark").addEventListener("change", e=>{ if(e.target.checked) setTheme("darkBlue"); });
 $("#prefThemeLight").addEventListener("change", e=>{ if(e.target.checked) setTheme("light"); });
 
@@ -909,11 +1056,11 @@ $("#btnRiderMode").addEventListener("click", async ()=>{
   currentUser.role="rider"; currentUser.approved=false;
   stopOnline(); refreshTabs(); setTab("ride"); toast("Volviste a Pasajero (demo)");
 });
-$("#btnSignOut").addEventListener("click", ()=> auth.signOut().catch(e=>toast(e.message)));
 
+/* Sesión */
 auth.onAuthStateChanged(async (u)=>{
   if(!u){
-    currentUser=null; paintProfile(); refreshTabs();
+    currentUser=null; paintProfile(); refreshTabs(); attachChat(null); activeRideId=null;
     if(riderActiveUnsub) riderActiveUnsub();
     if(driverAvailUnsub) driverAvailUnsub();
     if(driverMineUnsub)  driverMineUnsub();
@@ -929,12 +1076,15 @@ auth.onAuthStateChanged(async (u)=>{
       displayName: u.displayName || (u.email ? u.email.split('@')[0] : 'Invitado'),
       photoURL: "https://i.pravatar.cc/100?u="+u.uid,
       role:"rider", approved:false, online:false,
-      demo: u.isAnonymous===true,
+      demo: u.isAnonymous===true, rating:5, stars:0,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, {merge:true});
   }
   currentUser=(await ref.get()).data();
-  paintProfile(); refreshTabs();
+  // asegurar campos
+  if(typeof currentUser.rating === 'undefined') currentUser.rating = 5;
+  if(typeof currentUser.stars  === 'undefined') currentUser.stars  = 0;
+  paintProfile(); refreshTabs(); renderAccount();
   ensureRideMap(); riderAttachActiveRide();
 });
 
@@ -944,6 +1094,7 @@ function renderHistory(){
   const wrap=$("#riderHistory"); wrap.innerHTML=""; if(!list.length) wrap.innerHTML=`<div class="small muted">Sin viajes.</div>`;
 }
 $("#btnClearRiderHistory").addEventListener("click", ()=>{ if(!currentUser) return; localStorage.setItem(`taxiya_rider_history_${currentUser.uid}`,"[]"); renderHistory(); toast("OK"); });
+
 </script>
 </body>
 </html>
