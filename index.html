@@ -17,7 +17,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
 
 <style>
-/* ====== Diseño base ====== */
+/* ====== Base ====== */
 :root{
   --bg:#0b0f15; --panel:#0f141d; --ink:#f5f7fb; --muted:#93a6b7; --line:#1c2a3a;
   --accent:#00b3ff; --accent2:#ffd34d; --ok:#17c964; --danger:#ef4444;
@@ -35,6 +35,7 @@ header{position:sticky;top:0;z-index:60;background:rgba(11,15,21,.88);
 .brand{font-weight:800;letter-spacing:.2px}
 .badge{border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px;opacity:.9}
 
+/* Desktop: tabs arriba (sticky) */
 nav.tabs{position:sticky; top:0; background:rgba(15,20,29,.75);
   border:1px solid var(--line); display:flex; gap:8px; padding:8px; border-radius:12px;
   backdrop-filter: blur(6px); z-index:50}
@@ -79,23 +80,27 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:800;cursor:poin
 /* Tema (clases en <body>) */
 body.theme-darkblue #mapRide .leaflet-tile,
 body.theme-darkblue #mapDriver .leaflet-tile{
-  /* visible pero oscuro (azules) */
   filter: brightness(1.1) contrast(1.15) saturate(1.25) hue-rotate(205deg);
 }
 body.theme-light #mapRide .leaflet-tile,
-body.theme-light #mapDriver .leaflet-tile{
-  filter: none;
-}
+body.theme-light #mapDriver .leaflet-tile{ filter:none }
 
 /* Icono auto */
 .car-ico{width:38px;height:38px;display:grid;place-items:center;transform: translate(-50%,-50%);}
 .car-ico svg{width:32px;height:32px;filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); transform: rotate(var(--rot,0deg));}
 
-/* ====== Mobile ====== */
+/* ====== Mobile fix: tabs abajo SIEMPRE ====== */
 @media (max-width:900px){
-  nav.tabs{position:fixed; bottom:10px; left:12px; right:12px; z-index:70}
-  body{padding-bottom:calc(96px + var(--safe-bottom))}
-  .map{height:calc(100svh - 300px)} /* evita que la barra solape el mapa */
+  /* Importante: anular el top heredado para que NO quede arriba */
+  nav.tabs{
+    position:fixed;
+    top:auto !important;            /* <- FIX clave */
+    bottom:calc(10px + var(--safe-bottom));
+    left:12px; right:12px;
+    z-index:70;
+  }
+  body{padding-bottom:calc(110px + var(--safe-bottom))}
+  .map{height:calc(100svh - 300px)} /* evita que la barra tape el mapa */
 }
 @media (min-width:901px){
   .map{height:62vh}
@@ -184,7 +189,7 @@ body.theme-light #mapDriver .leaflet-tile{
       <div><label>Tarifa</label><input id="fare" readonly value="$0"></div>
     </div>
 
-    <!-- NUEVO: selector de punto en mapa -->
+    <!-- Marcar en mapa -->
     <div class="row" style="margin-top:10px">
       <div style="flex:2 1 320px">
         <label>Marcar en mapa</label>
@@ -195,18 +200,10 @@ body.theme-light #mapDriver .leaflet-tile{
         </div>
         <div class="small muted">Tocá el mapa para fijar el punto seleccionado.</div>
       </div>
-      <div style="flex:1 1 160px;align-self:flex-end">
-        <button class="btn" id="btnGeoRO">Buscar origen</button>
-      </div>
-      <div style="flex:1 1 160px;align-self:flex-end">
-        <button class="btn" id="btnGeoRD">Buscar destino</button>
-      </div>
-      <div style="flex:1 1 160px;align-self:flex-end">
-        <button class="btnp" id="btnUnified" type="button">Pedir viaje</button>
-      </div>
-      <div style="flex:1 1 120px;align-self:flex-end">
-        <button class="btnd hide" id="btnCancel" type="button">Cancelar</button>
-      </div>
+      <div style="flex:1 1 160px;align-self:flex-end"><button class="btn" id="btnGeoRO">Buscar origen</button></div>
+      <div style="flex:1 1 160px;align-self:flex-end"><button class="btn" id="btnGeoRD">Buscar destino</button></div>
+      <div style="flex:1 1 160px;align-self:flex-end"><button class="btnp" id="btnUnified" type="button">Pedir viaje</button></div>
+      <div style="flex:1 1 120px;align-self:flex-end"><button class="btnd hide" id="btnCancel" type="button">Cancelar</button></div>
     </div>
 
     <div class="inline-card hide" id="driverCard" style="margin-top:10px">
@@ -253,8 +250,6 @@ body.theme-light #mapDriver .leaflet-tile{
   <!-- ====== AJUSTES ====== -->
   <section id="panel-settings" class="card hide">
     <h2>Ajustes</h2>
-
-    <!-- Subtabs -->
     <div class="subtabs" role="tablist" aria-label="Ajustes">
       <button class="subtab-btn active" data-stab="profile">Perfil</button>
       <button class="subtab-btn" data-stab="prefs">Preferencias</button>
@@ -262,47 +257,30 @@ body.theme-light #mapDriver .leaflet-tile{
       <button class="subtab-btn" data-stab="account">Cuenta</button>
     </div>
 
-    <!-- Perfil -->
     <div id="stab-profile" class="settings-pane active">
       <div class="inline-card">
         <img id="profileAvatar" class="avatar" alt="Avatar">
         <div class="small" id="profileInfo"></div>
       </div>
       <div class="row" style="margin-top:8px">
-        <div>
-          <label>Nombre para mostrar</label>
-          <input id="profileName" placeholder="Tu nombre"/>
-        </div>
-        <div>
-          <label>Foto de perfil</label>
-          <input id="profilePhoto" type="file" accept="image/*"/>
-        </div>
-        <div style="flex:0 0 180px;align-self:flex-end">
-          <button class="btnp" id="btnProfileSave" type="button">Guardar perfil</button>
-        </div>
+        <div><label>Nombre para mostrar</label><input id="profileName" placeholder="Tu nombre"/></div>
+        <div><label>Foto de perfil</label><input id="profilePhoto" type="file" accept="image/*"/></div>
+        <div style="flex:0 0 180px;align-self:flex-end"><button class="btnp" id="btnProfileSave" type="button">Guardar perfil</button></div>
       </div>
     </div>
 
-    <!-- Preferencias -->
     <div id="stab-prefs" class="settings-pane">
       <div class="row">
         <div>
           <label>Tema de mapa</label>
           <div class="inline-card">
-            <label style="display:flex;align-items:center;gap:6px">
-              <input type="radio" name="mapTheme" value="darkBlue" id="prefThemeDark" checked/>
-              Azul oscuro (recomendado)
-            </label>
-            <label style="display:flex;align-items:center;gap:6px;margin-left:14px">
-              <input type="radio" name="mapTheme" value="light" id="prefThemeLight"/>
-              Claro
-            </label>
+            <label style="display:flex;align-items:center;gap:6px"><input type="radio" name="mapTheme" value="darkBlue" id="prefThemeDark" checked/> Azul oscuro</label>
+            <label style="display:flex;align-items:center;gap:6px;margin-left:14px"><input type="radio" name="mapTheme" value="light" id="prefThemeLight"/> Claro</label>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Roles/Permisos -->
     <div id="stab-roles" class="settings-pane">
       <div class="row" style="gap:6px">
         <button class="btn" id="btnGeoTest" type="button">Probar geolocalización</button>
@@ -314,11 +292,8 @@ body.theme-light #mapDriver .leaflet-tile{
       </div>
     </div>
 
-    <!-- Cuenta -->
     <div id="stab-account" class="settings-pane">
-      <div class="row">
-        <button class="btnd" id="btnSignOut" type="button">Cerrar sesión</button>
-      </div>
+      <div class="row"><button class="btnd" id="btnSignOut" type="button">Cerrar sesión</button></div>
     </div>
   </section>
 </main>
@@ -359,7 +334,7 @@ const bearing=(a,b)=>{const φ1=toRad(a.lat), φ2=toRad(b.lat), Δλ=toRad(b.lng
   return (Math.atan2(y,x)*180/Math.PI+360)%360;};
 function fmtTime(ms){ const s=Math.floor(ms/1000); const h=String(Math.floor(s/3600)).padStart(2,"0"); const m=String(Math.floor((s%3600)/60)).padStart(2,"0"); const ss=String(s%60).padStart(2,"0"); return `${h}:${m}:${ss}`;}
 
-/* ================= Tabs (globales) ================= */
+/* ================= Tabs ================= */
 let currentUser=null;
 const panels=["access","ride","history","driver","settings"];
 function setTab(name){
@@ -375,7 +350,7 @@ $$('.tabs .tab-btn').forEach(b=> b.addEventListener('click', ()=> setTab(b.datas
 $("#goLogin").onclick=()=>{ $("#loginBox").classList.remove("hide"); $("#registerBox").classList.add("hide"); };
 $("#goRegister").onclick=()=>{ $("#registerBox").classList.remove("hide"); $("#loginBox").classList.add("hide"); };
 
-/* ================= Subpestañas Ajustes ================= */
+/* ===== Subtabs ajustes ===== */
 function setSettingsTab(name){
   $$('.subtab-btn').forEach(b=> b.classList.toggle('active', b.dataset.stab===name));
   $$('.settings-pane').forEach(p=> p.classList.toggle('active', p.id==='stab-'+name));
@@ -391,8 +366,8 @@ let mapRide=null, mapDriver=null;
 let riderMarkers={origin:null,dest:null,driver:null}, riderLines={o2d:null,drv:null};
 let origin=null, dest=null, riderActiveUnsub=null, lastDriverPt=null;
 
-/* NUEVO: modo de selección en mapa */
-let pickMode="none"; // none | origin | dest
+/* Selector de punto en mapa */
+let pickMode="none";
 $("#pickNone").onchange = e=> { if(e.target.checked) pickMode="none"; };
 $("#pickOrigin").onchange= e=> { if(e.target.checked) pickMode="origin"; };
 $("#pickDest").onchange  = e=> { if(e.target.checked) pickMode="dest"; };
@@ -416,15 +391,13 @@ function ensureRideMap(){
   L.control.zoom({position:'bottomright'}).addTo(mapRide);
   applyMapTheme(mapRide, currentTheme);
   mapRide.setView([-31.5375,-68.5364],12);
-
-  // Click para fijar origen/destino
   mapRide.on('click', async (e)=>{
     if(pickMode==="none") return toast("Elegí Origen o Destino para marcar");
     const pt={lat:e.latlng.lat, lng:e.latlng.lng};
     if(pickMode==="origin"){
       origin=pt; setRideMarker('origin',pt.lat,pt.lng,'Origen');
       $("#riderOrigin").value = `${pt.lat.toFixed(5)}, ${pt.lng.toFixed(5)}`;
-    }else if(pickMode==="dest"){
+    }else{
       dest=pt; setRideMarker('dest',pt.lat,pt.lng,'Destino');
       $("#riderDest").value = `${pt.lat.toFixed(5)}, ${pt.lng.toFixed(5)}`;
     }
@@ -442,11 +415,11 @@ function ensureDriverMap(){
   mapDriver.setView([-31.5375,-68.5364],13);
 }
 window.addEventListener('resize', ()=>{
-  if(mapRide) mapRide.invalidateSize();
-  if(mapDriver) mapDriver.invalidateSize();
+  mapRide?.invalidateSize();
+  mapDriver?.invalidateSize();
 }, {passive:true});
 
-/* Rutas (OSRM) */
+/* Rutas */
 async function routeCoords(a,b){
   const url=`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`;
   const r=await fetch(url); if(!r.ok) throw new Error("OSRM off");
@@ -490,7 +463,7 @@ async function geocode(q){ try{const u=new URL("https://nominatim.openstreetmap.
 function estimateFareRaw(km){ const base=990, perKm=660, perMin=99; const mins=(km/24)*60; return Math.max(800, Math.round(base + km*perKm + mins*perMin)); }
 function updateEstimate(){ const dist=$("#distance"), fare=$("#fare"); if(!origin||!dest){ dist.value="0.00 km"; fare.value="$0"; return; } const km=km2(origin,dest); dist.value=`${km.toFixed(2)} km`; fare.value=money(estimateFareRaw(km)); }
 
-/* Botones pasajero */
+/* Pasajero */
 $("#btnGeoRO").addEventListener("click", async ()=>{
   ensureRideMap(); const loc=await geocode($("#riderOrigin").value.trim()); if(!loc) return toast("Origen no encontrado");
   origin=loc; setRideMarker('origin',loc.lat,loc.lng,'Origen'); mapRide.setView([loc.lat,loc.lng],15); updateEstimate();
@@ -508,8 +481,6 @@ $("#btnLocate").addEventListener("click", ()=>{
     setRideMarker('origin',origin.lat,origin.lng,'Origen'); mapRide.setView([origin.lat,origin.lng],15); updateEstimate();
   }, ()=>toast("No se pudo ubicar (abrí por https)"), {enableHighAccuracy:true,timeout:5000,maximumAge:15000});
 });
-
-/* Crear/cancelar viaje */
 $("#btnUnified").addEventListener("click", riderCreateRide);
 $("#btnCancel").addEventListener("click", ()=>{});
 async function riderCreateRide(){
@@ -760,7 +731,7 @@ function attachDriverStreams(){
   });
 }
 
-/* ================= Perfil / Ajustes / Sesión ================= */
+/* ================= Ajustes / Sesión ================= */
 function paintProfile(){
   const el=$("#profileInfo"), av=$("#profileAvatar"); if(!currentUser){ el.textContent="Sin sesión"; av.src=""; return; }
   av.src=currentUser.photoURL||"https://i.pravatar.cc/100?u="+(currentUser.uid||'placeholder');
@@ -784,6 +755,15 @@ function refreshTabs(){
   $("#authPill").textContent = logged ? `${currentUser.displayName||labelEmail||'Usuario'} — ${(currentUser.role||'rider')}${currentUser.approved?' (KYC✓)':''}${currentUser.demo?' (demo)':''}` : "Sin sesión";
   setTab(logged ? "ride" : "access");
 }
+function setTheme(theme){
+  currentTheme = theme;
+  localStorage.setItem("taxiya_theme", theme);
+  document.body.classList.toggle("theme-darkblue", theme==="darkBlue");
+  document.body.classList.toggle("theme-light", theme==="light");
+  if(mapRide) applyMapTheme(mapRide, theme);
+  if(mapDriver) applyMapTheme(mapDriver, theme);
+  setTimeout(()=>{ mapRide?.invalidateSize(); mapDriver?.invalidateSize(); }, 80);
+}
 
 /* compresión de imagen */
 function compressImage(file, maxBytes=900*1024, maxW=512){
@@ -806,7 +786,7 @@ async function emailExists(email){
   try{ const m=await auth.fetchSignInMethodsForEmail(email); return Array.isArray(m)&&m.length>0; }catch(_){ return false; }
 }
 
-/* ===== Registro / Login (libre) ===== */
+/* Registro/Login */
 $("#btnSignUp").addEventListener("click", async ()=>{
   const name = $("#regName").value.trim();
   const email = normalizeEmail($("#regEmail").value);
@@ -819,8 +799,7 @@ $("#btnSignUp").addEventListener("click", async ()=>{
   }
   try{
     if(await emailExists(email)){
-      $("#goLogin").click();
-      $("#loginEmail").value = email;
+      $("#goLogin").click(); $("#loginEmail").value = email;
       pill($("#msg"), "Ese correo ya está registrado. Iniciá sesión o usá “Entrar rápido (demo)”.", "warn");
       return;
     }
@@ -891,7 +870,7 @@ $("#btnFast").addEventListener("click", async ()=>{
   }catch(_){ pill($("#msg"), "No se pudo entrar en modo demo.", "error"); }
 });
 
-/* ===== Ajustes ===== */
+/* Ajustes */
 $("#btnProfileSave").addEventListener("click", async ()=>{
   if(!auth.currentUser) return toast("Iniciá sesión");
   const name = $("#profileName").value.trim();
@@ -907,15 +886,6 @@ $("#btnProfileSave").addEventListener("click", async ()=>{
     toast("Perfil guardado");
   }catch(e){ toast("No se pudo guardar"); }
 });
-function setTheme(theme){
-  currentTheme = theme;
-  localStorage.setItem("taxiya_theme", theme);
-  document.body.classList.toggle("theme-darkblue", theme==="darkBlue");
-  document.body.classList.toggle("theme-light", theme==="light");
-  if(mapRide) applyMapTheme(mapRide, theme);
-  if(mapDriver) applyMapTheme(mapDriver, theme);
-  setTimeout(()=>{ mapRide?.invalidateSize(); mapDriver?.invalidateSize(); }, 80);
-}
 $("#prefThemeDark").addEventListener("change", e=>{ if(e.target.checked) setTheme("darkBlue"); });
 $("#prefThemeLight").addEventListener("change", e=>{ if(e.target.checked) setTheme("light"); });
 
@@ -941,7 +911,6 @@ $("#btnRiderMode").addEventListener("click", async ()=>{
 });
 $("#btnSignOut").addEventListener("click", ()=> auth.signOut().catch(e=>toast(e.message)));
 
-/* ===== Sesión ===== */
 auth.onAuthStateChanged(async (u)=>{
   if(!u){
     currentUser=null; paintProfile(); refreshTabs();
@@ -969,13 +938,12 @@ auth.onAuthStateChanged(async (u)=>{
   ensureRideMap(); riderAttachActiveRide();
 });
 
-/* ===== Historial simple (local) ===== */
+/* Historial local */
 function renderHistory(){
   if(!currentUser) return; const key=`taxiya_rider_history_${currentUser.uid}`; let list=[]; try{list=JSON.parse(localStorage.getItem(key)||"[]");}catch(_){}
   const wrap=$("#riderHistory"); wrap.innerHTML=""; if(!list.length) wrap.innerHTML=`<div class="small muted">Sin viajes.</div>`;
 }
 $("#btnClearRiderHistory").addEventListener("click", ()=>{ if(!currentUser) return; localStorage.setItem(`taxiya_rider_history_${currentUser.uid}`,"[]"); renderHistory(); toast("OK"); });
-
 </script>
 </body>
 </html>
