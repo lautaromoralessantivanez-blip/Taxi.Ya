@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Taxi Ya — demo login libre</title>
+<title>Taxi Ya — Registro estable</title>
 
-<!-- Leaflet -->
+<!-- Leaflet (solo para probar mapa; puedes quitarlo si no lo usas) -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -29,7 +29,7 @@ header{position:sticky;top:0;z-index:30;background:rgba(14,17,22,.8);backdrop-fi
 .brand{font-weight:800}
 .badge{border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px;opacity:.9}
 
-main{max-width:1200px;margin:16px auto;padding:0 12px;display:grid;gap:12px}
+main{max-width:1100px;margin:16px auto;padding:0 12px;display:grid;gap:12px}
 .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
 h2{margin:6px 0 10px;font-size:18px}
 label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
@@ -40,40 +40,18 @@ button{border:0;border-radius:12px;padding:10px 12px;font-weight:800;cursor:poin
 .btn{background:transparent;border:1px solid var(--line);color:var(--ink)} .btn:hover{filter:brightness(1.08)}
 .btnp{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#082532} .btnp:hover{filter:brightness(1.03)}
 .btnd{background:linear-gradient(180deg,#ff7a7a,var(--danger));color:#fff}
-.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1 1 240px}
 .small{font-size:12px}.muted{color:var(--muted)}
-.pill{display:inline-block;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:12px}
+.pill{display:inline-block;padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:13px}
 .ok{color:#0d3a24;background:#123225;border-color:#256a4b}
 .warn{color:#c58b22;background:#2a230f;border-color:#4a3d14}
 .error{color:#ffb4b4;background:#2a0f12;border-color:#5d1d24}
 .inline-card{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px;background:rgba(255,255,255,.02)}
 .avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;border:1px solid var(--line)}
-.list{display:grid;gap:8px}
-.item{border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(255,255,255,.02)}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;z-index:9999;background:rgba(24,30,38,.95);color:#fff;padding:10px 14px;border-radius:12px;border:1px solid #000;font-weight:700}
-
-/* Tabs */
-nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid var(--line); display:flex; gap:8px; padding:8px; border-radius:12px; backdrop-filter: blur(6px)}
-.tab-btn{flex:1 1 0; min-width:100px; height:44px; display:flex; align-items:center; justify-content:center; gap:6px; border-radius:999px; font-weight:800; cursor:pointer; background:transparent; border:1px solid var(--line); color:var(--ink)}
-.tab-btn.active{background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#082532; border-color:transparent}
 .hide{display:none!important}
 
-/* Map */
-.map{width:100%;height:62vh;min-height:360px;border-radius:16px;border:1px solid var(--line);overflow:hidden;position:relative}
-.map-top{position:absolute; left:10px; right:10px; top:10px; z-index:400; display:none; padding:8px 12px; border-radius:12px; font-weight:800; border:1px solid var(--line); background:rgba(0,0,0,.28); backdrop-filter: blur(4px)}
-.map-top.show{display:block}
-#mapRide .leaflet-tile, #mapDriver .leaflet-tile{ filter: brightness(1.06) contrast(1.02) saturate(1.05) hue-rotate(185deg); }
-
-/* Conductor */
-.ctrlbar{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px}
-.ctrlbar .timer{justify-self:center;border:1px solid var(--line);padding:8px 14px;border-radius:999px;font-weight:800;background:rgba(255,255,255,.06)}
-.car-ico{width:38px;height:38px;display:grid;place-items:center;transform: translate(-50%,-50%);}
-.car-ico svg{width:32px;height:32px;filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); transform: rotate(var(--rot,0deg));}
-
-@media (max-width:900px){
-  nav.tabs{position:fixed; bottom:10px; left:12px; right:12px; z-index:40}
-  body{padding-bottom:84px}
-}
+/* Mapa (opcional para probar) */
+.map{width:100%;height:55vh;min-height:300px;border-radius:16px;border:1px solid var(--line);overflow:hidden}
 </style>
 </head>
 <body>
@@ -82,141 +60,72 @@ nav.tabs{position:sticky; top:0; background:rgba(17,23,34,.75); border:1px solid
   <div id="authPill" class="badge">Sin sesión</div>
 </header>
 
-<nav class="tabs" role="tablist">
-  <button class="tab-btn active" data-tab="access">Acceso</button>
-  <button class="tab-btn hide"   data-tab="ride">Viaje</button>
-  <button class="tab-btn hide"   data-tab="history">Historial</button>
-  <button class="tab-btn hide"   data-tab="driver">Conductor</button>
-  <button class="tab-btn hide"   data-tab="settings">Ajustes</button>
-</nav>
-
 <main>
   <!-- ACCESO -->
   <section id="panel-access" class="card">
     <h2>Acceso</h2>
 
     <div class="row" style="gap:6px;margin-bottom:8px">
-      <button class="btnp" id="goLogin">Iniciar sesión</button>
-      <button class="btn" id="goRegister">Registrarme</button>
+      <button class="btnp" id="goLogin" type="button">Iniciar sesión</button>
+      <button class="btn"  id="goRegister" type="button">Registrarme</button>
+      <span id="msg" class="pill hide" role="status" aria-live="polite"></span>
     </div>
 
     <!-- LOGIN -->
-    <div id="loginBox">
+    <form id="loginBox" novalidate>
       <div class="row">
-        <div><label>Correo (o escribe cualquiera para demo)</label><input id="loginEmail" type="email" placeholder="tucorreo@dominio.com" autocomplete="username"></div>
-        <div><label>Contraseña</label><input id="loginPass" type="password" placeholder="••••••" autocomplete="current-password"></div>
+        <div><label>Correo</label><input id="loginEmail" type="email" placeholder="tucorreo@dominio.com" autocomplete="username" required></div>
+        <div><label>Contraseña</label><input id="loginPass" type="password" placeholder="••••••" autocomplete="current-password" required></div>
       </div>
       <div class="row" style="margin-top:6px">
-        <button class="btnp" id="btnSignIn" type="button">Entrar</button>
-        <button class="btn"  id="btnResend" type="button">Reenviar verificación</button>
+        <button class="btnp" id="btnSignIn" type="submit">Entrar</button>
+        <button class="btn"  id="btnFast" type="button" title="Para pruebas rápidas">Entrar rápido (demo)</button>
         <button class="btn"  id="btnForgot" type="button">Olvidé mi contraseña</button>
       </div>
-      <div class="row" style="margin-top:6px">
-        <button class="btn" id="btnFast" type="button">Entrar rápido (demo, cualquier correo)</button>
-      </div>
-    </div>
+    </form>
 
-    <!-- REGISTRO -->
-    <div id="registerBox" class="hide">
+    <!-- REGISTRO (foto opcional) -->
+    <form id="registerBox" class="hide" novalidate>
       <div class="row">
-        <div><label>Nombre</label><input id="regName" placeholder="Tu nombre y apellido"></div>
-        <div><label>Correo</label><input id="regEmail" type="email" placeholder="tucorreo@dominio.com"></div>
+        <div><label>Nombre</label><input id="regName" placeholder="Tu nombre y apellido" autocomplete="name" required></div>
+        <div><label>Correo</label><input id="regEmail" type="email" placeholder="tucorreo@dominio.com" autocomplete="username" required></div>
       </div>
       <div class="row" style="margin-top:6px">
-        <div><label>Contraseña</label><input id="regPass" type="password" placeholder="mín. 6" minlength="6"></div>
-        <div><label>Foto de perfil (obligatoria)</label><input id="regPhoto" type="file" accept="image/*"></div>
+        <div><label>Contraseña</label><input id="regPass" type="password" placeholder="mín. 6" autocomplete="new-password" minlength="6" required></div>
+        <div><label>Confirmar contraseña</label><input id="regPass2" type="password" placeholder="repetir" autocomplete="new-password" minlength="6" required></div>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <div><label>Foto de perfil (opcional)</label><input id="regPhoto" type="file" accept="image/*"></div>
+        <div class="small muted" style="align-self:flex-end">* Si subís foto la comprimimos para evitar límites de tamaño.</div>
       </div>
       <div class="row" style="margin-top:8px">
-        <button class="btnp" id="btnSignUp" type="button">Crear cuenta</button>
+        <button class="btnp" id="btnSignUp" type="submit">Crear cuenta y entrar</button>
       </div>
-    </div>
-
-    <div id="msg" class="pill hide" style="margin-top:8px"></div>
+    </form>
   </section>
 
-  <!-- PASAJERO -->
-  <section id="panel-ride" class="card hide">
-    <h2>Solicitar viaje</h2>
-    <div class="row">
-      <div><label>Origen</label><input id="riderOrigin" placeholder="Calle y altura"></div>
-      <div><label>Destino</label><input id="riderDest" placeholder="Calle y altura"></div>
-      <div><label>&nbsp;</label><button class="btn" id="btnLocate">Ubicarme</button></div>
-    </div>
-    <div class="row" style="margin-top:6px">
-      <div><label>Tipo</label><select id="reqType"><option value="auto">Auto</option><option value="moto">Moto</option></select></div>
-      <div><label>Pago</label><select id="payMethod"><option value="">Elegir…</option><option value="cash">Efectivo</option><option value="mp">Mercado Pago</option></select></div>
-      <div><label>Distancia</label><input id="distance" readonly value="0.00 km"></div>
-      <div><label>Tarifa</label><input id="fare" readonly value="$0"></div>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <button class="btn" id="btnGeoRO">Buscar origen</button>
-      <button class="btn" id="btnGeoRD">Buscar destino</button>
-      <button class="btnp" id="btnUnified" type="button">Pedir viaje</button>
-      <button class="btnd hide" id="btnCancel" type="button">Cancelar</button>
-    </div>
-
-    <div class="inline-card hide" id="driverCard" style="margin-top:10px">
-      <img id="driverAvatar" class="avatar" alt="Conductor">
-      <div><b id="driverName">Conductor</b><div class="small muted" id="driverExtra">—</div></div>
-    </div>
-
-    <div style="position:relative; margin-top:10px">
-      <div id="mapRide" class="map"></div>
-      <div id="rideMapTop" class="map-top"></div>
-    </div>
-  </section>
-
-  <!-- HISTORIAL -->
-  <section id="panel-history" class="card hide">
-    <h2>Historial</h2>
-    <div class="row" style="justify-content:flex-end"><button class="btn" id="btnClearRiderHistory">Limpiar</button></div>
-    <div id="riderHistory" class="list" style="margin-top:8px"></div>
-  </section>
-
-  <!-- CONDUCTOR -->
-  <section id="panel-driver" class="card hide">
-    <h2>Conductor</h2>
-    <div class="ctrlbar">
-      <div><button class="btnp" id="btnStartRoute" disabled>Iniciar</button></div>
-      <div class="timer" id="onlineTimer">00:00:00</div>
-      <div>
-        <div class="row" style="gap:6px">
-          <button class="btn" id="btnPauseRoute" disabled>Pausar</button>
-          <button class="btnd" id="btnStopRoute" disabled>Terminar</button>
-        </div>
-      </div>
-    </div>
-    <div style="position:relative">
-      <div id="mapDriver" class="map" aria-label="Mapa del conductor"></div>
-      <div id="driverMapTop" class="map-top"></div>
-    </div>
-
-    <h3 style="margin:14px 0 8px">Viajes disponibles</h3>
-    <div id="driverAvailable" class="list"></div>
-
-    <h3 style="margin:14px 0 8px">Mi viaje activo</h3>
-    <div id="driverMyActive" class="list"></div>
-  </section>
-
-  <!-- AJUSTES -->
+  <!-- PERFIL / SALIR -->
   <section id="panel-settings" class="card hide">
-    <h2>Ajustes</h2>
+    <h2>Mi cuenta</h2>
     <div class="inline-card">
       <img id="profileAvatar" class="avatar" alt="Avatar">
       <div class="small" id="profileInfo"></div>
     </div>
     <div class="row" style="margin-top:8px">
-      <button class="btn" id="btnVerifySubmit" type="button">Aprobar como Conductor (demo)</button>
-      <span id="drvKycStatus" class="pill warn">No solicitado</span>
-      <button class="btn" id="btnSignOut" type="button">Cerrar sesión</button>
+      <button class="btn"  id="btnMakeDriver" type="button">Aprobar como Conductor (demo)</button>
+      <button class="btnd" id="btnSignOut"   type="button">Cerrar sesión</button>
     </div>
+  </section>
+
+  <!-- Mapa de prueba -->
+  <section id="panel-map" class="card hide">
+    <h2>Mapa (prueba)</h2>
+    <div id="map" class="map"></div>
   </section>
 </main>
 
-<div id="toast" class="toast hide"></div>
-
 <script type="module">
-/* ================= Firebase ================= */
+/* =============== Firebase (tu proyecto) =============== */
 const firebaseConfig = {
   apiKey: "AIzaSyBu523IOGnIZGfAkdlLdVLcENwLgv5KU9o",
   authDomain: "taxi-ya-3be33.firebaseapp.com",
@@ -230,341 +139,33 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 const usersCol = db.collection("users");
-const ridesCol = db.collection("rides");
 
-/* ================= Utils ================= */
+/* =============== Helpers =============== */
 const $=s=>document.querySelector(s);
-const $$=s=>Array.from(document.querySelectorAll(s));
-const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n||0);
-function toast(msg,ms=1700){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hide"); setTimeout(()=>t.classList.add("hide"),ms); }
+const normalizeEmail=e=>String(e||"").trim().toLowerCase();
 function pill(el, text, cls){ el.textContent=text; el.className=`pill ${cls||''}`; el.classList.remove('hide'); }
-const normalizeEmail = e => String(e||"").trim().toLowerCase();
-const toRad=d=>d*Math.PI/180;
-const km2=(a,b)=>{ const R=6371, dLat=toRad(b.lat-a.lat), dLon=toRad(b.lng-a.lng);
-  const la1=toRad(a.lat), la2=toRad(b.lat);
-  const h=Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;
-  return 2*R*Math.asin(Math.sqrt(h)); };
-const bearing=(a,b)=>{const φ1=toRad(a.lat), φ2=toRad(b.lat), Δλ=toRad(b.lng-a.lng);
-  const y=Math.sin(Δλ)*Math.cos(φ2); const x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
-  return (Math.atan2(y,x)*180/Math.PI+360)%360;};
-
-/* ================= Tabs ================= */
-let currentUser=null;
-const panels=["access","ride","history","driver","settings"];
-function setTab(name){
-  panels.forEach(p=>{
-    $("#panel-"+p).classList.toggle("hide",p!==name);
-    document.querySelector(`[data-tab="${p}"]`).classList.toggle("active",p===name);
-  });
-  if(name==="ride"){ ensureRideMap(); setTimeout(()=> mapRide.invalidateSize(), 120); }
-  if(name==="driver"){ ensureDriverMap(); setTimeout(()=> mapDriver.invalidateSize(), 120); }
-  if(name==="settings"){ paintProfile(); }
-}
-$$('.tabs .tab-btn').forEach(b=> b.addEventListener('click', ()=> setTab(b.dataset.tab)));
-$("#goLogin").onclick=()=>{ $("#loginBox").classList.remove("hide"); $("#registerBox").classList.add("hide"); };
-$("#goRegister").onclick=()=>{ $("#registerBox").classList.remove("hide"); $("#loginBox").classList.add("hide"); };
-
-/* ================= Map tiles ================= */
-function uberTiles(){
-  const tl=L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    {maxZoom:19,subdomains:'abcd',attribution:'© OpenStreetMap © CARTO'});
-  tl.on('tileerror',()=>{ try{ if(tl._fallback) return; tl._fallback=true; L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(tl._map);}catch(_){ }});
-  return tl;
+function hidePill(){ $("#msg").classList.add("hide"); }
+function setLoading(btn,is){ btn.disabled=is; btn.textContent=is? "Procesando..." : btn.dataset.label||btn.textContent; }
+function mapErrors(e){
+  const c=e?.code||"";
+  if(c==="auth/email-already-in-use") return "Ese correo ya está registrado. Iniciá sesión.";
+  if(c==="auth/invalid-email")       return "Correo inválido.";
+  if(c==="auth/weak-password")       return "La contraseña es muy corta (mín. 6).";
+  if(c==="auth/invalid-credential"||c==="auth/wrong-password") return "Correo o contraseña incorrectos.";
+  if(c==="auth/user-not-found")      return "No existe una cuenta con ese correo.";
+  return "Ocurrió un error. Intenta de nuevo.";
 }
 
-/* ================= OSRM routing ================= */
-async function routeCoords(a,b){
-  const url=`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`;
-  const r=await fetch(url); if(!r.ok) throw new Error("OSRM off");
-  const j=await r.json(); const rt=j.routes?.[0]; if(!rt) throw new Error("Sin ruta");
-  return rt.geometry.coordinates.map(([x,y])=>[y,x]);
+/* =============== Navegación simple =============== */
+function go(panel){
+  $("#panel-access").classList.toggle("hide", panel!=="access");
+  $("#panel-settings").classList.toggle("hide", panel!=="settings");
+  $("#panel-map").classList.toggle("hide", panel!=="map");
 }
+$("#goLogin").onclick = ()=>{ hidePill(); $("#loginBox").classList.remove("hide"); $("#registerBox").classList.add("hide"); $("#loginEmail").focus(); };
+$("#goRegister").onclick = ()=>{ hidePill(); $("#registerBox").classList.remove("hide"); $("#loginBox").classList.add("hide"); $("#regName").focus(); };
 
-/* ================= Iconos ================= */
-function carIcon(color="#00b3ff"){
-  const svg = `
-  <div class="car-ico">
-    <svg viewBox="0 0 64 64" aria-hidden="true">
-      <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="${color}"/><stop offset="1" stop-color="#5fd2ff"/></linearGradient></defs>
-      <rect x="14" y="24" width="36" height="18" rx="6" fill="url(#g)" />
-      <path d="M18 24 l7-10 h14 l7 10 z" fill="#0d1b24"/>
-      <circle cx="22" cy="44" r="6" fill="#0d1b24"/><circle cx="42" cy="44" r="6" fill="#0d1b24"/>
-      <circle cx="22" cy="44" r="2" fill="#9ecbe6"/><circle cx="42" cy="44" r="2" fill="#9ecbe6"/>
-      <rect x="20" y="26" width="24" height="8" rx="2" fill="#8ad4ff" opacity=".9"/>
-    </svg>
-  </div>`;
-  return L.divIcon({html:svg, className:'', iconSize:[38,38], iconAnchor:[19,19]});
-}
-function setCarRotation(marker,deg){ try{ marker.getElement()?.querySelector('.car-ico')?.style.setProperty('--rot', deg+'deg'); }catch(_){ } }
-
-/* ================= PASAJERO (mapa y viajes) ================= */
-let mapRide=null, riderMarkers={origin:null,dest:null,driver:null}, riderLines={o2d:null,drv:null};
-let origin=null, dest=null, riderActiveUnsub=null, lastDriverPt=null;
-
-function ensureRideMap(){
-  if(mapRide) return;
-  mapRide=L.map('mapRide',{zoomControl:false});
-  L.control.zoom({position:'bottomright'}).addTo(mapRide);
-  uberTiles().addTo(mapRide);
-  mapRide.setView([-31.5375,-68.5364],12);
-}
-function setRideMarker(kind, lat, lng, label){
-  let ico;
-  if(kind==='driver'){ ico = carIcon('#ffd34d'); }
-  else{
-    const bg = kind==='origin' ? '#0f2a22' : '#2a0f12';
-    const fg = kind==='origin' ? '#53f0a8' : '#ffb4b4';
-    ico = L.divIcon({
-      html:`<div class="pill" style="transform:translate(-50%,-50%);background:${bg};color:${fg};border-color:${fg}">${label}</div>`,
-      className:'', iconSize:[0,0]
-    });
-  }
-  if(!riderMarkers[kind]) riderMarkers[kind]=L.marker([lat,lng],{icon:ico}).addTo(mapRide);
-  else riderMarkers[kind].setLatLng([lat,lng]);
-}
-function drawRideLine(name, coords){ if(riderLines[name]){ mapRide.removeLayer(riderLines[name]); } riderLines[name]=L.polyline(coords,{weight:5}).addTo(mapRide); }
-function fitRideBounds(){ const b=L.latLngBounds([]); Object.values(riderMarkers).forEach(m=>m&&b.extend(m.getLatLng())); if(b.isValid()) mapRide.fitBounds(b,{padding:[24,24]}); }
-async function geocode(q){ try{const u=new URL("https://nominatim.openstreetmap.org/search");u.searchParams.set("q",q);u.searchParams.set("format","json");u.searchParams.set("limit","1");const r=await fetch(u,{headers:{'Accept-Language':'es'}}); if(!r.ok) return null; const j=await r.json(); if(!j.length) return null; return {lat:+j[0].lat,lng:+j[0].lon};}catch(_){return null} }
-function estimateFareRaw(km){ const base=990, perKm=660, perMin=99; const mins=(km/24)*60; return Math.max(800, Math.round(base + km*perKm + mins*perMin)); }
-function updateEstimate(){ const dist=$("#distance"), fare=$("#fare"); if(!origin||!dest){ dist.value="0.00 km"; fare.value="$0"; return; } const km=km2(origin,dest); dist.value=`${km.toFixed(2)} km`; fare.value=money(estimateFareRaw(km)); }
-
-$("#btnGeoRO").addEventListener("click", async ()=>{
-  ensureRideMap(); const loc=await geocode($("#riderOrigin").value.trim()); if(!loc) return toast("Origen no encontrado");
-  origin=loc; setRideMarker('origin',loc.lat,loc.lng,'Origen'); mapRide.setView([loc.lat,loc.lng],15); updateEstimate();
-});
-$("#btnGeoRD").addEventListener("click", async ()=>{
-  ensureRideMap(); const loc=await geocode($("#riderDest").value.trim()); if(!loc) return toast("Destino no encontrado");
-  dest=loc; setRideMarker('dest',loc.lat,loc.lng,'Destino'); mapRide.setView([loc.lat,loc.lng],15); updateEstimate();
-  if(origin){ try{ const c=await routeCoords(origin,dest); drawRideLine('o2d',c); fitRideBounds(); }catch(_){ } }
-});
-$("#btnLocate").addEventListener("click", ()=>{
-  if(!navigator.geolocation) return toast("Sin geolocalización");
-  ensureRideMap();
-  navigator.geolocation.getCurrentPosition(p=>{
-    origin={lat:p.coords.latitude,lng:p.coords.longitude};
-    setRideMarker('origin',origin.lat,origin.lng,'Origen'); mapRide.setView([origin.lat,origin.lng],15); updateEstimate();
-  }, ()=>toast("No se pudo ubicar"), {enableHighAccuracy:true,timeout:5000,maximumAge:15000});
-});
-
-/* Crear viaje */
-$("#btnUnified").addEventListener("click", riderCreateRide);
-$("#btnCancel").addEventListener("click", ()=>{});
-
-async function riderCreateRide(){
-  if(!currentUser) return toast("Iniciá sesión");
-  if(!origin||!dest) return toast("Elegí origen y destino");
-  const existing = await ridesCol.where("riderId","==", currentUser.uid).where("finished","==", false).limit(1).get().catch(()=>null);
-  if(existing && !existing.empty) return toast("Ya tenés un viaje activo");
-  const km=km2(origin,dest), fare=estimateFareRaw(km);
-  const data={
-    riderId: currentUser.uid, riderName: currentUser.displayName || currentUser.email || "Pasajero",
-    riderPhotoURL: currentUser.photoURL || "", riderRating: currentUser.rating || 5, riderEmail: currentUser.email || currentUser.emailTyped || "demo@demo",
-    originText: $("#riderOrigin").value.trim() || `${origin.lat.toFixed(5)}, ${origin.lng.toFixed(5)}`,
-    destText: $("#riderDest").value.trim() || `${dest.lat.toFixed(5)}, ${dest.lng.toFixed(5)}`,
-    origin, dest, km, fare, vehicle: $("#reqType").value || "auto",
-    payment: {method:$("#payMethod").value||null,status:"pending"},
-    driverId: null, reservedBy: null,
-    status:"requested", finished:false,
-    ts: firebase.firestore.FieldValue.serverTimestamp()
-  };
-  await ridesCol.add(data);
-  toast("Solicitud enviada");
-}
-
-function riderAttachActiveRide(){
-  if(riderActiveUnsub) riderActiveUnsub();
-  riderActiveUnsub = ridesCol.where("riderId","==", currentUser.uid).where("finished","==", false).limit(1)
-  .onSnapshot(qs=>{
-    if(qs.empty){ $("#driverCard").classList.add("hide"); $("#btnCancel").classList.add("hide"); return; }
-    const id=qs.docs[0].id, r=qs.docs[0].data();
-    $("#btnCancel").classList.toggle("hide", r.status!=="requested");
-    $("#btnCancel").onclick = async()=>{ try{ await ridesCol.doc(id).set({status:"cancelled", finished:true},{merge:true}); }catch(e){ toast(e.message) } };
-
-    $("#rideMapTop").textContent=`${r.originText} → ${r.destText} · ${(r.km||0).toFixed(1)} km · ${money(r.fare||0)}`;
-    $("#rideMapTop").classList.add("show"); setTimeout(()=>$("#rideMapTop").classList.remove("show"),1200);
-
-    if(r.driverId){
-      $("#driverCard").classList.remove("hide");
-      $("#driverName").textContent = `${r.driverName||"Conductor"} — ${money(r.fare)} · ★${(r.driverRating||5).toFixed(1)}`;
-      $("#driverAvatar").src = r.driverPhotoURL || "https://i.pravatar.cc/100?img=3";
-      $("#driverExtra").textContent = r.status==="accepted"?"En camino al origen": r.status==="arrived"?"Llegó al origen": r.status==="in_trip"?"En viaje": r.status==="completed"?"Finalizado":"—";
-    }
-
-    ensureRideMap();
-    if(r.origin){ origin=r.origin; setRideMarker('origin',origin.lat,origin.lng,'Origen'); }
-    if(r.dest){ dest=r.dest; setRideMarker('dest',dest.lat,dest.lng,'Destino'); }
-    (async ()=>{ try{ const c=await routeCoords(origin,dest); drawRideLine('o2d',c); }catch(_){}})();
-
-    if(r.driverLoc){
-      const cur={lat:r.driverLoc.latitude,lng:r.driverLoc.longitude};
-      setRideMarker('driver',cur.lat,cur.lng,'');
-      if(lastDriverPt){ setCarRotation(riderMarkers.driver, bearing(lastDriverPt,cur)); }
-      lastDriverPt=cur;
-      const target = (r.status==="accepted"||r.status==="arrived")? r.origin : r.dest;
-      if(target){
-        routeCoords(cur,target).then(coords=>{ drawRideLine('drv',coords); fitRideBounds(); }).catch(()=>{});
-      }else{ fitRideBounds(); }
-    }
-  });
-}
-
-/* ================= CONDUCTOR ================= */
-let mapDriver=null, driverMarker=null, prevDriverPoint=null;
-let activePolylineToPick=null, activePolylineO2D=null;
-let driverAvailUnsub=null, driverMineUnsub=null;
-let geoWatchId=null, lastPush=0, currentRideId=null;
-let online=false, onTimer=null, onStart=null;
-
-function ensureDriverMap(){
-  if(mapDriver) return;
-  mapDriver=L.map('mapDriver',{zoomControl:false});
-  L.control.zoom({position:'bottomright'}).addTo(mapDriver);
-  uberTiles().addTo(mapDriver);
-  mapDriver.setView([-31.5375,-68.5364],13);
-}
-function centerOnMeOnce(){
-  if(!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(p=>{
-    ensureDriverMap();
-    const lat=p.coords.latitude,lng=p.coords.longitude;
-    if(!driverMarker){
-      driverMarker=L.marker([lat,lng],{icon:carIcon('#00b3ff')}).addTo(mapDriver);
-    }else driverMarker.setLatLng([lat,lng]);
-    mapDriver.setView([lat,lng],14);
-  });
-}
-function startGeoWatch(){
-  if(!navigator.geolocation) return;
-  if(geoWatchId) navigator.geolocation.clearWatch(geoWatchId);
-  geoWatchId = navigator.geolocation.watchPosition(async p=>{
-    ensureDriverMap();
-    const lat=p.coords.latitude,lng=p.coords.longitude;
-    const nowPoint={lat,lng};
-    if(!driverMarker){ driverMarker=L.marker([lat,lng],{icon:carIcon('#00b3ff')}).addTo(mapDriver); }
-    else{
-      if(prevDriverPoint){ setCarRotation(driverMarker, bearing(prevDriverPoint,nowPoint)); }
-      driverMarker.setLatLng([lat,lng]);
-    }
-    prevDriverPoint=nowPoint;
-    const now=Date.now();
-    if(currentRideId && now-lastPush>2500){
-      lastPush=now;
-      await ridesCol.doc(currentRideId).set({driverLoc:new firebase.firestore.GeoPoint(lat,lng), driverLocAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-    }
-  }, console.warn, {enableHighAccuracy:true, maximumAge:2000, timeout:15000});
-}
-function stopGeoWatch(){ if(geoWatchId){ navigator.geolocation.clearWatch(geoWatchId); geoWatchId=null; } }
-
-function setOnlineUI(isOnline){
-  online=isOnline;
-  $("#btnStartRoute").disabled = !currentUser?.approved || online;
-  $("#btnPauseRoute").disabled = !currentUser?.approved || !online;
-  $("#btnStopRoute").disabled  = !currentUser?.approved || !online;
-}
-function fmtTime(ms){ const s=Math.floor(ms/1000); const h=String(Math.floor(s/3600)).padStart(2,"0"); const m=String(Math.floor((s%3600)/60)).padStart(2,"0"); const ss=String(s%60).padStart(2,"0"); return `${h}:${m}:${ss}`;}
-function startTimer(){ onStart=Date.now(); $("#onlineTimer").textContent="00:00:00"; if(onTimer) clearInterval(onTimer); onTimer=setInterval(()=>$("#onlineTimer").textContent=fmtTime(Date.now()-onStart),1000); }
-function stopTimer(reset=true){ if(onTimer) clearInterval(onTimer); if(reset) $("#onlineTimer").textContent="00:00:00"; }
-
-async function goOnline(){ await usersCol.doc(auth.currentUser.uid).set({online:true},{merge:true}); setOnlineUI(true); startTimer(); ensureDriverMap(); centerOnMeOnce(); startGeoWatch(); attachDriverStreams(); toast("Conectado"); }
-async function pauseOnline(){ await usersCol.doc(auth.currentUser.uid).set({online:false},{merge:true}); setOnlineUI(false); stopTimer(false); stopGeoWatch(); toast("Pausado"); }
-async function stopOnline(){ await usersCol.doc(auth.currentUser.uid).set({online:false},{merge:true}); setOnlineUI(false); stopTimer(true); stopGeoWatch(); clearActiveRoute(); $("#driverAvailable").innerHTML=""; $("#driverMyActive").innerHTML=""; toast("Desconectado"); }
-$("#btnStartRoute").addEventListener("click", goOnline);
-$("#btnPauseRoute").addEventListener("click", pauseOnline);
-$("#btnStopRoute").addEventListener("click", stopOnline);
-
-function clearActiveRoute(){ if(activePolylineToPick){ mapDriver.removeLayer(activePolylineToPick); activePolylineToPick=null; } if(activePolylineO2D){ mapDriver.removeLayer(activePolylineO2D); activePolylineO2D=null; } }
-
-/* Streams conductor */
-function attachDriverStreams(){
-  if(driverAvailUnsub) driverAvailUnsub();
-  if(driverMineUnsub)  driverMineUnsub();
-
-  if(!online){
-    $("#driverAvailable").innerHTML=`<div class="small muted">Presioná “Iniciar”.</div>`;
-    $("#driverMyActive").innerHTML=`<div class="small muted">Sin viajes activos.</div>`;
-    return;
-  }
-  ensureDriverMap();
-
-  driverAvailUnsub = ridesCol.where("status","==","requested").limit(60)
-  .onSnapshot(qs=>{
-    const wrap=$("#driverAvailable"); wrap.innerHTML="";
-    if(qs.empty){ wrap.innerHTML=`<div class="small muted">Sin viajes por ahora…</div>`; return; }
-    qs.forEach(doc=>{
-      const r=doc.data();
-      if(r.reservedBy && r.reservedBy!==auth.currentUser.uid) return;
-      const item=document.createElement("div"); item.className="item";
-      item.innerHTML=`
-        <div class="inline-card">
-          <img class="avatar" src="${r.riderPhotoURL||'https://i.pravatar.cc/100?img=12'}" alt="Pasajero">
-          <div>
-            <b>${r.riderName||'Pasajero'}</b> — ${money(r.fare)} · ★${(r.riderRating||5).toFixed(1)}
-            <div class="small">${r.originText} → ${r.destText}</div>
-            <div class="small muted">${(r.km||0).toFixed(1)} km · ${r.vehicle||'auto'}</div>
-          </div>
-        </div>
-        <div class="row" style="margin-top:6px">
-          <button class="btn" data-view>Ver ruta</button>
-          <button class="btnp" data-accept>Aceptar</button>
-        </div>`;
-      item.querySelector('[data-view]').onclick=()=> showRoutePreview(r);
-      item.querySelector('[data-accept]').onclick=()=> driverAcceptRide(doc.id);
-      wrap.appendChild(item);
-    });
-  });
-
-  driverMineUnsub = ridesCol.where("driverId","==", auth.currentUser.uid).where("finished","==",false)
-  .onSnapshot(qs=>{
-    const wrap=$("#driverMyActive"); wrap.innerHTML="";
-    if(qs.empty){ currentRideId=null; wrap.innerHTML=`<div class="small muted">Sin viajes activos.</div>`; clearActiveRoute(); return; }
-    qs.forEach((doc,i)=>{
-      const r=doc.data(); if(i===0){ currentRideId=doc.id; showActiveRoute(r); }
-      const order=["requested","accepted","arrived","in_trip","completed"];
-      const can=n=> order.indexOf(n)===order.indexOf(r.status)+1;
-      const item=document.createElement("div"); item.className="item";
-      item.innerHTML=`
-        <div class="inline-card">
-          <img class="avatar" src="${r.riderPhotoURL||'https://i.pravatar.cc/100?img=12'}" alt="Pasajero">
-          <div>
-            <b>${r.riderName||'Pasajero'}</b> — ${money(r.fare)} · ★${(r.riderRating||5).toFixed(1)}
-            <div class="small">${r.originText} → ${r.destText}</div>
-            <div class="small muted">${(r.km||0).toFixed(1)} km · Estado: <b>${r.status}</b></div>
-          </div>
-        </div>
-        <div class="row" style="margin-top:6px">
-          <button class="btn${can('arrived')?' btnp':''}" data-next="arrived" ${can('arrived')?'':'disabled'}>Llegué</button>
-          <button class="btn${can('in_trip')?' btnp':''}" data-next="in_trip" ${can('in_trip')?'':'disabled'}>Iniciar</button>
-          <button class="btn${can('completed')?' btnp':''}" data-next="completed" ${can('completed')?'':'disabled'}>Finalizar</button>
-        </div>`;
-      item.querySelectorAll('[data-next]').forEach(b=> b.onclick=()=> driverAdvance(doc.id,b.dataset.next));
-      wrap.appendChild(item);
-    });
-  });
-}
-
-/* ================= Perfil / Auth ================= */
-function paintProfile(){
-  const el=$("#profileInfo"), av=$("#profileAvatar"); if(!currentUser){ el.textContent="Sin sesión"; av.src=""; return; }
-  av.src=currentUser.photoURL||"https://i.pravatar.cc/100?u="+(currentUser.uid||'placeholder');
-  const tagDemo = currentUser.demo ? " (demo)" : "";
-  el.innerHTML=`Nombre: <b>${currentUser.displayName||"—"}</b> · Correo: <b>${currentUser.email||currentUser.emailTyped||"—"}</b>${tagDemo}<br>Rol: <b>${currentUser.role||'rider'}</b> · KYC: <b>${currentUser.approved?'Aprobado':'No'}</b>`;
-}
-function refreshTabs(){
-  const logged=!!currentUser;
-  document.querySelector(`[data-tab="access"]`).classList.toggle("hide", logged);
-  document.querySelector(`[data-tab="ride"]`).classList.toggle("hide", !logged);
-  document.querySelector(`[data-tab="history"]`).classList.toggle("hide", !logged);
-  document.querySelector(`[data-tab="driver"]`).classList.toggle("hide", !(logged && currentUser.approved));
-  document.querySelector(`[data-tab="settings"]`).classList.toggle("hide", !logged);
-  $("#btnStartRoute").disabled = !(logged && currentUser.approved);
-  $("#drvKycStatus").className = "pill " + (currentUser?.approved?"ok":"warn");
-  $("#drvKycStatus").textContent = currentUser?.approved?"Aprobado":"No solicitado";
-  const labelEmail = currentUser?.email || currentUser?.emailTyped || "";
-  $("#authPill").textContent = logged ? `${currentUser.displayName||labelEmail||'Usuario'} — ${(currentUser.role||'rider')}${currentUser.approved?' (KYC✓)':''}${currentUser.demo?' (demo)':''}` : "Sin sesión";
-  setTab(logged ? "ride" : "access");
-}
-
-/* compresión de imagen */
+/* =============== Compresión de imagen (opcional) =============== */
 function compressImage(file, maxBytes=900*1024, maxW=512){
   return new Promise((resolve,reject)=>{
     const img=new Image(), rdr=new FileReader();
@@ -573,7 +174,7 @@ function compressImage(file, maxBytes=900*1024, maxW=512){
       const scale=Math.min(1, maxW/img.width);
       const w=Math.round(img.width*scale), h=Math.round(img.height*scale);
       const c=document.createElement('canvas'); c.width=w; c.height=h;
-      const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+      c.getContext('2d').drawImage(img,0,0,w,h);
       let q=0.92, out;
       do{ out=c.toDataURL('image/jpeg', q); q-=0.07; }while(out.length>maxBytes && q>0.35);
       resolve(out);
@@ -582,190 +183,140 @@ function compressImage(file, maxBytes=900*1024, maxW=512){
   });
 }
 
-/* Registro normal (con verificación) */
-$("#btnSignUp").addEventListener("click", async ()=>{
+/* =============== REGISTRO (estable, sin verificación) =============== */
+$("#registerBox").addEventListener("submit", async (e)=>{
+  e.preventDefault(); hidePill();
   const name = $("#regName").value.trim();
   const email = normalizeEmail($("#regEmail").value);
-  const pass = $("#regPass").value;
-  const file = $("#regPhoto").files[0];
+  const pass  = $("#regPass").value;
+  const pass2 = $("#regPass2").value;
+  const file  = $("#regPhoto").files[0];
+  const btn   = $("#btnSignUp"); btn.dataset.label="Crear cuenta y entrar"; setLoading(btn,true);
 
-  if(!name || !email || pass.length<6 || !file){
-    pill($("#msg"), "Completá todos los campos (foto obligatoria).", "error"); 
-    return;
+  if(!name || !email || pass.length<6 || pass!==pass2){
+    pill($("#msg"), "Completá todos los campos y verifica la contraseña.", "warn"); setLoading(btn,false); return;
   }
 
   try{
-    const photoURL = await compressImage(file);
-    const { user } = await auth.createUserWithEmailAndPassword(email, pass);
+    let photoURL="";
+    if(file){ photoURL = await compressImage(file); }
 
+    const { user } = await auth.createUserWithEmailAndPassword(email, pass);
     await user.updateProfile({ displayName: name, photoURL });
-    await user.sendEmailVerification();
 
     await usersCol.doc(user.uid).set({
-      uid: user.uid,
-      email: user.email,
-      displayName: name,
-      photoURL,
-      role: "rider",
-      approved: false,
-      online: false,
+      uid:user.uid, email:user.email, displayName:name,
+      photoURL, role:"rider", approved:false, online:false,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    }, {merge:true});
 
-    pill($("#msg"), "Cuenta creada. Te enviamos un correo para verificar. Verifícala y luego inicia sesión.", "ok");
-    await auth.signOut();
-    $("#goLogin").click();
-    $("#loginEmail").value = email;
-
+    pill($("#msg"), "¡Cuenta creada! Ya estás dentro.", "ok");
   }catch(e){
-    const code=e?.code||"";
-    if(code==="auth/email-already-in-use"){
-      $("#goLogin").click();
-      $("#loginEmail").value = email;
-      pill($("#msg"), "Ese correo ya está registrado. Podés usar “Entrar rápido (demo)” para continuar igual.", "warn");
-    }else if(code==="auth/invalid-email"){
-      pill($("#msg"), "Correo inválido.", "error");
-    }else{
-      pill($("#msg"), "No se pudo crear la cuenta.", "error");
-    }
+    pill($("#msg"), mapErrors(e), "error");
+  }finally{
+    setLoading(btn,false);
   }
 });
 
-/* Reenviar verificación */
-$("#btnResend").addEventListener("click", async ()=>{
+/* =============== LOGIN =============== */
+$("#loginBox").addEventListener("submit", async (e)=>{
+  e.preventDefault(); hidePill();
   const email = normalizeEmail($("#loginEmail").value);
   const pass  = $("#loginPass").value;
-  if(!email || !pass){
-    pill($("#msg"), "Completá email y contraseña para reenviar verificación.", "warn");
-    return;
-  }
+  const btn   = $("#btnSignIn"); btn.dataset.label="Entrar"; setLoading(btn,true);
   try{
-    const { user } = await auth.signInWithEmailAndPassword(email, pass);
-    await user.sendEmailVerification();
-    await auth.signOut();
-    pill($("#msg"), "Verificación reenviada. Revisá tu correo.", "ok");
+    await auth.signInWithEmailAndPassword(email, pass);
   }catch(e){
-    const code=e?.code||"";
-    if(code==="auth/user-not-found"){
-      pill($("#msg"), "Ese correo no tiene cuenta. Registrate o usa “Entrar rápido (demo)”.", "warn");
-    }else if(code==="auth/wrong-password" || code==="auth/invalid-credential"){
-      pill($("#msg"), "Correo o contraseña incorrectos.", "error");
-    }else{
-      pill($("#msg"), "No se pudo reenviar la verificación.", "error");
-    }
+    pill($("#msg"), mapErrors(e), "error");
+  }finally{
+    setLoading(btn,false);
   }
 });
 
-/* OLVIDÉ MI CONTRASEÑA */
-$("#btnForgot").addEventListener("click", async ()=>{
-  const email = normalizeEmail($("#loginEmail").value);
-  if(!email) return pill($("#msg"),"Escribí tu correo para enviar el enlace.","warn");
-  try{ await auth.sendPasswordResetEmail(email); pill($("#msg"),"Te envié un correo para restablecer tu contraseña.","ok"); }
-  catch(_){ pill($("#msg"),"No se pudo enviar el correo. Verificá el email.","error"); }
-});
-
-/* Login normal (mapea invalid-credential) */
-$("#btnSignIn").addEventListener("click", async ()=>{
-  const email = normalizeEmail($("#loginEmail").value);
-  const pass  = $("#loginPass").value;
-  try{
-    const { user } = await auth.signInWithEmailAndPassword(email, pass);
-    if(!user.emailVerified){
-      await auth.signOut();
-      pill($("#msg"), "Tu correo no está verificado. Revisá tu bandeja o usa “Entrar rápido (demo)”.", "warn");
-    }
-  }catch(e){
-    const code=e?.code||"";
-    if(code==="auth/user-not-found"){
-      pill($("#msg"), "No existe una cuenta con ese correo. Registrate o usa “Entrar rápido (demo)”.", "warn");
-    }else if(code==="auth/wrong-password" || code==="auth/invalid-credential"){
-      pill($("#msg"), "Correo o contraseña incorrectos.", "error");
-    }else{
-      pill($("#msg"), "No se pudo iniciar sesión.", "error");
-    }
-  }
-});
-
-/* ✨ ENTRAR RÁPIDO (DEMO): anónimo + guarda nombre/correo que escribiste */
+/* =============== Entrar rápido (demo) =============== */
 $("#btnFast").addEventListener("click", async ()=>{
+  hidePill();
   const emailTyped = $("#loginEmail").value.trim() || `demo-${Date.now()}@demo.local`;
+  const btn = $("#btnFast"); btn.dataset.label="Entrar rápido (demo)"; setLoading(btn,true);
   try{
     const cred = await auth.signInAnonymously();
     const u = cred.user;
     const displayName = emailTyped.split('@')[0];
     const photoURL = "https://i.pravatar.cc/100?u="+u.uid;
     await usersCol.doc(u.uid).set({
-      uid: u.uid,
-      emailTyped,                // guardamos el correo que escribiste (no verificado)
-      displayName,
-      photoURL,
-      role:"rider",
-      approved:false,
-      online:false,
-      demo:true,
+      uid:u.uid, emailTyped, displayName, photoURL,
+      role:"rider", approved:false, online:false, demo:true,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, {merge:true});
-    // onAuthStateChanged se encargará del resto
   }catch(_){
     pill($("#msg"), "No se pudo entrar en modo demo.", "error");
-  }
+  }finally{ setLoading(btn,false); }
 });
 
-/* KYC demo, logout */
-$("#btnVerifySubmit").addEventListener("click", async ()=>{
-  if(!auth.currentUser) return toast("Iniciá sesión");
+/* =============== Olvidé mi contraseña =============== */
+$("#btnForgot").addEventListener("click", async ()=>{
+  hidePill();
+  const email = normalizeEmail($("#loginEmail").value);
+  if(!email) return pill($("#msg"),"Escribí tu correo y volvés a intentar.","warn");
+  try{ await auth.sendPasswordResetEmail(email); pill($("#msg"),"Te envié el enlace de restablecimiento.","ok"); }
+  catch(e){ pill($("#msg"), mapErrors(e), "error"); }
+});
+
+/* =============== Perfil, salir, conductor demo =============== */
+$("#btnSignOut").addEventListener("click", ()=> auth.signOut().catch(()=>{}));
+$("#btnMakeDriver").addEventListener("click", async ()=>{
+  if(!auth.currentUser) return;
   await usersCol.doc(auth.currentUser.uid).set({role:"driver",approved:true},{merge:true});
-  currentUser.approved=true; paintProfile(); refreshTabs(); setTab("driver"); toast("Conductor aprobado (demo)");
+  pill($("#msg"),"Marcado como conductor (demo).","ok"); paintProfile();
 });
-$("#btnSignOut").addEventListener("click", ()=> auth.signOut().catch(e=>toast(e.message)));
 
-/* Estado de sesión */
+/* =============== Estado de sesión =============== */
 auth.onAuthStateChanged(async (u)=>{
   if(!u){
-    currentUser=null; paintProfile(); refreshTabs();
-    if(riderActiveUnsub) riderActiveUnsub();
-    if(driverAvailUnsub) driverAvailUnsub();
-    if(driverMineUnsub)  driverMineUnsub();
+    $("#authPill").textContent="Sin sesión";
+    go("access");
     return;
   }
-  // Para usuarios reales, exigir verificación; para anónimos, permitir.
-  if(!u.isAnonymous && !u.emailVerified){
-    await auth.signOut();
-    pill($("#msg"),"Tu correo no está verificado. Verifícalo o usa “Entrar rápido (demo)”.","warn");
-    return;
-  }
-  const ref=usersCol.doc(u.uid);
-  const snap=await ref.get();
+  const ref=usersCol.doc(u.uid); const snap=await ref.get();
   if(!snap.exists){
     await ref.set({
       uid:u.uid,
       email: u.email || null,
-      emailTyped: null,
+      emailTyped: u.isAnonymous ? ($("#loginEmail").value.trim() || null) : null,
       displayName: u.displayName || (u.email ? u.email.split('@')[0] : 'Invitado'),
       photoURL: u.photoURL || "https://i.pravatar.cc/100?u="+u.uid,
-      role:"rider", approved:false, online:false,
-      demo: u.isAnonymous===true,
+      role:"rider", approved:false, online:false, demo: u.isAnonymous===true,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, {merge:true});
   }
-  currentUser=(await ref.get()).data();
-  paintProfile(); refreshTabs();
-  ensureRideMap(); riderAttachActiveRide();
+  const data=(await ref.get()).data();
+  $("#authPill").textContent = `${data.displayName||'Usuario'} — ${(data.role||'rider')}${data.approved?' (KYC✓)':''}${data.demo?' (demo)':''}`;
+  paintProfile(data);
+  go("settings");
+  initMapOnce();
 });
 
-/* ================= Historial (simple) ================= */
-function renderHistory(){
-  if(!currentUser) return; const key=`taxiya_rider_history_${currentUser.uid}`; let list=[]; try{list=JSON.parse(localStorage.getItem(key)||"[]");}catch(_){}
-  const wrap=$("#riderHistory"); wrap.innerHTML=""; if(!list.length) wrap.innerHTML=`<div class="small muted">Sin viajes.</div>`;
+/* =============== Perfil UI =============== */
+function paintProfile(d){
+  d=d||{};
+  $("#profileAvatar").src = d.photoURL || "https://i.pravatar.cc/100?u=placeholder";
+  $("#profileInfo").innerHTML = `
+    Nombre: <b>${d.displayName||"—"}</b> · Correo: <b>${d.email||d.emailTyped||"—"}</b><br>
+    Rol: <b>${d.role||'rider'}</b> · KYC: <b>${d.approved?'Aprobado':'No'}</b>${d.demo?' · Sesión demo':''}
+  `;
 }
-$("#btnClearRiderHistory").addEventListener("click", ()=>{ if(!currentUser) return; localStorage.setItem(`taxiya_rider_history_${currentUser.uid}`,"[]"); renderHistory(); toast("OK"); });
 
-/* ================= Map instances ================= */
-let mapRideInstantiated=false,mapDriverInstantiated=false;
-function ensureRideMap(){ if(mapRideInstantiated) return; mapRideInstantiated=true;
-  mapRide=L.map('mapRide',{zoomControl:false}); L.control.zoom({position:'bottomright'}).addTo(mapRide); uberTiles().addTo(mapRide); mapRide.setView([-31.5375,-68.5364],12); }
-function ensureDriverMap(){ if(mapDriverInstantiated) return; mapDriverInstantiated=true;
-  mapDriver=L.map('mapDriver',{zoomControl:false}); L.control.zoom({position:'bottomright'}).addTo(mapDriver); uberTiles().addTo(mapDriver); mapDriver.setView([-31.5375,-68.5364],13); }
+/* =============== Mapa (opcional) =============== */
+let map=null;
+function initMapOnce(){
+  if(map) return;
+  $("#panel-map").classList.remove("hide");
+  map = L.map('map',{zoomControl:false});
+  L.control.zoom({position:'bottomright'}).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    {maxZoom:19,subdomains:'abcd',attribution:'© OpenStreetMap © CARTO'}).addTo(map);
+  map.setView([-31.5375,-68.5364],12);
+}
 </script>
 </body>
 </html>
