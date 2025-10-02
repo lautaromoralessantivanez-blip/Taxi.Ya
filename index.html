@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>Taxi Ya — demo login libre</title>
+<title>Taxi Ya — Firebase + Pestañas</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -31,7 +31,7 @@ button,input,select{font-family:inherit}
 .tab{padding:.45rem .75rem;border:1px solid var(--line);border-radius:999px;background:var(--chip);color:var(--ink);opacity:.85;cursor:pointer;transition:.2s}
 .tab[aria-selected="true"]{background:var(--accent);color:#111;opacity:1;border-color:#e6b800}
 
-.container{display:grid;grid-template-columns:340px 1fr;gap:1rem;padding:1rem;max-width:1200px;margin:0 auto}
+.container{display:grid;grid-template-columns:360px 1fr;gap:1rem;padding:1rem;max-width:1300px;margin:0 auto}
 .aside,.main{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .panel-head{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--line);background:var(--card)}
 .panel-body{padding:1rem}
@@ -57,6 +57,7 @@ button,input,select{font-family:inherit}
 .input{width:100%;background:#0e1620;border:1px solid var(--line);color:var(--ink);padding:.65rem .75rem;border-radius:12px}
 .label{font-size:.9rem;color:var(--muted);margin-bottom:.35rem}
 .field{display:grid;gap:.35rem}
+.help{color:var(--muted);font-size:.86rem}
 
 .grid{display:grid;gap:.75rem}
 .grid.cols-2{grid-template-columns:1fr 1fr}
@@ -65,7 +66,7 @@ button,input,select{font-family:inherit}
 #map{width:100%;height:520px}
 
 /* Mobile */
-@media (max-width: 980px){
+@media (max-width: 1080px){
   .container{grid-template-columns:1fr}
   .aside{order:2}
   .main{order:1}
@@ -86,6 +87,8 @@ button,input,select{font-family:inherit}
 .msg{display:inline-block;background:#12202e;border:1px solid var(--line);padding:.5rem .65rem;border-radius:10px;margin:.25rem 0}
 .msg.me{background:#1f2a37}
 .chatinput{display:flex;gap:.5rem;padding:.6rem;border-top:1px solid var(--line)}
+
+.err{color:#fecaca}
 </style>
 </head>
 <body>
@@ -102,12 +105,10 @@ button,input,select{font-family:inherit}
   <div class="container">
     <aside class="aside">
       <div class="panel-head">
-        <strong id="sideTitle">Inicio</strong>
-        <span class="badge warn">Demo libre</span>
+        <strong id="sideTitle">Cuenta</strong>
+        <span class="badge ok" id="authBadge">No conectado</span>
       </div>
-      <div class="panel-body" id="sideBody">
-        <!-- contenido lateral dinámico -->
-      </div>
+      <div class="panel-body" id="sideBody"><!-- lateral dinámico --></div>
     </aside>
 
     <main class="main">
@@ -139,11 +140,19 @@ button,input,select{font-family:inherit}
               <button class="btn ghost" id="btnLimpiar">Limpiar</button>
               <button class="btn primary" id="btnSolicitar">Solicitar viaje</button>
             </div>
+            <p class="help" id="actividad">Toca el mapa y elegí si es ORIGEN o DESTINO (se pregunta en cada toque).</p>
           </div>
 
           <div class="card">
-            <div class="label">Actividad</div>
-            <div id="actividad" style="font-size:.95rem;color:var(--muted)">Toca en el mapa para elegir ORIGEN o DESTINO (te preguntamos qué es en cada toque).</div>
+            <div class="label">Chat del viaje</div>
+            <div class="chatbox">
+              <div id="chatlog" class="chatlog"></div>
+              <div class="chatinput">
+                <input id="chatInput" class="input" placeholder="Escribe un mensaje respetuoso…"/>
+                <button class="btn" id="chatSend">Enviar</button>
+              </div>
+            </div>
+            <div class="help">El chat se habilita al tener un viaje activo.</div>
           </div>
         </div>
       </div>
@@ -151,35 +160,48 @@ button,input,select{font-family:inherit}
   </div>
 </div>
 
-<script>
+<!-- ================= Firebase + App (Módulos) ================= -->
+<script type="module">
+// ===== Firebase SDK (módulos via CDN) =====
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, addDoc, collection, serverTimestamp, onSnapshot, query, where, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// *** Config proporcionada ***
+const firebaseConfig = {
+  apiKey: "AIzaSyBu523IOGnIZGfAkdlLdVLcENwLgv5KU9o",
+  authDomain: "taxi-ya-3be33.firebaseapp.com",
+  projectId: "taxi-ya-3be33",
+  storageBucket: "taxi-ya-3be33.firebasestorage.app",
+  messagingSenderId: "31840475169",
+  appId: "1:31840475169:web:1485e47b9ebea4a66c6b60",
+  measurementId: "G-2RQRP1G2KB"
+};
+
+const appFB = initializeApp(firebaseConfig);
+try{ getAnalytics(appFB); }catch(e){ /* analytics requiere https/permitidos, ignorar errores */ }
+const auth = getAuth(appFB);
+const db = getFirestore(appFB);
+
 // ======= Estado y utilidades =======
 const $ = (sel) => document.querySelector(sel);
 const tabsEl = $('#tabs');
-let map, origenMarker, destinoMarker, meMarker;
+let map, origenMarker, destinoMarker, meMarker, activeReqUnsub=null, chatUnsub=null, listUnsub=null;
 let state = {
-  user: null,
-  viajes: [], // historial simple
-  activo: null, // viaje activo {id, pasajero, conductor, origen, destino, precio, estado}
-  pendingForDriver: null, // solicitud visible para el conductor en modo demo
-  precios: { base: 800, porKm: 350, porMin: 0, descuento: 0.10 }, // 10% más barato que apps grandes ;)
-  ratings: {} // uid -> {sum, count}
+  fbUser: null,
+  profile: null, // {name, role, ratingSum, ratingCount}
+  precios: { base: 800, porKm: 350, descuento: 0.10 },
+  origen: null, destino: null,
+  activeRequestId: null, // id en Firestore
 };
 
-const bannedWords = ['puta','puto','cagar','mierda','hdp','concha','pija','forro','insulto'];
+const bannedWords = ['puta','puto','cagar','mierda','hdp','concha','pija','forro','insulto','boludo'];
 function sanitizeMsg(text){
   let t = text.trim();
-  for(const w of bannedWords){
-    const re = new RegExp('\\b'+w+'\\b','gi');
-    t = t.replace(re, '***');
-  }
+  for(const w of bannedWords){ t = t.replace(new RegExp('\b'+w+'\b','gi'), '***'); }
   return t;
 }
-
-function save(){ localStorage.setItem('taxiya_state', JSON.stringify(state)); }
-function load(){ try{ const s = JSON.parse(localStorage.getItem('taxiya_state')); if(s) state = Object.assign(state, s); }catch(e){} }
-load();
-
-function uid(){ return Math.random().toString(36).slice(2,10); }
 
 function fmt(n){ return new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', maximumFractionDigits:0}).format(n); }
 function km(a,b){
@@ -191,14 +213,15 @@ function km(a,b){
   return 2*R*Math.asin(Math.sqrt(h));
 }
 
-// ======= UI: Tabs =======
+// ======= Tabs =======
 const TABS = [
-  {id:'inicio', label:'Inicio'},
+  {id:'cuenta', label:'Cuenta'},
   {id:'pasajero', label:'Pasajero'},
   {id:'conductor', label:'Conductor'},
-  {id:'perfil', label:'Perfil'}
+  {id:'perfil', label:'Perfil'},
+  {id:'ajustes', label:'Ajustes'}
 ];
-let currentTab = 'inicio';
+let currentTab = 'cuenta';
 
 function renderTabs(){
   tabsEl.innerHTML = '';
@@ -213,95 +236,116 @@ function renderTabs(){
 }
 
 function setStatusChip(){
-  $('#statusChip').textContent = state.user ? `${state.user.rol}` : 'offline';
-  $('#statusChip').className = 'chip';
+  const sc = $('#statusChip');
+  if(state.fbUser){ sc.textContent = state.profile? state.profile.role : 'conectado'; }
+  else { sc.textContent = 'offline'; }
+  sc.className = 'chip';
+  $('#authBadge').textContent = state.fbUser? 'Conectado' : 'No conectado';
 }
 
-// ======= Lateral según tab =======
+// ======= Lateral =======
 function renderSide(){
-  renderTabs();
-  setStatusChip();
-  const title = $('#sideTitle');
-  const body = $('#sideBody');
-  title.textContent = ({
-    inicio:'Inicio', pasajero:'Pasajero', conductor:'Conductor', perfil:'Perfil'
+  renderTabs(); setStatusChip();
+  $('#sideTitle').textContent = ({
+    cuenta:'Cuenta', pasajero:'Pasajero', conductor:'Conductor', perfil:'Perfil', ajustes:'Ajustes'
   })[currentTab];
+  const body = $('#sideBody');
   body.innerHTML='';
 
-  if(!state.user){
-    body.appendChild(loginCard());
-    return;
-  }
-
-  if(currentTab==='inicio') body.appendChild(cardInicio());
-  if(currentTab==='pasajero') body.appendChild(cardPasajero());
-  if(currentTab==='conductor') body.appendChild(cardConductor());
-  if(currentTab==='perfil') body.appendChild(cardPerfil());
+  if(currentTab==='cuenta') return body.appendChild(cardCuenta());
+  if(!state.fbUser){ body.innerHTML = `<div class="card"><b>Inicia sesión</b><p class="help">Para usar esta sección necesitás estar conectado.</p></div>`; return; }
+  if(currentTab==='pasajero') return body.appendChild(cardPasajero());
+  if(currentTab==='conductor') return body.appendChild(cardConductor());
+  if(currentTab==='perfil') return body.appendChild(cardPerfil());
+  if(currentTab==='ajustes') return body.appendChild(cardAjustes());
 }
 
 // ======= Componentes =======
-function loginCard(){
-  const wrap = document.createElement('div');
-  wrap.className='grid';
-  wrap.innerHTML = `
+function cardCuenta(){
+  const el = document.createElement('div'); el.className='grid';
+  if(!state.fbUser){
+    el.innerHTML = `
     <div class="card">
-      <h3 style="margin:0 0 .25rem 0">Entrar (demo libre)</h3>
-      <p style="margin:.2rem 0 .8rem 0;color:var(--muted)">No se valida correo. Tus datos quedan solo en este dispositivo.</p>
-      <div class="field"><label class="label">Nombre</label><input id="inNombre" class="input" placeholder="Ana, Mauro…"/></div>
-      <div class="field"><label class="label">Correo (opcional)</label><input id="inEmail" class="input" placeholder="nombre@mail.com"/></div>
-      <div class="field"><label class="label">Rol</label>
-        <select id="inRol" class="input">
-          <option value="pasajero">Pasajero</option>
-          <option value="conductor">Conductor</option>
-        </select>
+      <h3 style="margin:0 0 .5rem 0">Registración</h3>
+      <div class="grid cols-2">
+        <div class="field"><label class="label">Nombre</label><input id="regName" class="input" placeholder="Ana, Mauro…"></div>
+        <div class="field"><label class="label">Rol</label>
+          <select id="regRole" class="input"><option value="pasajero">Pasajero</option><option value="conductor">Conductor</option></select>
+        </div>
       </div>
-      <div class="row" style="margin-top:.8rem;justify-content:space-between">
-        <button class="btn primary" id="btnEntrar">Entrar ahora</button>
-        <button class="btn ghost" id="btnAutofill">Autocompletar</button>
-      </div>
-    </div>`;
-  setTimeout(()=>{
-    $('#btnAutofill').onclick = ()=>{
-      $('#inNombre').value = 'Usuario Demo';
-      $('#inEmail').value = 'demo@example.com';
-    };
-    $('#btnEntrar').onclick = ()=>{
-      const nombre = $('#inNombre').value.trim()||'Invitado';
-      const email = $('#inEmail').value.trim()||'';
-      const rol = $('#inRol').value;
-      state.user = { id: uid(), nombre, email, rol, foto:"", rating: {sum:0, count:0} };
-      save(); renderSide();
-    };
-  },0);
-  return wrap;
-}
-
-function cardInicio(){
-  const el = document.createElement('div');
-  el.className='grid';
-  el.innerHTML = `
-    <div class="card">
-      <div class="row wrap" style="justify-content:space-between">
-        <div>
-          <div class="label">Sesión</div>
-          <div class="chip">${state.user?.nombre || ''} (${state.user?.rol})</div>
-        </div>
-        <div>
-          <div class="label">Viajes</div>
-          <div class="chip">${state.viajes.length}</div>
-        </div>
-        <div>
-          <div class="label">Estado</div>
-          <div class="badge warn">modo demo</div>
-        </div>
+      <div class="grid cols-2">
+        <div class="field"><label class="label">Email</label><input id="regEmail" type="email" class="input" placeholder="nombre@mail.com"></div>
+        <div class="field"><label class="label">Contraseña</label><input id="regPass" type="password" class="input" placeholder="mín. 6 caracteres"></div>
       </div>
       <div class="row" style="margin-top:.8rem;gap:.5rem;flex-wrap:wrap">
-        <button class="btn" onclick="currentTab='pasajero'; renderSide()">Ir a Pasajero</button>
-        <button class="btn" onclick="currentTab='conductor'; renderSide()">Ir a Conductor</button>
-        <button class="btn danger" onclick="logout()">Cerrar sesión</button>
+        <button class="btn primary" id="btnReg">Crear cuenta</button>
+        <span class="help">¿Ya tenés cuenta? Inicia abajo.</span>
       </div>
+      <div id="regErr" class="err"></div>
     </div>
-  `;
+    <div class="card">
+      <h3 style="margin:0 0 .5rem 0">Iniciar sesión</h3>
+      <div class="grid cols-2">
+        <div class="field"><label class="label">Email</label><input id="inEmail" type="email" class="input"></div>
+        <div class="field"><label class="label">Contraseña</label><input id="inPass" type="password" class="input"></div>
+      </div>
+      <div class="row" style="margin-top:.8rem;gap:.5rem;flex-wrap:wrap">
+        <button class="btn" id="btnLogin">Entrar</button>
+      </div>
+      <div id="loginErr" class="err"></div>
+    </div>`;
+    setTimeout(()=>{
+      $('#btnReg').onclick = async ()=>{
+        const name=$('#regName').value.trim();
+        const role=$('#regRole').value; const email=$('#regEmail').value.trim(); const pass=$('#regPass').value;
+        $('#regErr').textContent='';
+        try{
+          const cred = await createUserWithEmailAndPassword(auth, email, pass);
+          await updateProfile(cred.user, { displayName: name });
+          await setDoc(doc(db,'users',cred.user.uid), {
+            name, role, email, ratingSum:0, ratingCount:0, createdAt: serverTimestamp()
+          });
+        }catch(e){ $('#regErr').textContent = e.message; }
+      };
+      $('#btnLogin').onclick = async ()=>{
+        $('#loginErr').textContent='';
+        try{ await signInWithEmailAndPassword(auth, $('#inEmail').value.trim(), $('#inPass').value); }
+        catch(e){ $('#loginErr').textContent = e.message; }
+      };
+    },0);
+  } else {
+    el.innerHTML = `
+      <div class="card">
+        <div class="row wrap" style="justify-content:space-between">
+          <div>
+            <div class="label">Usuario</div>
+            <div class="chip">${state.profile?.name||state.fbUser.email}</div>
+          </div>
+          <div>
+            <div class="label">Rol</div>
+            <div class="chip">${state.profile?.role||'—'}</div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:.8rem;gap:.5rem;flex-wrap:wrap">
+          <button class="btn danger" id="btnLogout">Cerrar sesión</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">Cambiar rol</div>
+        <div class="row" style="gap:.5rem;flex-wrap:wrap">
+          <select id="roleSel" class="input" style="max-width:220px"><option value="pasajero">Pasajero</option><option value="conductor">Conductor</option></select>
+          <button class="btn" id="btnRole">Guardar</button>
+        </div>
+      </div>`;
+    setTimeout(()=>{
+      $('#btnLogout').onclick = ()=> signOut(auth);
+      if(state.profile) $('#roleSel').value = state.profile.role;
+      $('#btnRole').onclick = async ()=>{
+        const r = $('#roleSel').value;
+        await updateDoc(doc(db,'users',state.fbUser.uid), { role:r });
+      };
+    },0);
+  }
   return el;
 }
 
@@ -310,93 +354,67 @@ function cardPasajero(){
   el.innerHTML = `
     <div class="card">
       <div class="label">Cómo elegir puntos</div>
-      <p style="margin:.3rem 0;color:var(--muted)">Toca el mapa y elige si ese toque es <b>ORIGEN</b> o <b>DESTINO</b>. Podés usar tu ubicación como origen.</p>
+      <p class="help">Toca el mapa y elegí si el toque es <b>ORIGEN</b> o <b>DESTINO</b>. Podés usar tu ubicación como origen.</p>
       <div class="row" style="gap:.5rem;flex-wrap:wrap">
-        <button class="btn" onclick="miUbicacionComoOrigen()">Usar mi ubicación</button>
-        <button class="btn ghost" onclick="limpiar()">Limpiar</button>
+        <button class="btn" id="btnUseMe">Usar mi ubicación</button>
+        <button class="btn ghost" id="btnClr">Limpiar</button>
       </div>
     </div>
     <div class="card">
       <div class="label">Solicitud</div>
-      <p id="solicitudTxt" style="margin:.3rem 0;color:var(--muted)">Aún no solicitaste un viaje.</p>
+      <p id="solicitudTxt" class="help">Aún no solicitaste un viaje.</p>
       <div class="row" style="gap:.5rem;flex-wrap:wrap">
-        <button class="btn primary" onclick="solicitarViaje()">Solicitar viaje</button>
-        <button class="btn ghost" onclick="cancelarSolicitud()">Cancelar</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="label">Chat con el conductor</div>
-      <div class="chatbox">
-        <div id="chatlogPax" class="chatlog"></div>
-        <div class="chatinput">
-          <input id="chatInPax" class="input" placeholder="Escribe un mensaje respetuoso…"/>
-          <button class="btn" onclick="enviarChat('pax')">Enviar</button>
-        </div>
+        <button class="btn primary" id="btnReq">Solicitar viaje</button>
+        <button class="btn ghost" id="btnCancelReq">Cancelar</button>
       </div>
     </div>`;
+  setTimeout(()=>{
+    $('#btnUseMe').onclick = miUbicacionComoOrigen;
+    $('#btnClr').onclick = limpiar;
+    $('#btnReq').onclick = solicitarViaje;
+    $('#btnCancelReq').onclick = cancelarSolicitud;
+  },0);
   return el;
 }
 
 function cardConductor(){
   const el = document.createElement('div'); el.className='grid';
-  const req = state.pendingForDriver;
   el.innerHTML = `
     <div class="card">
-      <div class="label">Solicitudes</div>
-      ${ req ? `
-        <div class="row wrap" style="justify-content:space-between">
-          <div>
-            <div class="chip">Pasajero: ${req.pasajero.nombre}</div>
-            <div class="chip">Precio: ${fmt(req.precio)}</div>
-          </div>
-          <div>
-            <div class="chip">Dist: ${req.km.toFixed(2)} km</div>
-            <div class="chip">Estado: ${req.estado}</div>
-          </div>
-        </div>
-        <div class="row" style="margin-top:.6rem;gap:.5rem;flex-wrap:wrap">
-          <button class="btn primary" onclick="aceptarViaje()">Aceptar</button>
-          <button class="btn ghost" onclick="rechazarViaje()">Rechazar</button>
-        </div>
-      ` : `<p style="margin:.3rem 0;color:var(--muted)">Sin solicitudes. Cuando el pasajero pida, aparecerá aquí.</p>`}
+      <div class="label">Solicitudes pendientes</div>
+      <div id="reqList" class="grid"></div>
     </div>
     <div class="card">
-      <div class="label">Acciones</div>
+      <div class="label">Acciones del viaje</div>
       <div class="row" style="gap:.5rem;flex-wrap:wrap">
-        <button class="btn" onclick="iniciarTrayecto()">Iniciar</button>
-        <button class="btn" onclick="finalizarTrayecto()">Finalizar</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="label">Chat con el pasajero</div>
-      <div class="chatbox">
-        <div id="chatlogDrv" class="chatlog"></div>
-        <div class="chatinput">
-          <input id="chatInDrv" class="input" placeholder="Escribe un mensaje respetuoso…"/>
-          <button class="btn" onclick="enviarChat('drv')">Enviar</button>
-        </div>
+        <button class="btn" id="btnStart">Iniciar</button>
+        <button class="btn" id="btnFinish">Finalizar</button>
       </div>
     </div>`;
+  setTimeout(()=>{
+    $('#btnStart').onclick = iniciarTrayecto;
+    $('#btnFinish').onclick = finalizarTrayecto;
+    suscribeListaPendientes();
+  },0);
   return el;
 }
 
 function cardPerfil(){
-  const u = state.user;
-  const avg = u.rating.count? (u.rating.sum/u.rating.count):0;
+  const p = state.profile || {ratingSum:0, ratingCount:0, role:'pasajero'};
+  const avg = p.ratingCount? (p.ratingSum/p.ratingCount):0;
   const stars = [1,2,3,4,5].map(i=>`<span class="star ${avg>=i? '':'off'}">★</span>`).join('');
-  const totalStars = u.rating.sum; // acumulado para trofeos
+  const totalStars = p.ratingSum;
   let trofeos = '';
-  if(totalStars>=5000) trofeos += '🏆🥇';
-  else if(totalStars>=1000) trofeos += '🏆';
+  if(totalStars>=5000) trofeos += '🏆🥇'; else if(totalStars>=1000) trofeos += '🏆';
   const el = document.createElement('div'); el.className='grid';
   el.innerHTML = `
     <div class="card">
       <div class="row wrap" style="gap:.75rem;align-items:flex-start">
-        <img src="https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(u.nombre)}" alt="avatar" width="64" height="64" style="border-radius:12px;border:1px solid var(--line)"/>
+        <img src="https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(p.name||state.fbUser?.email||'U')}" alt="avatar" width="64" height="64" style="border-radius:12px;border:1px solid var(--line)"/>
         <div>
-          <div style="font-weight:600">${u.nombre}</div>
-          <div class="chip">${u.email||'sin email'}</div>
-          <div class="chip">Rol: ${u.rol}</div>
+          <div style="font-weight:600">${p.name||'Usuario'}</div>
+          <div class="chip">${state.fbUser?.email||''}</div>
+          <div class="chip">Rol: ${p.role}</div>
         </div>
       </div>
     </div>
@@ -404,38 +422,51 @@ function cardPerfil(){
       <div class="label">Calificación</div>
       <div class="row" style="gap:.35rem">${stars}</div>
       <div class="row" style="gap:.5rem;margin-top:.4rem">
-        <div class="chip">${u.rating.count} opiniones</div>
+        <div class="chip">${p.ratingCount} opiniones</div>
         <div class="chip">${avg.toFixed(2)} / 5.00</div>
         <div class="chip trophy">${trofeos||'—'}</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="label">Cuenta</div>
-      <div class="row" style="gap:.5rem;flex-wrap:wrap">
-        <button class="btn danger" onclick="logout()">Cerrar sesión</button>
-        <button class="btn ghost" onclick="borrarTodo()">Borrar datos locales</button>
       </div>
     </div>`;
   return el;
 }
 
-function logout(){ state.user=null; save(); renderSide(); }
-function borrarTodo(){ localStorage.removeItem('taxiya_state'); location.reload(); }
+function cardAjustes(){
+  const pr = state.precios;
+  const el = document.createElement('div'); el.className='grid';
+  el.innerHTML = `
+    <div class="card">
+      <div class="label">Tarifas</div>
+      <div class="grid cols-2">
+        <div class="field"><label class="label">Base (ARS)</label><input id="pBase" class="input" type="number" value="${pr.base}"></div>
+        <div class="field"><label class="label">Por km (ARS)</label><input id="pKm" class="input" type="number" value="${pr.porKm}"></div>
+      </div>
+      <div class="field"><label class="label">Descuento app (0–0.9)</label><input id="pDesc" class="input" type="number" step="0.01" value="${pr.descuento}"></div>
+      <div class="row" style="margin-top:.6rem;gap:.5rem"><button class="btn" id="btnSaveTarifas">Guardar</button></div>
+    </div>`;
+  setTimeout(()=>{
+    $('#btnSaveTarifas').onclick = ()=>{
+      state.precios.base = Number($('#pBase').value||0);
+      state.precios.porKm = Number($('#pKm').value||0);
+      state.precios.descuento = Number($('#pDesc').value||0);
+      updateInfo();
+      alert('Tarifas actualizadas');
+    };
+  },0);
+  return el;
+}
 
-// ======= Mapa y selección =======
+// ======= Mapa =======
 function initMap(){
   map = L.map('map', { zoomControl:true }).setView([-34.6037,-58.3816], 12); // CABA por defecto
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(map);
-
   map.on('click', (e)=>{
-    if(!state.user){ alert('Inicia sesión (demo) para usar el mapa.'); return; }
-    const useAsOrigin = confirm('¿Usar este punto como ORIGEN?\n(Cancelar = DESTINO)');
+    if(!state.fbUser){ alert('Inicia sesión para usar el mapa.'); return; }
+    const useAsOrigin = confirm('¿Usar este punto como ORIGEN?
+(Cancelar = DESTINO)');
     const p = { lat: e.latlng.lat, lng: e.latlng.lng };
-    if(useAsOrigin){ setOrigen(p); }
-    else { setDestino(p); }
+    if(useAsOrigin){ setOrigen(p); } else { setDestino(p); }
   });
 }
-
 function setOrigen(p){
   if(origenMarker) map.removeLayer(origenMarker);
   origenMarker = L.marker([p.lat, p.lng], { draggable:true }).addTo(map).bindPopup('Origen');
@@ -448,7 +479,6 @@ function setDestino(p){
   destinoMarker.on('dragend',()=>{ const ll=destinoMarker.getLatLng(); setDestino({lat:ll.lat,lng:ll.lng}); });
   state.destino=p; updateInfo();
 }
-
 function miUbicacionComoOrigen(){
   if(!navigator.geolocation){ alert('Geolocalización no disponible'); return; }
   navigator.geolocation.getCurrentPosition((pos)=>{
@@ -459,118 +489,173 @@ function miUbicacionComoOrigen(){
     setOrigen(p);
   }, ()=> alert('No se pudo obtener ubicación'));
 }
-
 function limpiar(){
   if(origenMarker) map.removeLayer(origenMarker); origenMarker=null; state.origen=null;
   if(destinoMarker) map.removeLayer(destinoMarker); destinoMarker=null; state.destino=null;
   updateInfo();
 }
-
 function updateInfo(){
-  const o = state.origen, d=state.destino;
+  const o = state.origen, d=state.destino; const dist = km(o,d);
   $('#origenTxt').textContent = o? `${o.lat.toFixed(4)}, ${o.lng.toFixed(4)}` : '—';
   $('#destinoTxt').textContent = d? `${d.lat.toFixed(4)}, ${d.lng.toFixed(4)}` : '—';
-  const dist = km(o,d);
   $('#kmTxt').textContent = dist.toFixed(2);
   const bruto = state.precios.base + dist*state.precios.porKm; // simple
   const final = Math.max(0, Math.round(bruto*(1 - state.precios.descuento)));
   $('#fareTxt').textContent = fmt(final);
-  save();
 }
 
-// ======= Flujo de viaje (demo local) =======
-function solicitarViaje(){
-  if(!state.user || state.user.rol!=='pasajero'){ alert('Inicia como pasajero.'); return; }
-  if(!state.origen || !state.destino){ alert('Elige origen y destino primero.'); return; }
-  const dist = km(state.origen, state.destino);
+// ======= Firestore: Solicitudes/ Viaje =======
+async function solicitarViaje(){
+  if(!state.fbUser) return alert('Inicia sesión');
+  const prof = state.profile; if(prof?.role!=='pasajero') return alert('Cambiá a rol PASAJERO en Cuenta.');
+  if(!state.origen || !state.destino) return alert('Elegí origen y destino');
+  const dist = km(state.origen,state.destino);
   const precio = Math.max(0, Math.round((state.precios.base + dist*state.precios.porKm) * (1 - state.precios.descuento)));
-  const v = { id: uid(), pasajero: state.user, conductor: null, origen: state.origen, destino: state.destino, km: dist, precio, estado:'buscando', chat: [] };
-  state.activo = v;
-  state.pendingForDriver = v; // visible al panel Conductor
-  $('#actividad').textContent = 'Solicitud enviada. Esperando conductor…';
-  $('#solicitudTxt').textContent = `Solicitud #${v.id} por ${fmt(precio)} — ${dist.toFixed(2)} km (estado: buscando)`;
-  save(); renderSide();
+  const docRef = await addDoc(collection(db,'requests'),{
+    status:'buscando',
+    pasajeroId: state.fbUser.uid,
+    pasajeroNombre: state.profile?.name || state.fbUser.email,
+    origen: state.origen, destino: state.destino,
+    km: dist, precio,
+    createdAt: serverTimestamp()
+  });
+  state.activeRequestId = docRef.id;
+  watchActiveRequest(docRef.id);
 }
 
-function cancelarSolicitud(){
-  if(state.activo && state.activo.estado==='buscando'){
-    state.activo = null; state.pendingForDriver=null; save(); renderSide();
-    $('#actividad').textContent='Solicitud cancelada.';
-  }
+async function cancelarSolicitud(){
+  if(!state.activeRequestId) return;
+  await updateDoc(doc(db,'requests',state.activeRequestId), { status:'cancelado' });
 }
 
-function aceptarViaje(){
-  if(!state.user || state.user.rol!=='conductor'){ alert('Inicia como conductor.'); return; }
-  const req = state.pendingForDriver; if(!req){ alert('No hay solicitud.'); return; }
-  req.conductor = state.user; req.estado='aceptado';
-  state.activo = req; state.pendingForDriver=null; save(); renderSide();
-  $('#actividad').textContent = `Conductor asignado: ${state.user.nombre}.`;
-}
-function rechazarViaje(){ state.pendingForDriver=null; save(); renderSide(); }
-
-function iniciarTrayecto(){
-  if(!state.activo){ alert('No hay viaje activo.'); return; }
-  state.activo.estado='en curso'; save(); renderSide();
-  $('#actividad').textContent='En viaje…';
-}
-
-function finalizarTrayecto(){
-  if(!state.activo){ alert('No hay viaje activo.'); return; }
-  state.activo.estado='finalizado';
-  state.viajes.push(state.activo);
-  const pax = state.activo.pasajero; const drv = state.activo.conductor || {id:'demo', nombre:'Conductor Demo'};
-  // pedir estrellas
-  setTimeout(()=>{
-    const rp = Number(prompt(`Pasajero: califica al conductor de 1 a 5 estrellas`, '5'))||5;
-    const rd = Number(prompt(`Conductor: califica al pasajero de 1 a 5 estrellas`, '5'))||5;
-    // acumular en cada perfil si existen
-    if(drv.id===state.user?.id){ // si el conductor es el usuario actual y calificó al pasajero
-      // sumar al pasajero (en esta demo simple sumamos al propio usuario si es pasajero)
+function watchActiveRequest(id){
+  if(activeReqUnsub) activeReqUnsub();
+  activeReqUnsub = onSnapshot(doc(db,'requests',id), (snap)=>{
+    if(!snap.exists()) return;
+    const r = snap.data();
+    $('#actividad').textContent = `#${id.slice(0,6)} — ${r.status.toUpperCase()} — ${fmt(r.precio)} (${(r.km||0).toFixed(2)} km)`;
+    if(r.status==='finalizado' || r.status==='cancelado'){
+      // pedir calificación
+      setTimeout(async ()=>{
+        const stars = Number(prompt('Califica de 1 a 5 estrellas','5'))||5;
+        const uRef = doc(db,'users',state.fbUser.uid);
+        const u = await getDoc(uRef);
+        const sum=(u.data().ratingSum||0)+stars, cnt=(u.data().ratingCount||0)+1;
+        await updateDoc(uRef,{ratingSum:sum,ratingCount:cnt});
+        alert('¡Gracias por calificar!');
+      }, 50);
+      state.activeRequestId=null;
+      if(chatUnsub){ chatUnsub(); chatUnsub=null; }
+    }else{
+      ensureChatListener(id);
     }
-    if(state.user){
-      state.user.rating.sum += (state.user.rol==='conductor'? rp : rd);
-      state.user.rating.count += 1;
+  });
+}
+
+function ensureChatListener(reqId){
+  if(chatUnsub) return; // ya escuchando
+  const msgsRef = collection(db,'requests',reqId,'messages');
+  chatUnsub = onSnapshot(query(msgsRef, orderBy('ts','asc'), limit(100)), (qs)=>{
+    const log = $('#chatlog'); log.innerHTML='';
+    qs.forEach(d=>{
+      const m=d.data();
+      const who = m.from === (state.profile?.role==='pasajero'?'pax':'drv') ? 'me':'';
+      log.insertAdjacentHTML('beforeend', `<div class="msg ${who}"><b>${m.from==='pax'?'Pasajero':'Conductor'}:</b> ${m.text}</div>`);
+    });
+    log.scrollTop = log.scrollHeight;
+  });
+}
+
+// enviar chat
+$('#chatSend').addEventListener('click', async ()=>{
+  if(!state.activeRequestId) return alert('Sin viaje activo');
+  const input = $('#chatInput'); let text = (input.value||'').trim(); if(!text) return;
+  const sanitized = sanitizeMsg(text); if(/^\*{3,}$/.test(sanitized)) return alert('Mensaje bloqueado');
+  await addDoc(collection(db,'requests',state.activeRequestId,'messages'),{
+    from: state.profile?.role==='pasajero'?'pax':'drv', text: sanitized, ts: serverTimestamp()
+  });
+  input.value='';
+});
+
+// Conductor: lista pendientes y acciones
+function suscribeListaPendientes(){
+  if(listUnsub) listUnsub();
+  listUnsub = onSnapshot(query(collection(db,'requests'), where('status','==','buscando'), orderBy('createdAt','desc'), limit(20)), (qs)=>{
+    const cont = $('#reqList'); if(!cont) return; cont.innerHTML='';
+    qs.forEach(docu=>{
+      const r = docu.data(); const id=docu.id;
+      const card = document.createElement('div'); card.className='card';
+      card.innerHTML = `
+        <div class="row wrap" style="justify-content:space-between">
+          <div>
+            <div class="chip">#${id.slice(0,6)}</div>
+            <div class="chip">Pasajero: ${r.pasajeroNombre}</div>
+          </div>
+          <div>
+            <div class="chip">${(r.km||0).toFixed(2)} km</div>
+            <div class="chip">${fmt(r.precio||0)}</div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:.5rem;gap:.5rem">
+          <button class="btn primary" data-id="${id}">Aceptar</button>
+        </div>`;
+      cont.appendChild(card);
+      card.querySelector('button').onclick = ()=> aceptarViaje(id);
+    });
+  });
+}
+
+async function aceptarViaje(id){
+  if(!state.fbUser) return alert('Inicia sesión');
+  if(state.profile?.role!=='conductor') return alert('Cambiá a rol CONDUCTOR en Cuenta.');
+  await updateDoc(doc(db,'requests',id), {
+    status:'aceptado',
+    conductorId: state.fbUser.uid,
+    conductorNombre: state.profile?.name || state.fbUser.email
+  });
+  state.activeRequestId = id; watchActiveRequest(id);
+}
+
+async function iniciarTrayecto(){
+  if(!state.activeRequestId) return alert('Sin viaje activo');
+  await updateDoc(doc(db,'requests',state.activeRequestId), { status:'en_curso' });
+}
+async function finalizarTrayecto(){
+  if(!state.activeRequestId) return alert('Sin viaje activo');
+  await updateDoc(doc(db,'requests',state.activeRequestId), { status:'finalizado' });
+}
+
+// ======= Auth =======
+onAuthStateChanged(auth, async (user)=>{
+  state.fbUser = user;
+  if(user){
+    // cargar/crear perfil
+    const uref = doc(db,'users',user.uid);
+    const snap = await getDoc(uref);
+    if(!snap.exists()){
+      await setDoc(uref, { name: user.displayName||'', email:user.email||'', role:'pasajero', ratingSum:0, ratingCount:0, createdAt: serverTimestamp() });
+      state.profile = { name:user.displayName||'', email:user.email||'', role:'pasajero', ratingSum:0, ratingCount:0 };
+    }else{
+      state.profile = snap.data();
     }
-    alert('¡Gracias! Viaje finalizado.');
-    state.activo=null; save(); renderSide();
-  }, 50);
-}
-
-// ======= Chat (demo local compartido) =======
-function renderChat(){
-  const v = state.activo; const logP = $('#chatlogPax'); const logD = $('#chatlogDrv');
-  if(!logP||!logD) return;
-  const msgs = v?.chat || [];
-  logP.innerHTML=''; logD.innerHTML='';
-  for(const m of msgs){
-    const bubble = (who)=> `<div class="msg ${who}"><b>${m.from==='pax'?'Pasajero':'Conductor'}:</b> ${m.text}</div>`;
-    logP.insertAdjacentHTML('beforeend', bubble(m.from==='pax'?'me':''));
-    logD.insertAdjacentHTML('beforeend', bubble(m.from==='drv'?'me':''));
+  } else {
+    state.profile = null; state.activeRequestId=null;
+    if(activeReqUnsub){ activeReqUnsub(); activeReqUnsub=null; }
+    if(chatUnsub){ chatUnsub(); chatUnsub=null; }
+    if(listUnsub){ listUnsub(); listUnsub=null; }
   }
-  logP.scrollTop = logP.scrollHeight; logD.scrollTop = logD.scrollHeight;
-}
+  renderSide();
+});
 
-function enviarChat(from){
-  if(!state.activo){ alert('No hay viaje activo.'); return; }
-  const input = from==='pax'? $('#chatInPax') : $('#chatInDrv');
-  let text = (input.value||'').trim(); if(!text) return;
-  const sanitized = sanitizeMsg(text);
-  // bloquear si todo quedó en *** (insulto puro)
-  if(/^\*{3,}$/.test(sanitized)){ alert('Mensaje bloqueado por lenguaje inapropiado.'); return; }
-  state.activo.chat.push({ id: uid(), ts: Date.now(), from, text: sanitized });
-  input.value=''; save(); renderChat();
-}
-
-// ======= Eventos y bootstrap =======
-window.addEventListener('DOMContentLoaded', ()=>{
+// ======= Eventos iniciales =======
+function bootstrap(){
+  renderTabs();
   initMap();
   $('#btnMiUbicacion').onclick = miUbicacionComoOrigen;
   $('#btnLimpiar').onclick = limpiar;
   $('#btnSolicitar').onclick = solicitarViaje;
-  renderSide();
-  // refrescar chat cada 800ms (demo)
-  setInterval(renderChat, 800);
-});
+}
+bootstrap();
 </script>
 </body>
 </html>
