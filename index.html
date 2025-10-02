@@ -1,4 +1,5 @@
-<!doctype html>
+# Save the latest HTML code from canvas into a downloadable file
+code = """<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
@@ -43,7 +44,6 @@ button,input,select{font-family:inherit}
 .chip{background:#121a24;border:1px solid var(--line);padding:.35rem .6rem;border-radius:999px;font-size:.85rem;color:var(--muted)}
 .badge{padding:.3rem .5rem;border-radius:8px;border:1px solid var(--line);font-size:.78rem}
 .badge.ok{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.35)}
-.badge.warn{background:rgba(255,211,77,.12);color:#fde68a;border-color:rgba(255,211,77,.35)}
 
 /* Buttons */
 .btn{display:inline-flex;align-items:center;gap:.5rem;border:1px solid var(--line);background:#12202e;color:var(--ink);padding:.6rem .9rem;border-radius:12px;cursor:pointer;transition:.2s;text-decoration:none}
@@ -63,7 +63,7 @@ button,input,select{font-family:inherit}
 .grid.cols-2{grid-template-columns:1fr 1fr}
 
 /* Map */
-#map{width:100%;height:520px}
+#map{width:100%;min-height:520px;height:520px}
 
 /* Mobile */
 @media (max-width: 1080px){
@@ -87,6 +87,11 @@ button,input,select{font-family:inherit}
 .msg{display:inline-block;background:#12202e;border:1px solid var(--line);padding:.5rem .65rem;border-radius:10px;margin:.25rem 0}
 .msg.me{background:#1f2a37}
 .chatinput{display:flex;gap:.5rem;padding:.6rem;border-top:1px solid var(--line)}
+
+/* Segmented control */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:#0e1620;color:var(--ink);padding:.45rem .8rem;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#111}
 
 .err{color:#fecaca}
 </style>
@@ -114,6 +119,22 @@ button,input,select{font-family:inherit}
     <main class="main">
       <div class="panel-head"><strong id="mainTitle">Mapa</strong></div>
       <div class="panel-body">
+        <div class="card" style="margin-bottom:.75rem">
+          <div class="row wrap" style="justify-content:space-between;gap:.75rem">
+            <div class="row" style="gap:.5rem">
+              <div class="label">Seleccionar en mapa:</div>
+              <div class="seg" id="modeSeg">
+                <button id="modeOrigen" aria-pressed="true">Origen</button>
+                <button id="modeDestino" aria-pressed="false">Destino</button>
+              </div>
+            </div>
+            <div class="row" style="gap:.5rem;flex-wrap:wrap">
+              <button class="btn" id="btnMiUbicacion">Usar mi ubicación</button>
+              <button class="btn ghost" id="btnLimpiar">Limpiar</button>
+              <button class="btn primary" id="btnSolicitar">Solicitar viaje</button>
+            </div>
+          </div>
+        </div>
         <div id="map"></div>
         <div class="grid cols-2" style="margin-top:.75rem">
           <div class="card">
@@ -135,12 +156,7 @@ button,input,select{font-family:inherit}
                 <div id="fareTxt" class="chip">$ 0</div>
               </div>
             </div>
-            <div class="row" style="margin-top:.6rem;gap:.5rem;flex-wrap:wrap">
-              <button class="btn" id="btnMiUbicacion">Usar mi ubicación como ORIGEN</button>
-              <button class="btn ghost" id="btnLimpiar">Limpiar</button>
-              <button class="btn primary" id="btnSolicitar">Solicitar viaje</button>
-            </div>
-            <p class="help" id="actividad">Toca el mapa y elegí si es ORIGEN o DESTINO (se pregunta en cada toque).</p>
+            <p class="help" id="actividad">Toca el mapa para fijar el punto según el selector (Origen/Destino).</p>
           </div>
 
           <div class="card">
@@ -166,7 +182,7 @@ button,input,select{font-family:inherit}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, updateDoc, addDoc, collection, serverTimestamp, onSnapshot, query, where, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, addDoc, collection, serverTimestamp, onSnapshot, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // *** Config proporcionada ***
 const firebaseConfig = {
@@ -180,14 +196,15 @@ const firebaseConfig = {
 };
 
 const appFB = initializeApp(firebaseConfig);
-try{ getAnalytics(appFB); }catch(e){ /* analytics requiere https/permitidos, ignorar errores */ }
+try{ getAnalytics(appFB); }catch(e){ /* analytics puede fallar fuera de https; ignorar */ }
 const auth = getAuth(appFB);
 const db = getFirestore(appFB);
 
 // ======= Estado y utilidades =======
 const $ = (sel) => document.querySelector(sel);
 const tabsEl = $('#tabs');
-let map, origenMarker, destinoMarker, meMarker, activeReqUnsub=null, chatUnsub=null, listUnsub=null;
+let map, origenMarker, destinoMarker, meMarker, line, activeReqUnsub=null, chatUnsub=null, listUnsub=null;
+let selectMode = 'origen'; // origen | destino
 let state = {
   fbUser: null,
   profile: null, // {name, role, ratingSum, ratingCount}
@@ -199,7 +216,7 @@ let state = {
 const bannedWords = ['puta','puto','cagar','mierda','hdp','concha','pija','forro','insulto','boludo'];
 function sanitizeMsg(text){
   let t = text.trim();
-  for(const w of bannedWords){ t = t.replace(new RegExp('\b'+w+'\b','gi'), '***'); }
+  for(const w of bannedWords){ t = t.replace(new RegExp('\\b'+w+'\\b','gi'), '***'); }
   return t;
 }
 
@@ -252,12 +269,12 @@ function renderSide(){
   const body = $('#sideBody');
   body.innerHTML='';
 
-  if(currentTab==='cuenta') return body.appendChild(cardCuenta());
+  if(currentTab==='cuenta') { body.appendChild(cardCuenta()); return; }
   if(!state.fbUser){ body.innerHTML = `<div class="card"><b>Inicia sesión</b><p class="help">Para usar esta sección necesitás estar conectado.</p></div>`; return; }
-  if(currentTab==='pasajero') return body.appendChild(cardPasajero());
-  if(currentTab==='conductor') return body.appendChild(cardConductor());
-  if(currentTab==='perfil') return body.appendChild(cardPerfil());
-  if(currentTab==='ajustes') return body.appendChild(cardAjustes());
+  if(currentTab==='pasajero') { body.appendChild(cardPasajero()); return; }
+  if(currentTab==='conductor') { body.appendChild(cardConductor()); return; }
+  if(currentTab==='perfil') { body.appendChild(cardPerfil()); return; }
+  if(currentTab==='ajustes') { body.appendChild(cardAjustes()); return; }
 }
 
 // ======= Componentes =======
@@ -279,7 +296,6 @@ function cardCuenta(){
       </div>
       <div class="row" style="margin-top:.8rem;gap:.5rem;flex-wrap:wrap">
         <button class="btn primary" id="btnReg">Crear cuenta</button>
-        <span class="help">¿Ya tenés cuenta? Inicia abajo.</span>
       </div>
       <div id="regErr" class="err"></div>
     </div>
@@ -327,6 +343,7 @@ function cardCuenta(){
           </div>
         </div>
         <div class="row" style="margin-top:.8rem;gap:.5rem;flex-wrap:wrap">
+          <button class="btn" onclick="currentTab='pasajero'; renderSide()">Ir a Pasajero</button>
           <button class="btn danger" id="btnLogout">Cerrar sesión</button>
         </div>
       </div>
@@ -353,24 +370,14 @@ function cardPasajero(){
   const el = document.createElement('div'); el.className='grid';
   el.innerHTML = `
     <div class="card">
-      <div class="label">Cómo elegir puntos</div>
-      <p class="help">Toca el mapa y elegí si el toque es <b>ORIGEN</b> o <b>DESTINO</b>. Podés usar tu ubicación como origen.</p>
-      <div class="row" style="gap:.5rem;flex-wrap:wrap">
-        <button class="btn" id="btnUseMe">Usar mi ubicación</button>
-        <button class="btn ghost" id="btnClr">Limpiar</button>
-      </div>
-    </div>
-    <div class="card">
       <div class="label">Solicitud</div>
-      <p id="solicitudTxt" class="help">Aún no solicitaste un viaje.</p>
+      <p id="solicitudTxt" class="help">Elige puntos en el mapa y solicita el viaje.</p>
       <div class="row" style="gap:.5rem;flex-wrap:wrap">
         <button class="btn primary" id="btnReq">Solicitar viaje</button>
         <button class="btn ghost" id="btnCancelReq">Cancelar</button>
       </div>
     </div>`;
   setTimeout(()=>{
-    $('#btnUseMe').onclick = miUbicacionComoOrigen;
-    $('#btnClr').onclick = limpiar;
     $('#btnReq').onclick = solicitarViaje;
     $('#btnCancelReq').onclick = cancelarSolicitud;
   },0);
@@ -459,25 +466,31 @@ function cardAjustes(){
 function initMap(){
   map = L.map('map', { zoomControl:true }).setView([-34.6037,-58.3816], 12); // CABA por defecto
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(map);
+  // asegurar render correcto si el contenedor cambia tamaño
+  setTimeout(()=>{ map.invalidateSize(); }, 250);
   map.on('click', (e)=>{
     if(!state.fbUser){ alert('Inicia sesión para usar el mapa.'); return; }
-    const useAsOrigin = confirm('¿Usar este punto como ORIGEN?
-(Cancelar = DESTINO)');
     const p = { lat: e.latlng.lat, lng: e.latlng.lng };
-    if(useAsOrigin){ setOrigen(p); } else { setDestino(p); }
+    if(selectMode==='origen'){ setOrigen(p); } else { setDestino(p); }
   });
+}
+function drawLine(){
+  if(line){ map.removeLayer(line); line=null; }
+  if(state.origen && state.destino){
+    line = L.polyline([[state.origen.lat,state.origen.lng],[state.destino.lat,state.destino.lng]], {color:'#ffd34d'}).addTo(map);
+  }
 }
 function setOrigen(p){
   if(origenMarker) map.removeLayer(origenMarker);
   origenMarker = L.marker([p.lat, p.lng], { draggable:true }).addTo(map).bindPopup('Origen');
   origenMarker.on('dragend',()=>{ const ll=origenMarker.getLatLng(); setOrigen({lat:ll.lat,lng:ll.lng}); });
-  state.origen=p; updateInfo();
+  state.origen=p; updateInfo(); drawLine();
 }
 function setDestino(p){
   if(destinoMarker) map.removeLayer(destinoMarker);
   destinoMarker = L.marker([p.lat, p.lng], { draggable:true, icon: L.divIcon({className:'', html:'<div style="background:#1e293b;border:2px solid #334155;color:#fff;padding:2px 6px;border-radius:6px">🎯</div>'}) }).addTo(map).bindPopup('Destino');
   destinoMarker.on('dragend',()=>{ const ll=destinoMarker.getLatLng(); setDestino({lat:ll.lat,lng:ll.lng}); });
-  state.destino=p; updateInfo();
+  state.destino=p; updateInfo(); drawLine();
 }
 function miUbicacionComoOrigen(){
   if(!navigator.geolocation){ alert('Geolocalización no disponible'); return; }
@@ -492,6 +505,7 @@ function miUbicacionComoOrigen(){
 function limpiar(){
   if(origenMarker) map.removeLayer(origenMarker); origenMarker=null; state.origen=null;
   if(destinoMarker) map.removeLayer(destinoMarker); destinoMarker=null; state.destino=null;
+  if(line) map.removeLayer(line); line=null;
   updateInfo();
 }
 function updateInfo(){
@@ -521,6 +535,7 @@ async function solicitarViaje(){
   });
   state.activeRequestId = docRef.id;
   watchActiveRequest(docRef.id);
+  currentTab='pasajero'; renderSide();
 }
 
 async function cancelarSolicitud(){
@@ -629,7 +644,6 @@ async function finalizarTrayecto(){
 onAuthStateChanged(auth, async (user)=>{
   state.fbUser = user;
   if(user){
-    // cargar/crear perfil
     const uref = doc(db,'users',user.uid);
     const snap = await getDoc(uref);
     if(!snap.exists()){
@@ -650,12 +664,22 @@ onAuthStateChanged(auth, async (user)=>{
 // ======= Eventos iniciales =======
 function bootstrap(){
   renderTabs();
+  renderSide(); // asegura mostrar registración al entrar
   initMap();
   $('#btnMiUbicacion').onclick = miUbicacionComoOrigen;
   $('#btnLimpiar').onclick = limpiar;
   $('#btnSolicitar').onclick = solicitarViaje;
+  // selector Origen/Destino
+  const bO = $('#modeOrigen'), bD = $('#modeDestino');
+  bO.onclick = ()=>{ selectMode='origen'; bO.setAttribute('aria-pressed','true'); bD.setAttribute('aria-pressed','false'); };
+  bD.onclick = ()=>{ selectMode='destino'; bD.setAttribute('aria-pressed','true'); bO.setAttribute('aria-pressed','false'); };
 }
 bootstrap();
 </script>
 </body>
 </html>
+"""
+path = "/mnt/data/TaxiYa-Firebase-Pestanas.html"
+with open(path, "w", encoding="utf-8") as f:
+    f.write(code)
+path
