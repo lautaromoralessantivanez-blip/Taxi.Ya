@@ -9,1060 +9,568 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- Firebase (compat v12) -->
-<script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore-compat.js"></script>
-
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
 
 <style>
 :root{
-  --bg:#0b0f15; --panel:#0f141d; --ink:#f5f7fb; --muted:#93a6b7; --line:#1c2a3a;
-  --accent:#00b3ff; --accent2:#ffd34d; --ok:#17c964; --danger:#ef4444;
-  --radius:16px; --shadow:0 16px 40px rgba(0,0,0,.45);
-  --safe-bottom: env(safe-area-inset-bottom, 14px);
+  --bg:#0b0f15; --panel:#0f141d; --ink:#f5f7fb; --muted:#a9b4c2; --line:#1b2430;
+  --accent:#ffd34d; --ok:#22c55e; --danger:#ef4444; --chip:#17202a; --card:#0d131b;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:Poppins,system-ui,Arial;touch-action:manipulation}
+body{margin:0;background:linear-gradient(180deg,#0b0f15,#0b0f15 60%,#0a0f19);color:var(--ink);font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+button,input,select{font-family:inherit}
 
-header{position:sticky;top:0;z-index:60;background:rgba(11,15,21,.88);
-  backdrop-filter:blur(6px);padding:12px 16px;border-bottom:1px solid var(--line);
-  display:flex;justify-content:space-between;align-items:center}
-.brand{font-weight:800}
-.badge{border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px;opacity:.9}
+/* Layout */
+.app{min-height:100dvh;display:grid;grid-template-rows:auto 1fr}
+.header{display:flex;gap:.5rem;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--line);background:rgba(13,19,27,.7);backdrop-filter:blur(12px);position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:center;gap:.6rem}
+.brand .dot{width:.9rem;height:.9rem;border-radius:999px;background:var(--accent);box-shadow:0 0 16px rgba(255,211,77,.7)}
+.brand b{letter-spacing:.5px}
+.tabs{display:flex;gap:.35rem;flex-wrap:wrap}
+.tab{padding:.45rem .75rem;border:1px solid var(--line);border-radius:999px;background:var(--chip);color:var(--ink);opacity:.85;cursor:pointer;transition:.2s}
+.tab[aria-selected="true"]{background:var(--accent);color:#111;opacity:1;border-color:#e6b800}
 
-nav.tabs{position:sticky; top:0; background:rgba(15,20,29,.75);
-  border:1px solid var(--line); display:flex; gap:8px; padding:8px; border-radius:12px;
-  backdrop-filter: blur(6px); z-index:50}
-.tab-btn{flex:1 1 0; min-width:110px; height:44px; display:flex; align-items:center;
-  justify-content:center; gap:6px; border-radius:999px; font-weight:800; cursor:pointer;
-  background:transparent; border:1px solid var(--line); color:var(--ink)}
-.tab-btn.active{background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#082532; border-color:transparent}
-.hide{display:none!important}
+.container{display:grid;grid-template-columns:340px 1fr;gap:1rem;padding:1rem;max-width:1200px;margin:0 auto}
+.aside,.main{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--line);background:var(--card)}
+.panel-body{padding:1rem}
 
-main{max-width:1100px;margin:16px auto;padding:0 12px;display:grid;gap:12px}
-.card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
-  border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
-h2{margin:6px 0 10px;font-size:18px}
-h3{margin:14px 0 8px}
-label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
-input,select,button{font:inherit}
-input,select{width:100%;padding:10px;border-radius:12px;border:1px solid var(--line);
-  background:rgba(255,255,255,.02);color:var(--ink)}
-input::placeholder{color:#8aa0b3}
-button{border:0;border-radius:12px;padding:10px 12px;font-weight:800;cursor:pointer}
-.btn{background:transparent;border:1px solid var(--line);color:var(--ink)} .btn:hover{filter:brightness(1.08)}
-.btnp{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#082532} .btnp:hover{filter:brightness(1.03)}
-.btnd{background:linear-gradient(180deg,#ff7a7a,var(--danger));color:#fff}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1 1 240px}
-.small{font-size:12px}.muted{color:var(--muted)}
-.pill{display:inline-block;padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:13px}
-.ok{color:#0d3a24;background:#123225;border-color:#256a4b}
-.warn{color:#c58b22;background:#2a230f;border-color:#4a3d14}
-.error{color:#ffb4b4;background:#2a0f12;border-color:#5d1d24}
-.inline-card{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px;background:rgba(255,255,255,.02)}
-.avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;border:1px solid var(--line)}
-.list{display:grid;gap:8px}
-.item{border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(255,255,255,.02)}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(72px + var(--safe-bottom));z-index:9999;background:rgba(12,16,22,.96);color:#fff;padding:10px 14px;border-radius:12px;border:1px solid #000;font-weight:700}
+/* Cards & chips */
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1rem}
+.row{display:flex;gap:.6rem;align-items:center}
+.row.wrap{flex-wrap:wrap}
+.chip{background:#121a24;border:1px solid var(--line);padding:.35rem .6rem;border-radius:999px;font-size:.85rem;color:var(--muted)}
+.badge{padding:.3rem .5rem;border-radius:8px;border:1px solid var(--line);font-size:.78rem}
+.badge.ok{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.35)}
+.badge.warn{background:rgba(255,211,77,.12);color:#fde68a;border-color:rgba(255,211,77,.35)}
 
-.map{width:100%;min-height:360px;border-radius:16px;border:1px solid var(--line);overflow:hidden;position:relative}
-.map-top{position:absolute; left:10px; right:10px; top:10px; z-index:400; display:none; padding:8px 12px; border-radius:12px; font-weight:800; border:1px solid var(--line); background:rgba(0,0,0,.28); backdrop-filter: blur(4px)}
-.map-top.show{display:block}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:.5rem;border:1px solid var(--line);background:#12202e;color:var(--ink);padding:.6rem .9rem;border-radius:12px;cursor:pointer;transition:.2s;text-decoration:none}
+.btn:hover{transform:translateY(-1px)}
+.btn.primary{background:var(--accent);color:#111;border-color:#e6b800}
+.btn.ghost{background:transparent}
+.btn.danger{background:#2a0f12;border-color:#40161b;color:#fecaca}
+.btn.block{display:flex;justify-content:center;width:100%}
 
-.pick-chooser{position:absolute; left:10px; right:10px; top:56px; z-index:450; display:none; gap:8px;
-  align-items:center; justify-content:space-between; padding:8px; border-radius:12px; border:1px solid var(--line); background:rgba(0,0,0,.55); backdrop-filter:blur(6px)}
-.pick-chooser.show{display:flex}
+/* Inputs */
+.input{width:100%;background:#0e1620;border:1px solid var(--line);color:var(--ink);padding:.65rem .75rem;border-radius:12px}
+.label{font-size:.9rem;color:var(--muted);margin-bottom:.35rem}
+.field{display:grid;gap:.35rem}
 
-body.theme-darkblue #mapRide .leaflet-tile,
-body.theme-darkblue #mapDriver .leaflet-tile{ filter: brightness(1.1) contrast(1.15) saturate(1.25) hue-rotate(205deg) }
-body.theme-light    #mapRide .leaflet-tile,
-body.theme-light    #mapDriver .leaflet-tile{ filter:none }
+.grid{display:grid;gap:.75rem}
+.grid.cols-2{grid-template-columns:1fr 1fr}
 
-.car-ico{width:38px;height:38px;display:grid;place-items:center;transform: translate(-50%,-50%);}
-.car-ico svg{width:32px;height:32px;filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); transform: rotate(var(--rot,0deg));}
+/* Map */
+#map{width:100%;height:520px}
 
-.chat-wrap{margin-top:10px}
-.chat-list{display:flex;flex-direction:column;gap:6px;max-height:32svh;overflow:auto;padding:8px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02)}
-.chat-msg{padding:8px 10px;border-radius:12px;max-width:80%}
-.chat-msg.me{align-self:flex-end;background:linear-gradient(180deg,var(--accent),var(--accent2));color:#082532}
-.chat-msg.other{align-self:flex-start;background:rgba(255,255,255,.06)}
-.chat-meta{font-size:11px;color:var(--muted);margin-top:2px}
-.chat-input-row{display:flex;gap:6px;margin-top:6px}
-.chat-input-row input{flex:1 1 auto}
-
-@media (max-width:900px){
-  nav.tabs{ position:fixed; bottom:calc(10px + var(--safe-bottom)); left:12px; right:12px; top:auto!important; z-index:70}
-  body{padding-bottom:calc(120px + var(--safe-bottom))}
-  .map{height:calc(100svh - 320px)}
+/* Mobile */
+@media (max-width: 980px){
+  .container{grid-template-columns:1fr}
+  .aside{order:2}
+  .main{order:1}
 }
-@media (min-width:901px){ .map{height:62vh} }
 
-.subtabs{display:flex; gap:6px; flex-wrap:wrap; margin:8px 0}
-.subtab-btn{flex:1 1 120px; height:40px; display:flex; align-items:center; justify-content:center;
-  border-radius:999px; cursor:pointer; font-weight:800; background:transparent; border:1px solid var(--line); color:var(--ink)}
-.subtab-btn.active{background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#082532; border-color:transparent}
-.settings-pane{display:none}
-.settings-pane.active{display:block}
+/* Bottom nav on small screens */
+@media (max-width: 680px){
+  .tabs{position:fixed;bottom:10px;left:0;right:0;justify-content:center;z-index:40}
+  .tab{background:#131c28;border-color:#223043}
+}
 
-.trophy-shelf{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
-.trophy{display:grid;place-items:center;width:64px;height:64px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:28px}
-.trophy.lock{opacity:.35;filter:grayscale(1)}
+.star{font-size:1.1rem;color:#fcd34d}
+.star.off{opacity:.35;filter:grayscale(1)}
+.trophy{filter:drop-shadow(0 6px 16px rgba(255,211,77,.35))}
 
-.rate-modal{position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(2px); display:none; align-items:center; justify-content:center; z-index:9998}
-.rate-card{width:min(520px,92vw); background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03)); border:1px solid var(--line); border-radius:16px; padding:16px}
-.rate-title{font-weight:800; margin-bottom:8px}
-.stars{display:flex; gap:8px; font-size:30px; user-select:none}
-.star{cursor:pointer; filter:grayscale(1) brightness(.8)}
-.star.on{filter:none}
-.rate-actions{display:flex; gap:8px; margin-top:10px; justify-content:flex-end}
+.chatbox{display:grid;grid-template-rows:1fr auto;height:240px;background:#0d131b;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.chatlog{overflow:auto;padding:.6rem}
+.msg{display:inline-block;background:#12202e;border:1px solid var(--line);padding:.5rem .65rem;border-radius:10px;margin:.25rem 0}
+.msg.me{background:#1f2a37}
+.chatinput{display:flex;gap:.5rem;padding:.6rem;border-top:1px solid var(--line)}
 </style>
 </head>
-<body class="theme-darkblue">
-<header>
-  <div class="brand">Taxi Ya</div>
-  <div id="authPill" class="badge">Sin sesión</div>
-</header>
+<body>
+<div class="app" id="app">
+  <header class="header">
+    <div class="brand">
+      <span class="dot"></span>
+      <b>Taxi Ya</b>
+      <span class="chip" id="statusChip">offline</span>
+    </div>
+    <nav class="tabs" id="tabs"></nav>
+  </header>
 
-<nav class="tabs" role="tablist">
-  <button class="tab-btn active" data-tab="access">Acceso</button>
-  <button class="tab-btn hide"   data-tab="ride">Viaje</button>
-  <button class="tab-btn hide"   data-tab="history">Historial</button>
-  <button class="tab-btn hide"   data-tab="driver">Conductor</button>
-  <button class="tab-btn hide"   data-tab="settings">Ajustes</button>
-</nav>
+  <div class="container">
+    <aside class="aside">
+      <div class="panel-head">
+        <strong id="sideTitle">Inicio</strong>
+        <span class="badge warn">Demo libre</span>
+      </div>
+      <div class="panel-body" id="sideBody">
+        <!-- contenido lateral dinámico -->
+      </div>
+    </aside>
 
-<main>
-  <!-- ACCESO -->
-  <section id="panel-access" class="card">
-    <h2>Acceso</h2>
-    <div class="row" style="gap:6px;margin-bottom:8px">
-      <button class="btnp" id="goLogin">Iniciar sesión</button>
-      <button class="btn" id="goRegister">Registrarme</button>
-    </div>
+    <main class="main">
+      <div class="panel-head"><strong id="mainTitle">Mapa</strong></div>
+      <div class="panel-body">
+        <div id="map"></div>
+        <div class="grid cols-2" style="margin-top:.75rem">
+          <div class="card">
+            <div class="row wrap" style="justify-content:space-between">
+              <div>
+                <div class="label">Origen</div>
+                <div id="origenTxt" class="chip">—</div>
+              </div>
+              <div>
+                <div class="label">Destino</div>
+                <div id="destinoTxt" class="chip">—</div>
+              </div>
+              <div>
+                <div class="label">Distancia (km)</div>
+                <div id="kmTxt" class="chip">0.00</div>
+              </div>
+              <div>
+                <div class="label">Tarifa estimada</div>
+                <div id="fareTxt" class="chip">$ 0</div>
+              </div>
+            </div>
+            <div class="row" style="margin-top:.6rem;gap:.5rem;flex-wrap:wrap">
+              <button class="btn" id="btnMiUbicacion">Usar mi ubicación como ORIGEN</button>
+              <button class="btn ghost" id="btnLimpiar">Limpiar</button>
+              <button class="btn primary" id="btnSolicitar">Solicitar viaje</button>
+            </div>
+          </div>
 
-    <!-- LOGIN -->
-    <div id="loginBox">
-      <div class="row">
-        <div><label>Correo (o cualquiera para demo)</label><input id="loginEmail" type="email" inputmode="email" placeholder="tucorreo@dominio.com" autocomplete="username"></div>
-        <div><label>Contraseña</label><input id="loginPass" type="password" placeholder="••••••" autocomplete="current-password"></div>
-      </div>
-      <div class="row" style="margin-top:6px">
-        <button class="btnp" id="btnSignIn" type="button">Entrar</button>
-        <button class="btn"  id="btnResend" type="button">Reenviar verificación</button>
-        <button class="btn"  id="btnForgot" type="button">Olvidé mi contraseña</button>
-      </div>
-      <div class="row" style="margin-top:6px">
-        <button class="btn" id="btnFast" type="button">Entrar rápido (demo)</button>
-      </div>
-    </div>
-
-    <!-- REGISTRO -->
-    <div id="registerBox" class="hide" novalidate>
-      <div class="row">
-        <div><label>Nombre</label><input id="regName" placeholder="Tu nombre y apellido"></div>
-        <div><label>Correo</label><input id="regEmail" type="email" placeholder="tucorreo@dominio.com"></div>
-      </div>
-      <div class="row" style="margin-top:6px">
-        <div><label>Contraseña</label><input id="regPass" type="password" placeholder="mín. 6" minlength="6"></div>
-        <div><label>Foto de perfil (opcional)</label><input id="regPhoto" type="file" accept="image/*"></div>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <button class="btnp" id="btnSignUp" type="button">Crear cuenta</button>
-      </div>
-    </div>
-
-    <div id="msg" class="pill hide" style="margin-top:8px"></div>
-  </section>
-
-  <!-- PASAJERO -->
-  <section id="panel-ride" class="card hide">
-    <h2>Solicitar viaje</h2>
-    <div class="row">
-      <div><label>Origen</label><input id="riderOrigin" placeholder="Calle y altura o marcar en mapa"></div>
-      <div><label>Destino</label><input id="riderDest" placeholder="Calle y altura o marcar en mapa"></div>
-      <div><label>&nbsp;</label><button class="btn" id="btnLocate">Ubicarme</button></div>
-    </div>
-    <div class="row" style="margin-top:6px">
-      <div><label>Tipo</label><select id="reqType"><option value="auto">Auto</option><option value="moto">Moto</option></select></div>
-      <div><label>Pago</label><select id="payMethod"><option value="">Elegir…</option><option value="cash">Efectivo</option><option value="mp">Mercado Pago</option></select></div>
-      <div><label>Distancia</label><input id="distance" readonly value="0.00 km"></div>
-      <div><label>Tarifa</label><input id="fare" readonly value="$0"></div>
-    </div>
-    <div class="inline-card hide" id="driverCard" style="margin-top:10px">
-      <img id="driverAvatar" class="avatar" alt="Conductor">
-      <div><b id="driverName">Conductor</b><div class="small muted" id="driverExtra">—</div></div>
-    </div>
-    <div style="position:relative; margin-top:10px">
-      <div id="mapRide" class="map" aria-label="Mapa del pasajero"></div>
-      <div id="rideMapTop" class="map-top"></div>
-      <div id="pickChooser" class="pick-chooser">
-        <span>¿Usar este punto como…?</span>
-        <div class="row" style="gap:6px;flex:0 0 auto">
-          <button id="btnPickAsOrigin" class="btn">Origen</button>
-          <button id="btnPickAsDest" class="btn">Destino</button>
-          <button id="btnPickCancel" class="btnd">Cancelar</button>
-        </div>
-      </div>
-    </div>
-    <!-- Chat pasajero -->
-    <div id="chatWrapRider" class="chat-wrap hide" aria-live="polite">
-      <h3>Chat con conductor</h3>
-      <div id="chatListRider" class="chat-list" aria-label="Mensajes"></div>
-      <div class="chat-input-row">
-        <input id="chatInputRider" placeholder="Escribe un mensaje (moderado)…" maxlength="500">
-        <button id="chatSendRider" class="btnp" type="button">Enviar</button>
-      </div>
-      <div class="small muted">No se permiten insultos ni lenguaje inapropiado.</div>
-    </div>
-  </section>
-
-  <!-- HISTORIAL -->
-  <section id="panel-history" class="card hide">
-    <h2>Historial</h2>
-    <div class="row" style="justify-content:flex-end"><button class="btn" id="btnClearRiderHistory">Limpiar</button></div>
-    <div id="riderHistory" class="list" style="margin-top:8px"></div>
-  </section>
-
-  <!-- CONDUCTOR -->
-  <section id="panel-driver" class="card hide">
-    <h2>Conductor</h2>
-    <div class="row" style="align-items:center">
-      <button class="btnp" id="btnStartRoute" disabled>Iniciar</button>
-      <div class="pill" id="onlineTimer">00:00:00</div>
-      <div class="row" style="gap:6px;flex:1 1 280px">
-        <button class="btn" id="btnPauseRoute" disabled>Pausar</button>
-        <button class="btnd" id="btnStopRoute" disabled>Terminar</button>
-      </div>
-    </div>
-    <div style="position:relative">
-      <div id="mapDriver" class="map" aria-label="Mapa del conductor"></div>
-      <div id="driverMapTop" class="map-top"></div>
-    </div>
-    <h3>Viajes disponibles</h3>
-    <div id="driverAvailable" class="list"></div>
-    <h3>Mi viaje activo</h3>
-    <div id="driverMyActive" class="list"></div>
-
-    <!-- Chat conductor -->
-    <div id="chatWrapDriver" class="chat-wrap hide" aria-live="polite">
-      <h3>Chat con pasajero</h3>
-      <div id="chatListDriver" class="chat-list"></div>
-      <div class="chat-input-row">
-        <input id="chatInputDriver" placeholder="Escribe un mensaje (moderado)…" maxlength="500">
-        <button id="chatSendDriver" class="btnp" type="button">Enviar</button>
-      </div>
-      <div class="small muted">No se permiten insultos ni lenguaje inapropiado.</div>
-    </div>
-  </section>
-
-  <!-- AJUSTES -->
-  <section id="panel-settings" class="card hide">
-    <h2>Ajustes</h2>
-    <div class="subtabs" role="tablist" aria-label="Ajustes">
-      <button class="subtab-btn active" data-stab="profile">Perfil</button>
-      <button class="subtab-btn" data-stab="prefs">Preferencias</button>
-      <button class="subtab-btn" data-stab="roles">Permisos / Roles</button>
-      <button class="subtab-btn" data-stab="account">Cuenta</button>
-    </div>
-
-    <!-- Perfil -->
-    <div id="stab-profile" class="settings-pane active">
-      <div class="inline-card">
-        <img id="profileAvatar" class="avatar" alt="Avatar">
-        <div class="small" id="profileInfo"></div>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <div><label>Nombre para mostrar</label><input id="profileName" placeholder="Tu nombre"/></div>
-        <div><label>Foto de perfil</label><input id="profilePhoto" type="file" accept="image/*"/></div>
-        <div style="flex:0 0 180px;align-self:flex-end"><button class="btnp" id="btnProfileSave" type="button">Guardar perfil</button></div>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <button class="btnd" id="btnSignOut" type="button">Cerrar sesión</button>
-      </div>
-    </div>
-
-    <!-- Preferencias -->
-    <div id="stab-prefs" class="settings-pane">
-      <div class="row">
-        <div>
-          <label>Tema de mapa</label>
-          <div class="inline-card">
-            <label style="display:flex;align-items:center;gap:6px"><input type="radio" name="mapTheme" value="darkBlue" id="prefThemeDark" checked/> Azul oscuro</label>
-            <label style="display:flex;align-items:center;gap:6px;margin-left:14px"><input type="radio" name="mapTheme" value="light" id="prefThemeLight"/> Claro</label>
+          <div class="card">
+            <div class="label">Actividad</div>
+            <div id="actividad" style="font-size:.95rem;color:var(--muted)">Toca en el mapa para elegir ORIGEN o DESTINO (te preguntamos qué es en cada toque).</div>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Roles -->
-    <div id="stab-roles" class="settings-pane">
-      <div class="row" style="gap:6px">
-        <button class="btn" id="btnGeoTest" type="button">Probar geolocalización</button>
-        <button class="btn" id="btnRiderMode" type="button">Modo Pasajero (demo)</button>
-        <button class="btnp" id="btnDriverMode" type="button">Aprobar Conductor (demo)</button>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <span id="drvKycStatus" class="pill warn">No solicitado</span>
-      </div>
-    </div>
-
-    <!-- Cuenta -->
-    <div id="stab-account" class="settings-pane">
-      <div class="inline-card">
-        <div class="pill">Calificación: <b id="ratingValue">★5.0</b></div>
-        <div class="pill">Estrellas: <b id="starsCount">0</b></div>
-        <div class="pill">Trofeo: <b id="trophyLabel">—</b></div>
-      </div>
-      <div class="trophy-shelf">
-        <div id="trophy1" class="trophy lock" title="1000 estrellas">🏆</div>
-        <div id="trophy2" class="trophy lock" title="5000 estrellas">🏆✨</div>
-      </div>
-    </div>
-  </section>
-</main>
-
-<!-- Modal de calificación -->
-<div id="rateModal" class="rate-modal" role="dialog" aria-modal="true" aria-labelledby="rateTitle">
-  <div class="rate-card">
-    <div id="rateTitle" class="rate-title">Califica tu experiencia</div>
-    <div id="rateStars" class="stars" role="radiogroup" aria-label="Calificación">
-      <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span>
-      <span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
-    </div>
-    <div class="rate-actions">
-      <button id="rateCancel" class="btn">Después</button>
-      <button id="rateSend" class="btnp">Enviar</button>
-    </div>
+    </main>
   </div>
 </div>
 
-<div id="toast" class="toast hide"></div>
-
-<script type="module">
-/* ================= Firebase ================= */
-const firebaseConfig = {
-  apiKey: "AIzaSyBu523IOGnIZGfAkdlLdVLcENwLgv5KU9o",
-  authDomain: "taxi-ya-3be33.firebaseapp.com",
-  projectId: "taxi-ya-3be33",
-  storageBucket: "taxi-ya-3be33.appspot.com",
-  messagingSenderId: "31840475169",
-  appId: "1:31840475169:web:1485e47b9ebea4a66c6b60",
-  measurementId: "G-2RQRP1G2KB"
+<script>
+// ======= Estado y utilidades =======
+const $ = (sel) => document.querySelector(sel);
+const tabsEl = $('#tabs');
+let map, origenMarker, destinoMarker, meMarker;
+let state = {
+  user: null,
+  viajes: [], // historial simple
+  activo: null, // viaje activo {id, pasajero, conductor, origen, destino, precio, estado}
+  pendingForDriver: null, // solicitud visible para el conductor en modo demo
+  precios: { base: 800, porKm: 350, porMin: 0, descuento: 0.10 }, // 10% más barato que apps grandes ;)
+  ratings: {} // uid -> {sum, count}
 };
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db   = firebase.firestore();
-const usersCol = db.collection("users");
-const ridesCol = db.collection("rides");
 
-// Persistencia y lenguaje (sin await de nivel superior)
-auth.useDeviceLanguage();
-auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+const bannedWords = ['puta','puto','cagar','mierda','hdp','concha','pija','forro','insulto'];
+function sanitizeMsg(text){
+  let t = text.trim();
+  for(const w of bannedWords){
+    const re = new RegExp('\\b'+w+'\\b','gi');
+    t = t.replace(re, '***');
+  }
+  return t;
+}
 
-/* ================= Utils ================= */
-const $=s=>document.querySelector(s);
-const $$=s=>Array.from(document.querySelectorAll(s));
-const normalizeEmail = e => String(e||"").trim().toLowerCase();
-const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n||0);
-function toast(msg,ms=2000){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hide"); setTimeout(()=>t.classList.add("hide"),ms); }
-function pill(el, text, cls){ el.textContent=text; el.className=`pill ${cls||''}`; el.classList.remove('hide'); }
-const toRad=d=>d*Math.PI/180;
-const km2=(a,b)=>{ const R=6371, dLat=toRad(b.lat-a.lat), dLon=toRad(b.lng-a.lng);
-  const la1=toRad(a.lat), la2=toRad(b.lat);
+function save(){ localStorage.setItem('taxiya_state', JSON.stringify(state)); }
+function load(){ try{ const s = JSON.parse(localStorage.getItem('taxiya_state')); if(s) state = Object.assign(state, s); }catch(e){} }
+load();
+
+function uid(){ return Math.random().toString(36).slice(2,10); }
+
+function fmt(n){ return new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', maximumFractionDigits:0}).format(n); }
+function km(a,b){
+  if(!a||!b) return 0;
+  const R=6371; // km
+  const dLat=(b.lat-a.lat)*Math.PI/180; const dLon=(b.lng-a.lng)*Math.PI/180;
+  const la1=a.lat*Math.PI/180, la2=b.lat*Math.PI/180;
   const h=Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;
-  return 2*R*Math.asin(Math.sqrt(h)); };
-const bearing=(a,b)=>{const φ1=toRad(a.lat), φ2=toRad(b.lat), Δλ=toRad(b.lng-a.lng);
-  const y=Math.sin(Δλ)*Math.cos(φ2); const x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
-  return (Math.atan2(y,x)*180/Math.PI+360)%360;};
-function fmtTime(ms){ const s=Math.floor(ms/1000); const h=String(Math.floor(s/3600)).padStart(2,"0"); const m=String(Math.floor((s%3600)/60)).padStart(2,"0"); const ss=String(s%60).padStart(2,"0"); return `${h}:${m}:${ss}`;}
-
-/* ================= Tabs ================= */
-let currentUser=null;
-const panels=["access","ride","history","driver","settings"];
-function setTab(name){
-  panels.forEach(p=>{
-    $("#panel-"+p).classList.toggle("hide",p!==name);
-    document.querySelector(`[data-tab="${p}"]`).classList.toggle("active",p===name);
-  });
-  if(name==="ride"){ ensureRideMap(); setTimeout(()=> mapRide.invalidateSize(), 120); }
-  if(name==="driver"){ ensureDriverMap(); setTimeout(()=> mapDriver.invalidateSize(), 120); }
-  if(name==="settings"){ paintProfile(); renderAccount(); }
+  return 2*R*Math.asin(Math.sqrt(h));
 }
-$$('.tabs .tab-btn').forEach(b=> b.addEventListener('click', ()=> setTab(b.dataset.tab)));
-$("#goLogin").onclick=()=>{ $("#loginBox").classList.remove("hide"); $("#registerBox").classList.add("hide"); };
-$("#goRegister").onclick=()=>{ $("#registerBox").classList.remove("hide"); $("#loginBox").classList.add("hide"); };
 
-/* ===== Subtabs ajustes ===== */
-function setSettingsTab(name){
-  $$('.subtab-btn').forEach(b=> b.classList.toggle('active', b.dataset.stab===name));
-  $$('.settings-pane').forEach(p=> p.classList.toggle('active', p.id==='stab-'+name));
-}
-$$('.subtab-btn').forEach(b=> b.addEventListener('click', ()=> setSettingsTab(b.dataset.stab)));
+// ======= UI: Tabs =======
+const TABS = [
+  {id:'inicio', label:'Inicio'},
+  {id:'pasajero', label:'Pasajero'},
+  {id:'conductor', label:'Conductor'},
+  {id:'perfil', label:'Perfil'}
+];
+let currentTab = 'inicio';
 
-/* ================= Tema y Mapas ================= */
-let currentTheme = localStorage.getItem("taxiya_theme") || "darkBlue";
-document.body.classList.toggle("theme-darkblue", currentTheme==="darkBlue");
-document.body.classList.toggle("theme-light", currentTheme==="light");
-
-let mapRide=null, mapDriver=null;
-let riderMarkers={origin:null,dest:null,driver:null}, riderLines={o2d:null,drv:null};
-let origin=null, dest=null, riderActiveUnsub=null, lastDriverPt=null; /* <-- ÚNICA declaración */
-let pickPendingPt=null;
-
-function tileLayerFor(theme){
-  if(theme==="darkBlue"){
-    return L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-      {maxZoom:19,subdomains:'abcd',attribution:'© OpenStreetMap © CARTO'});
+function renderTabs(){
+  tabsEl.innerHTML = '';
+  for(const t of TABS){
+    const el = document.createElement('button');
+    el.className = 'tab';
+    el.textContent = t.label;
+    el.setAttribute('aria-selected', t.id===currentTab);
+    el.onclick = ()=>{ currentTab=t.id; renderSide(); };
+    tabsEl.appendChild(el);
   }
-  return L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-      {maxZoom:19,subdomains:'abcd',attribution:'© OpenStreetMap © CARTO'});
-}
-function applyMapTheme(map, theme){
-  const toRemove=[]; map.eachLayer(l=>{ if(l instanceof L.TileLayer) toRemove.push(l); });
-  toRemove.forEach(l=>map.removeLayer(l));
-  tileLayerFor(theme).addTo(map);
-}
-function ensureRideMap(){
-  if(mapRide) return;
-  mapRide=L.map('mapRide',{zoomControl:false});
-  L.control.zoom({position:'bottomright'}).addTo(mapRide);
-  applyMapTheme(mapRide, currentTheme);
-  mapRide.setView([-31.5375,-68.5364],12);
-  mapRide.on('click', (e)=>{
-    pickPendingPt = {lat:e.latlng.lat, lng:e.latlng.lng};
-    $("#pickChooser").classList.add("show");
-  });
-}
-function ensureDriverMap(){
-  if(mapDriver) return;
-  mapDriver=L.map('mapDriver',{zoomControl:false});
-  L.control.zoom({position:'bottomright'}).addTo(mapDriver);
-  applyMapTheme(mapDriver, currentTheme);
-  mapDriver.setView([-31.5375,-68.5364],13);
-}
-window.addEventListener('resize', ()=>{ mapRide?.invalidateSize(); mapDriver?.invalidateSize(); }, {passive:true});
-
-/* Routing + markers */
-async function routeCoords(a,b){
-  const url=`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`;
-  const r=await fetch(url); if(!r.ok) throw new Error("OSRM off");
-  const j=await r.json(); const rt=j.routes?.[0]; if(!rt) throw new Error("Sin ruta");
-  return rt.geometry.coordinates.map(([x,y])=>[y,x]);
-}
-function carIcon(color="#00b3ff"){
-  const svg = `<div class="car-ico"><svg viewBox="0 0 64 64" aria-hidden="true">
-    <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="${color}"/><stop offset="1" stop-color="#5fd2ff"/></linearGradient></defs>
-    <rect x="14" y="24" width="36" height="18" rx="6" fill="url(#g)" />
-    <path d="M18 24 l7-10 h14 l7 10 z" fill="#0d1b24"/>
-    <circle cx="22" cy="44" r="6" fill="#0d1b24"/><circle cx="42" cy="44" r="6" fill="#0d1b24"/>
-    <circle cx="22" cy="44" r="2" fill="#9ecbe6"/><circle cx="42" cy="44" r="2" fill="#9ecbe6"/>
-    <rect x="20" y="26" width="24" height="8" rx="2" fill="#8ad4ff" opacity=".9"/></svg></div>`;
-  return L.divIcon({html:svg, className:'', iconSize:[38,38], iconAnchor:[19,19]});
-}
-function setCarRotation(marker,deg){ try{ marker.getElement()?.querySelector('.car-ico')?.style.setProperty('--rot', deg+'deg'); }catch(_){ } }
-function setRideMarker(kind, lat, lng, label){
-  let ico;
-  if(kind==='driver'){ ico = carIcon('#ffd34d'); }
-  else{
-    const bg = kind==='origin' ? '#0f2a22' : '#2a0f12';
-    const fg = kind==='origin' ? '#53f0a8' : '#ffb4b4';
-    ico = L.divIcon({html:`<div class="pill" style="transform:translate(-50%,-50%);background:${bg};color:${fg};border-color:${fg}">${label}</div>`, className:'', iconSize:[0,0]});
-  }
-  if(!riderMarkers[kind]) riderMarkers[kind]=L.marker([lat,lng],{icon:ico}).addTo(mapRide);
-  else riderMarkers[kind].setLatLng([lat,lng]);
-}
-function drawRideLine(name, coords){ if(riderLines[name]){ mapRide.removeLayer(riderLines[name]); } riderLines[name]=L.polyline(coords,{weight:5}).addTo(mapRide); }
-function fitRideBounds(){ const b=L.latLngBounds([]); Object.values(riderMarkers).forEach(m=>m&&b.extend(m.getLatLng())); if(b.isValid()) mapRide.fitBounds(b,{padding:[24,24]}); }
-async function geocode(q){ try{const u=new URL("https://nominatim.openstreetmap.org/search");u.searchParams.set("q",q);u.searchParams.set("format","json");u.searchParams.set("limit","1");const r=await fetch(u,{headers:{'Accept-Language':'es'}}); if(!r.ok) return null; const j=await r.json(); if(!j.length) return null; return {lat:+j[0].lat,lng:+j[0].lon};}catch(_){return null} }
-function estimateFareRaw(km){ const base=990, perKm=660, perMin=99; const mins=(km/24)*60; return Math.max(800, Math.round(base + km*perKm + mins*perMin)); }
-function updateEstimate(){ const dist=$("#distance"), fare=$("#fare"); if(!origin||!dest){ dist.value="0.00 km"; fare.value="$0"; return; } const km=km2(origin,dest); dist.value=`${km.toFixed(2)} km`; fare.value=money(estimateFareRaw(km)); }
-
-/* ========== PASAJERO: seleccionar desde mapa ========= */
-$("#btnPickAsOrigin").onclick = async()=>{
-  if(!pickPendingPt) return; origin=pickPendingPt; pickPendingPt=null;
-  setRideMarker('origin',origin.lat,origin.lng,'Origen');
-  $("#riderOrigin").value = `${origin.lat.toFixed(5)}, ${origin.lng.toFixed(5)}`;
-  $("#pickChooser").classList.remove("show"); updateEstimate();
-  if(origin && dest){ try{ const c=await routeCoords(origin,dest); drawRideLine('o2d',c); fitRideBounds(); }catch(_){ } }
-};
-$("#btnPickAsDest").onclick = async()=>{
-  if(!pickPendingPt) return; dest=pickPendingPt; pickPendingPt=null;
-  setRideMarker('dest',dest.lat,dest.lng,'Destino');
-  $("#riderDest").value = `${dest.lat.toFixed(5)}, ${dest.lng.toFixed(5)}`;
-  $("#pickChooser").classList.remove("show"); updateEstimate();
-  if(origin && dest){ try{ const c=await routeCoords(origin,dest); drawRideLine('o2d',c); fitRideBounds(); }catch(_){ } }
-};
-$("#btnPickCancel").onclick = ()=>{ pickPendingPt=null; $("#pickChooser").classList.remove("show"); };
-
-$("#btnLocate").addEventListener("click", ()=>{
-  if(!navigator.geolocation){ toast("Sin geolocalización"); return; }
-  ensureRideMap();
-  navigator.geolocation.getCurrentPosition(p=>{
-    origin={lat:p.coords.latitude,lng:p.coords.longitude};
-    setRideMarker('origin',origin.lat,origin.lng,'Origen'); mapRide.setView([origin.lat,origin.lng],15); updateEstimate();
-  }, ()=>toast("No se pudo ubicar (abrí por https)"), {enableHighAccuracy:true,timeout:5000,maximumAge:15000});
-});
-
-/* ===== Chat (moderado) ===== */
-let activeRideId=null, chatUnsub=null;
-function normalizeNoAccents(s){ return s.normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
-const banned = ["puta","puto","mierda","pendejo","cabron","imbecil","idiota","estupido","concha","forro","fuck","shit","bitch","asshole","bastard","dick","cunt","fag"];
-function containsBadWords(text){
-  const t = normalizeNoAccents(String(text||'').toLowerCase());
-  return banned.some(w=> new RegExp(`\\b${w}\\b`,'i').test(t));
-}
-function renderMsg(elList, m){
-  const mine = m.from===auth.currentUser?.uid;
-  const box=document.createElement('div');
-  box.className='chat-msg '+(mine?'me':'other');
-  box.textContent=m.text;
-  const meta=document.createElement('div'); meta.className='chat-meta';
-  const dt = m.ts?.toDate?.() || new Date();
-  meta.textContent = `${m.name||'Usuario'} · ${dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
-  const wrap=document.createElement('div'); wrap.appendChild(box); wrap.appendChild(meta);
-  elList.appendChild(wrap);
-  elList.scrollTop = elList.scrollHeight;
-}
-function attachChat(rideId){
-  if(chatUnsub) chatUnsub();
-  if(!rideId){ $("#chatWrapRider").classList.add("hide"); $("#chatWrapDriver").classList.add("hide"); return; }
-  if(currentUser?.role==='driver') $("#chatWrapDriver").classList.remove("hide");
-  else $("#chatWrapRider").classList.remove("hide");
-  const listR = $("#chatListRider"); const listD = $("#chatListDriver");
-  if(listR) listR.innerHTML=""; if(listD) listD.innerHTML="";
-  chatUnsub = ridesCol.doc(rideId).collection("chat").orderBy("ts","asc").onSnapshot(qs=>{
-    (listR && (listR.innerHTML="")); (listD && (listD.innerHTML=""));
-    qs.forEach(doc=>{
-      const m=doc.data();
-      if(listR) renderMsg(listR,m);
-      if(listD) renderMsg(listD,m);
-    });
-  });
-}
-async function sendChatMessage(inputEl){
-  const text = inputEl.value.trim();
-  if(!text) return;
-  if(containsBadWords(text)){ toast("Mensaje no permitido (lenguaje inapropiado)"); return; }
-  if(!activeRideId){ toast("No hay un viaje activo"); return; }
-  try{
-    await ridesCol.doc(activeRideId).collection("chat").add({
-      text, from: auth.currentUser.uid,
-      name: currentUser.displayName || (currentUser.email||currentUser.emailTyped||'Usuario'),
-      role: currentUser.role || 'rider',
-      ts: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    inputEl.value="";
-  }catch(_){ toast("No se pudo enviar el mensaje"); }
-}
-$("#chatSendRider").onclick = ()=> sendChatMessage($("#chatInputRider"));
-$("#chatSendDriver").onclick = ()=> sendChatMessage($("#chatInputDriver"));
-$("#chatInputRider").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#chatSendRider").click(); });
-$("#chatInputDriver").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#chatSendDriver").click(); });
-
-/* ===== Viajes: pasajero activo (chat + rating) ===== */
-function riderAttachActiveRide(){
-  if(riderActiveUnsub) riderActiveUnsub();
-  riderActiveUnsub = ridesCol.where("riderId","==", auth.currentUser.uid).where("finished","==", false).limit(1)
-  .onSnapshot(qs=>{
-    if(qs.empty){ $("#driverCard").classList.add("hide"); attachChat(null); activeRideId=null; return; }
-    const id=qs.docs[0].id, r=qs.docs[0].data(); activeRideId=id; attachChat(id);
-    if(r.status==="completed" && !r.riderRated) openRatingModal({rideId:id, targetUserId:r.driverId, targetName:r.driverName||"Conductor", role:"rider"});
-    $("#rideMapTop").textContent=`${r.originText} → ${r.destText} · ${(r.km||0).toFixed(1)} km · ${money(r.fare||0)}`;
-    $("#rideMapTop").classList.add("show"); setTimeout(()=>$("#rideMapTop").classList.remove("show"),1200);
-    if(r.driverId){
-      $("#driverCard").classList.remove("hide");
-      $("#driverName").textContent = `${r.driverName||"Conductor"} — ${money(r.fare)} · ★${(r.driverRating||5).toFixed(1)}`;
-      $("#driverAvatar").src = r.driverPhotoURL || "https://i.pravatar.cc/100?img=3";
-      $("#driverExtra").textContent = r.status==="accepted"?"En camino al origen": r.status==="arrived"?"Llegó al origen": r.status==="in_trip"?"En viaje": r.status==="completed"?"Finalizado":"—";
-    }
-    ensureRideMap();
-    if(r.origin){ origin=r.origin; setRideMarker('origin',origin.lat,origin.lng,'Origen'); }
-    if(r.dest){ dest=r.dest; setRideMarker('dest',dest.lat,dest.lng,'Destino'); }
-    (async ()=>{ try{ const c=await routeCoords(origin,dest); drawRideLine('o2d',c); }catch(_){}})();
-    if(r.driverLoc){
-      const cur={lat:r.driverLoc.latitude,lng:r.driverLoc.longitude};
-      setRideMarker('driver',cur.lat,cur.lng,'');
-      if(lastDriverPt){ setCarRotation(riderMarkers.driver, bearing(lastDriverPt,cur)); }
-      lastDriverPt=cur;
-      const target = (r.status==="accepted"||r.status==="arrived")? r.origin : r.dest;
-      if(target){
-        routeCoords(cur,target).then(coords=>{ drawRideLine('drv',coords); fitRideBounds(); }).catch(()=>{});
-      }else{ fitRideBounds(); }
-    }
-  });
 }
 
-/* ===== Conductor ===== */
-let mapDriverReady=false, driverMarker=null, prevDriverPoint=null;
-let activePolylineToPick=null, activePolylineO2D=null;
-let driverAvailUnsub=null, driverMineUnsub=null;
-let geoWatchId=null, lastPush=0;
-let online=false, onTimer=null, onStart=null;
-
-function centerOnMeOnce(){
-  if(!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(p=>{
-    ensureDriverMap();
-    const lat=p.coords.latitude,lng=p.coords.longitude;
-    if(!driverMarker){ driverMarker=L.marker([lat,lng],{icon:carIcon('#00b3ff')}).addTo(mapDriver); }
-    else driverMarker.setLatLng([lat,lng]);
-    mapDriver.setView([lat,lng],14);
-  }, ()=>toast("Geo deshabilitada"), {enableHighAccuracy:true,timeout:6000,maximumAge:15000});
-}
-function startGeoWatch(){
-  if(!navigator.geolocation) return;
-  if(geoWatchId) navigator.geolocation.clearWatch(geoWatchId);
-  geoWatchId = navigator.geolocation.watchPosition(async p=>{
-    ensureDriverMap();
-    const lat=p.coords.latitude,lng=p.coords.longitude;
-    const nowPoint={lat,lng};
-    if(!driverMarker){ driverMarker=L.marker([lat,lng],{icon:carIcon('#00b3ff')}).addTo(mapDriver); }
-    else{
-      if(prevDriverPoint){ setCarRotation(driverMarker, bearing(prevDriverPoint,nowPoint)); }
-      driverMarker.setLatLng([lat,lng]);
-    }
-    prevDriverPoint=nowPoint;
-    const now=Date.now();
-    if(activeRideId && now-lastPush>2500){
-      lastPush=now;
-      await ridesCol.doc(activeRideId).set({driverLoc:new firebase.firestore.GeoPoint(lat,lng), driverLocAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-    }
-  }, console.warn, {enableHighAccuracy:true, maximumAge:2000, timeout:15000});
-}
-function stopGeoWatch(){ if(geoWatchId){ navigator.geolocation.clearWatch(geoWatchId); geoWatchId=null; } }
-function setOnlineUI(isOnline){
-  online=isOnline;
-  $("#btnStartRoute").disabled = !currentUser?.approved || online;
-  $("#btnPauseRoute").disabled = !currentUser?.approved || !online;
-  $("#btnStopRoute").disabled  = !currentUser?.approved || !online;
-}
-function startTimer(){ onStart=Date.now(); $("#onlineTimer").textContent="00:00:00"; if(onTimer) clearInterval(onTimer); onTimer=setInterval(()=>$("#onlineTimer").textContent=fmtTime(Date.now()-onStart),1000); }
-function stopTimer(reset=true){ if(onTimer) clearInterval(onTimer); if(reset) $("#onlineTimer").textContent="00:00:00"; }
-async function goOnline(){ await usersCol.doc(auth.currentUser.uid).set({online:true},{merge:true}); setOnlineUI(true); startTimer(); ensureDriverMap(); centerOnMeOnce(); startGeoWatch(); attachDriverStreams(); toast("Conectado"); }
-async function pauseOnline(){ await usersCol.doc(auth.currentUser.uid).set({online:false},{merge:true}); setOnlineUI(false); stopTimer(false); stopGeoWatch(); toast("Pausado"); }
-async function stopOnline(){ await usersCol.doc(auth.currentUser.uid).set({online:false},{merge:true}); setOnlineUI(false); stopTimer(true); stopGeoWatch(); clearActiveRoute(); $("#driverAvailable").innerHTML=""; $("#driverMyActive").innerHTML=""; attachChat(null); activeRideId=null; toast("Desconectado"); }
-$("#btnStartRoute").addEventListener("click", goOnline);
-$("#btnPauseRoute").addEventListener("click", pauseOnline);
-$("#btnStopRoute").addEventListener("click", stopOnline);
-function clearActiveRoute(){ if(activePolylineToPick){ mapDriver.removeLayer(activePolylineToPick); activePolylineToPick=null; } if(activePolylineO2D){ mapDriver.removeLayer(activePolylineO2D); activePolylineO2D=null; } }
-async function showRoutePreview(r){
-  centerOnMeOnce(); clearActiveRoute();
-  if(!driverMarker || !r.origin) return;
-  try{
-    const cur=driverMarker.getLatLng();
-    const toPick = await routeCoords({lat:cur.lat,lng:cur.lng}, r.origin);
-    activePolylineToPick = L.polyline(toPick,{weight:5}).addTo(mapDriver);
-    if(r.dest){ const o2d = await routeCoords(r.origin, r.dest); activePolylineO2D = L.polyline(o2d,{weight:4,opacity:.6}).addTo(mapDriver); }
-    const b=L.latLngBounds([[cur.lat,cur.lng],[r.origin.lat,r.origin.lng]]); if(r.dest) b.extend([r.dest.lat,r.dest.lng]); mapDriver.fitBounds(b,{padding:[24,24]});
-    const top=$("#driverMapTop"); top.textContent=`${r.originText} → ${r.destText} · ${(r.km||0).toFixed(1)} km · ${money(r.fare)}`; top.classList.add("show"); setTimeout(()=>top.classList.remove("show"),1600);
-  }catch(_){}
-}
-async function showActiveRoute(r){
-  ensureDriverMap(); centerOnMeOnce(); clearActiveRoute();
-  if(r.driverLoc){
-    const cur={lat:r.driverLoc.latitude,lng:r.driverLoc.longitude};
-    if(prevDriverPoint){ setCarRotation(driverMarker, bearing(prevDriverPoint,cur)); }
-    driverMarker?.setLatLng([cur.lat,cur.lng]); prevDriverPoint=cur;
-  }
-  if(r.origin){
-    try{
-      const from = r.status==="in_trip" ? r.origin : (r.driverLoc? {lat:r.driverLoc.latitude,lng:r.driverLoc.longitude} : null);
-      if(from){ const toPick = await routeCoords(from, r.status==="in_trip"? r.dest : r.origin); activePolylineToPick = L.polyline(toPick,{weight:5}).addTo(mapDriver); }
-      if(r.dest){ const o2d = await routeCoords(r.origin, r.dest); activePolylineO2D = L.polyline(o2d,{weight:4,opacity:.6}).addTo(mapDriver); }
-      const b=L.latLngBounds([]); if(driverMarker) b.extend(driverMarker.getLatLng()); b.extend([r.origin.lat,r.origin.lng]); if(r.dest) b.extend([r.dest.lat,r.dest.lng]); if(b.isValid()) mapDriver.fitBounds(b,{padding:[24,24]});
-    }catch(_){}
-  }
-  const top=$("#driverMapTop"); top.textContent=`${r.originText} → ${r.destText} · ${(r.km||0).toFixed(1)} km · ${money(r.fare||0)}`; top.classList.add("show"); setTimeout(()=>top.classList.remove("show"),1500);
-}
-async function driverAcceptRide(rideId){
-  try{
-    await db.runTransaction(async tx=>{
-      const ref=ridesCol.doc(rideId); const snap=await tx.get(ref);
-      if(!snap.exists) throw new Error("El viaje ya no existe");
-      const r=snap.data();
-      if(r.status!=="requested") throw new Error("Ya fue tomado");
-      if(r.reservedBy && r.reservedBy!==auth.currentUser.uid) throw new Error("Reservado por otro conductor");
-      tx.update(ref,{
-        reservedBy: auth.currentUser.uid,
-        reservedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        status:"accepted",
-        driverId: auth.currentUser.uid,
-        driverName: currentUser.displayName || currentUser.email || "Conductor",
-        driverPhotoURL: currentUser.photoURL || "",
-        driverRating: currentUser.rating || 5
-      });
-    });
-    activeRideId=rideId; attachChat(rideId); toast("Viaje aceptado");
-  }catch(e){ toast(e.message); }
-}
-async function driverAdvance(rideId,next){
-  const ord=["requested","accepted","arrived","in_trip","completed"];
-  try{
-    await db.runTransaction(async tx=>{
-      const ref=ridesCol.doc(rideId); const snap=await tx.get(ref); if(!snap.exists) throw new Error("No existe");
-      const r=snap.data(); if(ord.indexOf(next)!==ord.indexOf(r.status)+1) throw new Error("Secuencia inválida");
-      const upd={status:next}; if(next==="completed") upd.finished=true; tx.update(ref,upd);
-    });
-    if(next==="completed"){ openRatingModal({rideId, targetUserId:null, role:"driver"}); }
-  }catch(e){ toast(e.message); }
-}
-function attachDriverStreams(){
-  if(driverAvailUnsub) driverAvailUnsub();
-  if(driverMineUnsub)  driverMineUnsub();
-  if(!online){
-    $("#driverAvailable").innerHTML=`<div class="small muted">Presioná “Iniciar”.</div>`;
-    $("#driverMyActive").innerHTML=`<div class="small muted">Sin viajes activos.</div>`;
-    $("#chatWrapDriver").classList.add("hide"); return;
-  }
-  ensureDriverMap();
-  driverAvailUnsub = ridesCol.where("status","==","requested").limit(60)
-  .onSnapshot(qs=>{
-    const wrap=$("#driverAvailable"); wrap.innerHTML="";
-    if(qs.empty){ wrap.innerHTML=`<div class="small muted">Sin viajes por ahora…</div>`; return; }
-    qs.forEach(doc=>{
-      const r=doc.data();
-      if(r.reservedBy && r.reservedBy!==auth.currentUser.uid) return;
-      const item=document.createElement("div"); item.className="item";
-      item.innerHTML=`
-        <div class="inline-card">
-          <img class="avatar" src="${r.riderPhotoURL||'https://i.pravatar.cc/100?img=12'}" alt="Pasajero">
-          <div>
-            <b>${r.riderName||'Pasajero'}</b> — ${money(r.fare)} · ★${(r.riderRating||5).toFixed(1)}
-            <div class="small">${r.originText} → ${r.destText}</div>
-            <div class="small muted">${(r.km||0).toFixed(1)} km · ${r.vehicle||'auto'}</div>
-          </div>
-        </div>
-        <div class="row" style="margin-top:6px">
-          <button class="btn" data-view>Ver ruta</button>
-          <button class="btnp" data-accept>Aceptar</button>
-        </div>`;
-      item.querySelector('[data-view]').onclick=()=> showRoutePreview(r);
-      item.querySelector('[data-accept]').onclick=()=> driverAcceptRide(doc.id);
-      wrap.appendChild(item);
-    });
-  });
-  driverMineUnsub = ridesCol.where("driverId","==", auth.currentUser.uid).where("finished","==",false)
-  .onSnapshot(qs=>{
-    const wrap=$("#driverMyActive"); wrap.innerHTML="";
-    if(qs.empty){ wrap.innerHTML=`<div class="small muted">Sin viajes activos.</div>`; activeRideId=null; attachChat(null); clearActiveRoute(); $("#chatWrapDriver").classList.add("hide"); return; }
-    qs.forEach((doc,i)=>{
-      const r=doc.data(); if(i===0){ activeRideId=doc.id; showActiveRoute(r); attachChat(doc.id); $("#chatWrapDriver").classList.remove("hide"); }
-      if(r.status==="completed" && !r.driverRated) openRatingModal({rideId:doc.id, targetUserId:r.riderId, targetName:r.riderName||"Pasajero", role:"driver"});
-      const order=["requested","accepted","arrived","in_trip","completed"];
-      const can=n=> order.indexOf(n)===order.indexOf(r.status)+1;
-      const item=document.createElement("div"); item.className="item";
-      item.innerHTML=`
-        <div class="inline-card">
-          <img class="avatar" src="${r.riderPhotoURL||'https://i.pravatar.cc/100?img=12'}" alt="Pasajero">
-          <div>
-            <b>${r.riderName||'Pasajero'}</b> — ${money(r.fare)} · ★${(r.riderRating||5).toFixed(1)}
-            <div class="small">${r.originText} → ${r.destText}</div>
-            <div class="small muted">${(r.km||0).toFixed(1)} km · Estado: <b>${r.status}</b></div>
-          </div>
-        </div>
-        <div class="row" style="margin-top:6px">
-          <button class="btn${can('arrived')?' btnp':''}" data-next="arrived" ${can('arrived')?'':'disabled'}>Llegué</button>
-          <button class="btn${can('in_trip')?' btnp':''}" data-next="in_trip" ${can('in_trip')?'':'disabled'}>Iniciar</button>
-          <button class="btn${can('completed')?' btnp':''}" data-next="completed" ${can('completed')?'':'disabled'}>Finalizar</button>
-        </div>`;
-      item.querySelectorAll('[data-next]').forEach(b=> b.onclick=()=> driverAdvance(doc.id,b.dataset.next));
-      wrap.appendChild(item);
-    });
-  });
+function setStatusChip(){
+  $('#statusChip').textContent = state.user ? `${state.user.rol}` : 'offline';
+  $('#statusChip').className = 'chip';
 }
 
-/* ===== Perfil / Cuenta / UI ===== */
-function paintProfile(){
-  const el=$("#profileInfo"), av=$("#profileAvatar"); if(!currentUser){ el.textContent="Sin sesión"; av.src=""; return; }
-  av.src=currentUser.photoURL||"https://i.pravatar.cc/100?u="+(currentUser.uid||'placeholder');
-  const tagDemo = currentUser.demo ? " (demo)" : "";
-  el.innerHTML=`Nombre: <b>${currentUser.displayName||"—"}</b> · Correo: <b>${currentUser.email||currentUser.emailTyped||"—"}</b>${tagDemo}<br>Rol: <b>${currentUser.role||'rider'}</b> · KYC: <b>${currentUser.approved?'Aprobado':'No'}</b>`;
-  $("#profileName").value = currentUser.displayName||"";
-  $("#prefThemeDark").checked = (currentTheme==="darkBlue");
-  $("#prefThemeLight").checked = (currentTheme==="light");
-}
-function renderAccount(){
-  const rating = Number(currentUser?.rating ?? 5).toFixed(1);
-  const stars  = Number(currentUser?.stars ?? 0);
-  $("#ratingValue").textContent = `★${rating}`;
-  $("#starsCount").textContent = String(stars);
-  const t1 = $("#trophy1"), t2=$("#trophy2");
-  const has1 = stars>=1000, has2=stars>=5000;
-  t1.classList.toggle("lock", !has1); t2.classList.toggle("lock", !has2);
-  $("#trophyLabel").textContent = has2 ? "Élite 5000" : has1 ? "Básico 1000" : "—";
-}
-function refreshTabs(){
-  const logged=!!currentUser;
-  document.querySelector(`[data-tab="access"]`).classList.toggle("hide", logged);
-  document.querySelector(`[data-tab="ride"]`).classList.toggle("hide", !logged);
-  document.querySelector(`[data-tab="history"]`).classList.toggle("hide", !logged);
-  document.querySelector(`[data-tab="driver"]`).classList.toggle("hide", !(logged && currentUser.approved));
-  document.querySelector(`[data-tab="settings"]`).classList.toggle("hide", !logged);
-  $("#btnStartRoute").disabled = !(logged && currentUser.approved);
-  $("#drvKycStatus").className = "pill " + (currentUser?.approved?"ok":"warn");
-  $("#drvKycStatus").textContent = currentUser?.approved?"Aprobado":"No solicitado";
-  const labelEmail = currentUser?.email || currentUser?.emailTyped || "";
-  $("#authPill").textContent = logged ? `${currentUser.displayName||labelEmail||'Usuario'} — ${(currentUser.role||'rider')}${currentUser.approved?' (KYC✓)':''}${currentUser.demo?' (demo)':''}` : "Sin sesión";
-  setTab(logged ? "ride" : "access");
-}
+// ======= Lateral según tab =======
+function renderSide(){
+  renderTabs();
+  setStatusChip();
+  const title = $('#sideTitle');
+  const body = $('#sideBody');
+  title.textContent = ({
+    inicio:'Inicio', pasajero:'Pasajero', conductor:'Conductor', perfil:'Perfil'
+  })[currentTab];
+  body.innerHTML='';
 
-/* compresión imagen */
-function compressImage(file, maxBytes=900*1024, maxW=512){
-  return new Promise((resolve,reject)=>{
-    const img=new Image(), rdr=new FileReader();
-    rdr.onload=e=>{ img.src=e.target.result; };
-    img.onload=()=>{
-      const scale=Math.min(1, maxW/img.width);
-      const w=Math.round(img.width*scale), h=Math.round(img.height*scale);
-      const c=document.createElement('canvas'); c.width=w; c.height=h;
-      const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,w,h);
-      let q=0.92, out;
-      do{ out=c.toDataURL('image/jpeg', q); q-=0.07; }while(out.length>maxBytes && q>0.35);
-      resolve(out);
-    };
-    img.onerror=reject; rdr.readAsDataURL(file);
-  });
-}
-async function emailExists(email){
-  try{ const m=await auth.fetchSignInMethodsForEmail(email); return Array.isArray(m)&&m.length>0; }catch(_){ return false; }
-}
-
-/* ============ REGISTRO / INICIO DE SESIÓN (ARREGLADO) ============ */
-function setBusy(btn, busy){
-  btn.disabled = !!busy;
-  btn.dataset._t ??= btn.textContent;
-  btn.textContent = busy ? "Procesando…" : btn.dataset._t;
-}
-
-$("#btnSignUp").addEventListener("click", async ()=>{
-  const name = $("#regName").value.trim();
-  const email = normalizeEmail($("#regEmail").value);
-  const pass = $("#regPass").value;
-  const file = $("#regPhoto").files[0];
-  const btn = $("#btnSignUp");
-  if(!name || !email || pass.length<6){ pill($("#msg"), "Completá nombre, correo y contraseña (mín. 6).", "error"); return; }
-  try{
-    setBusy(btn,true);
-    if(await emailExists(email)){ $("#goLogin").click(); $("#loginEmail").value = email; pill($("#msg"), "Ese correo ya está registrado. Iniciá sesión.", "warn"); return; }
-    const { user } = await auth.createUserWithEmailAndPassword(email, pass);
-    await user.updateProfile({ displayName: name });
-    let photoURL = "https://i.pravatar.cc/100?u="+user.uid;
-    if(file){ try{ photoURL = await compressImage(file); }catch(_){ } }
-    await usersCol.doc(user.uid).set({
-      uid:user.uid, email:user.email, displayName:name, photoURL,
-      role:"rider", approved:false, online:false, demo:false,
-      rating:5, ratingsCount:0, stars:0,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, {merge:true});
-    pill($("#msg"), "Cuenta creada. Ya estás dentro ✅", "ok");
-    setTab("ride");
-  }catch(e){
-    pill($("#msg"), `No se pudo crear la cuenta (${e.code||'error'}).`, "error");
-  }finally{ setBusy(btn,false); }
-});
-
-$("#btnSignIn").addEventListener("click", async ()=>{
-  const email = normalizeEmail($("#loginEmail").value);
-  const pass  = $("#loginPass").value;
-  const btn = $("#btnSignIn");
-  if(!email || !pass){ pill($("#msg"), "Completa correo y contraseña.", "warn"); return; }
-  try{
-    setBusy(btn,true);
-    await auth.signInWithEmailAndPassword(email, pass);
-    pill($("#msg"), "Listo, sesión iniciada.", "ok");
-  }catch(e){
-    const code=e?.code||"";
-    if(code==="auth/unauthorized-domain"){ pill($("#msg"), "Dominio no autorizado en Firebase Auth. Agregá tu dominio en Authentication → Settings → Authorized domains.", "error"); }
-    else if(code==="auth/user-not-found"){ pill($("#msg"), "No existe una cuenta con ese correo. Registrate o usá ‘Entrar rápido (demo)’.", "warn"); }
-    else if(code==="auth/wrong-password" || code==="auth/invalid-credential"){ pill($("#msg"), "Correo o contraseña incorrectos.", "error"); }
-    else pill($("#msg"), `No se pudo iniciar sesión (${code}).`, "error");
-  }finally{ setBusy(btn,false); }
-});
-
-$("#btnResend").addEventListener("click", async ()=>{
-  const email = normalizeEmail($("#loginEmail").value);
-  const pass  = $("#loginPass").value;
-  const btn = $("#btnResend");
-  if(!email || !pass){ pill($("#msg"), "Completá email y contraseña para reenviar verificación.", "warn"); return; }
-  try{
-    setBusy(btn,true);
-    const { user } = await auth.signInWithEmailAndPassword(email, pass);
-    await user.sendEmailVerification();
-    pill($("#msg"), "Verificación reenviada. Revisá tu correo.", "ok");
-  }catch(e){ pill($("#msg"), `No se pudo reenviar (${e.code||'error'}).`, "error"); }
-  finally{ setBusy(btn,false); }
-});
-
-$("#btnForgot").addEventListener("click", async ()=>{
-  const email = normalizeEmail($("#loginEmail").value);
-  if(!email) return pill($("#msg"),"Escribí tu correo para enviar el enlace.","warn");
-  try{ await auth.sendPasswordResetEmail(email); pill($("#msg"),"Te envié un correo para restablecer la contraseña.","ok"); }
-  catch(e){ pill($("#msg"),`No se pudo enviar (${e.code||'error'}).`,"error"); }
-});
-
-/* Entrar rápido (demo) sin depender de anónimo */
-$("#btnFast").addEventListener("click", async ()=>{
-  const emailTyped = $("#loginEmail").value.trim();
-  const demoEmail = emailTyped || `demo-${Date.now()}@demo.local`;
-  const demoPass  = "demo12345";
-  const btn = $("#btnFast");
-  try{
-    setBusy(btn,true);
-    try{
-      await auth.signInWithEmailAndPassword(demoEmail, demoPass);
-    }catch(e){
-      if(e.code==="auth/user-not-found"){
-        const cred = await auth.createUserWithEmailAndPassword(demoEmail, demoPass);
-        const u=cred.user;
-        await usersCol.doc(u.uid).set({
-          uid:u.uid, email:u.email, emailTyped: emailTyped || demoEmail,
-          displayName: (emailTyped||demoEmail).split('@')[0],
-          photoURL: "https://i.pravatar.cc/100?u="+u.uid,
-          role:"rider", approved:false, online:false, demo:true,
-          rating:5, ratingsCount:0, stars:0,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, {merge:true});
-      }else{
-        throw e;
-      }
-    }
-    pill($("#msg"), "Entraste en modo demo ✅", "ok");
-  }catch(e){
-    pill($("#msg"), `No se pudo entrar (demo) — ${e.code||'error'}.`, "error");
-  }finally{ setBusy(btn,false); }
-});
-
-/* Ajustes */
-$("#btnProfileSave").addEventListener("click", async ()=>{
-  if(!auth.currentUser) return toast("Iniciá sesión");
-  const name = $("#profileName").value.trim();
-  const file = $("#profilePhoto").files[0];
-  let photoURL = currentUser.photoURL || "https://i.pravatar.cc/100?u="+auth.currentUser.uid;
-  if(file){ try{ photoURL = await compressImage(file); }catch(_){ } }
-  try{
-    if(name) await auth.currentUser.updateProfile({displayName:name});
-    await usersCol.doc(auth.currentUser.uid).set({displayName:name||currentUser.displayName, photoURL},{merge:true});
-    currentUser.displayName = name || currentUser.displayName;
-    currentUser.photoURL = photoURL;
-    paintProfile();
-    toast("Perfil guardado");
-  }catch(e){ toast("No se pudo guardar"); }
-});
-$("#btnSignOut").addEventListener("click", ()=> auth.signOut().catch(e=>toast(e.message)));
-
-function setTheme(theme){
-  currentTheme = theme;
-  localStorage.setItem("taxiya_theme", theme);
-  document.body.classList.toggle("theme-darkblue", theme==="darkBlue");
-  document.body.classList.toggle("theme-light", theme==="light");
-  if(mapRide) applyMapTheme(mapRide, theme);
-  if(mapDriver) applyMapTheme(mapDriver, theme);
-  setTimeout(()=>{ mapRide?.invalidateSize(); mapDriver?.invalidateSize(); }, 80);
-}
-$("#prefThemeDark").addEventListener("change", e=>{ if(e.target.checked) setTheme("darkBlue"); });
-$("#prefThemeLight").addEventListener("change", e=>{ if(e.target.checked) setTheme("light"); });
-
-$("#btnGeoTest").addEventListener("click", ()=>{
-  if(!navigator.geolocation) return toast("Tu dispositivo no ofrece geolocalización");
-  navigator.geolocation.getCurrentPosition(
-    p=>toast(`OK: ${p.coords.latitude.toFixed(4)}, ${p.coords.longitude.toFixed(4)}`),
-    ()=>toast("Permiso denegado o error"),
-    {enableHighAccuracy:true,timeout:6000,maximumAge:0}
-  );
-});
-$("#btnDriverMode").addEventListener("click", async ()=>{
-  if(!auth.currentUser) return toast("Iniciá sesión");
-  await usersCol.doc(auth.currentUser.uid).set({role:"driver",approved:true},{merge:true});
-  currentUser.role="driver"; currentUser.approved=true;
-  refreshTabs(); setTab("driver"); toast("Conductor aprobado (demo)");
-});
-$("#btnRiderMode").addEventListener("click", async ()=>{
-  if(!auth.currentUser) return toast("Iniciá sesión");
-  await usersCol.doc(auth.currentUser.uid).set({role:"rider",approved:false,online:false},{merge:true});
-  currentUser.role="rider"; currentUser.approved=false;
-  stopOnline(); refreshTabs(); setTab("ride"); toast("Volviste a Pasajero (demo)");
-});
-
-/* Sesión */
-auth.onAuthStateChanged(async (u)=>{
-  if(!u){
-    currentUser=null; paintProfile(); refreshTabs(); attachChat(null); activeRideId=null;
-    if(riderActiveUnsub) riderActiveUnsub();
-    if(driverAvailUnsub) driverAvailUnsub();
-    if(driverMineUnsub)  driverMineUnsub();
+  if(!state.user){
+    body.appendChild(loginCard());
     return;
   }
-  const ref=usersCol.doc(u.uid);
-  const snap=await ref.get();
-  if(!snap.exists){
-    await ref.set({
-      uid:u.uid,
-      email: u.email || null,
-      emailTyped: u.isAnonymous ? ($("#loginEmail").value.trim() || null) : null,
-      displayName: u.displayName || (u.email ? u.email.split('@')[0] : 'Invitado'),
-      photoURL: "https://i.pravatar.cc/100?u="+u.uid,
-      role:"rider", approved:false, online:false,
-      demo: u.isAnonymous===true, rating:5, ratingsCount:0, stars:0,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, {merge:true});
-  }
-  currentUser=(await ref.get()).data();
-  if(typeof currentUser.rating === 'undefined') currentUser.rating = 5;
-  if(typeof currentUser.ratingsCount === 'undefined') currentUser.ratingsCount = 0;
-  if(typeof currentUser.stars  === 'undefined') currentUser.stars  = 0;
 
-  paintProfile(); refreshTabs(); renderAccount();
-  ensureRideMap(); riderAttachActiveRide();
-
-  if(!u.emailVerified && !u.isAnonymous){
-    pill($("#msg"), "Tu correo no está verificado. Podés usar todo igual, pero te reenvié el email desde Acceso → ‘Reenviar verificación’.", "warn");
-  }
-});
-
-/* Historial local */
-function renderHistory(){
-  if(!currentUser) return; const key=`taxiya_rider_history_${currentUser.uid}`; let list=[]; try{list=JSON.parse(localStorage.getItem(key)||"[]");}catch(_){}
-  const wrap=$("#riderHistory"); wrap.innerHTML=""; if(!list.length) wrap.innerHTML=`<div class="small muted">Sin viajes.</div>`;
+  if(currentTab==='inicio') body.appendChild(cardInicio());
+  if(currentTab==='pasajero') body.appendChild(cardPasajero());
+  if(currentTab==='conductor') body.appendChild(cardConductor());
+  if(currentTab==='perfil') body.appendChild(cardPerfil());
 }
-$("#btnClearRiderHistory").addEventListener("click", ()=>{ if(!currentUser) return; localStorage.setItem(`taxiya_rider_history_${currentUser.uid}`,"[]"); renderHistory(); toast("OK"); });
 
-/* ========== Calificación ========== */
-const rateModal = $("#rateModal");
-const starEls = $$('#rateStars .star');
-let rateCurrent = {rideId:null, targetUserId:null, targetName:"", role:null, value:5};
-const shownOnce = new Set();
-function openRatingModal({rideId, targetUserId, targetName="Usuario", role}){
-  const key = `${rideId}-${role}`; if(shownOnce.has(key)) return; shownOnce.add(key);
-  rateCurrent = {rideId, targetUserId, targetName, role, value:5};
-  $("#rateTitle").textContent = `Califica a ${targetName}`;
-  starEls.forEach(s=> s.classList.toggle('on', Number(s.dataset.v) <= 5));
-  rateModal.style.display = "flex";
+// ======= Componentes =======
+function loginCard(){
+  const wrap = document.createElement('div');
+  wrap.className='grid';
+  wrap.innerHTML = `
+    <div class="card">
+      <h3 style="margin:0 0 .25rem 0">Entrar (demo libre)</h3>
+      <p style="margin:.2rem 0 .8rem 0;color:var(--muted)">No se valida correo. Tus datos quedan solo en este dispositivo.</p>
+      <div class="field"><label class="label">Nombre</label><input id="inNombre" class="input" placeholder="Ana, Mauro…"/></div>
+      <div class="field"><label class="label">Correo (opcional)</label><input id="inEmail" class="input" placeholder="nombre@mail.com"/></div>
+      <div class="field"><label class="label">Rol</label>
+        <select id="inRol" class="input">
+          <option value="pasajero">Pasajero</option>
+          <option value="conductor">Conductor</option>
+        </select>
+      </div>
+      <div class="row" style="margin-top:.8rem;justify-content:space-between">
+        <button class="btn primary" id="btnEntrar">Entrar ahora</button>
+        <button class="btn ghost" id="btnAutofill">Autocompletar</button>
+      </div>
+    </div>`;
+  setTimeout(()=>{
+    $('#btnAutofill').onclick = ()=>{
+      $('#inNombre').value = 'Usuario Demo';
+      $('#inEmail').value = 'demo@example.com';
+    };
+    $('#btnEntrar').onclick = ()=>{
+      const nombre = $('#inNombre').value.trim()||'Invitado';
+      const email = $('#inEmail').value.trim()||'';
+      const rol = $('#inRol').value;
+      state.user = { id: uid(), nombre, email, rol, foto:"", rating: {sum:0, count:0} };
+      save(); renderSide();
+    };
+  },0);
+  return wrap;
 }
-starEls.forEach(s=> s.addEventListener('click', ()=>{ const v=+s.dataset.v||5; rateCurrent.value=v; starEls.forEach(x=> x.classList.toggle('on', +x.dataset.v<=v)); }));
-$("#rateCancel").onclick = ()=>{ rateModal.style.display="none"; };
-$("#rateSend").onclick   = async ()=>{ try{ await submitRating(rateCurrent); rateModal.style.display="none"; toast("¡Gracias por tu calificación!"); }catch(e){ toast("No se pudo guardar"); } };
-async function submitRating({rideId, targetUserId, role, value}){
-  if(!auth.currentUser || !rideId) throw new Error("sin datos");
-  const refRide = ridesCol.doc(rideId);
-  await db.runTransaction(async tx=>{
-    const s = await tx.get(refRide); if(!s.exists) throw new Error("ride no existe");
-    const r = s.data(); const isRider = (role==="rider");
-    const already = isRider ? r.riderRated === true : r.driverRated === true; if(already) return;
-    let targetId = targetUserId || (isRider ? r.driverId : r.riderId); if(!targetId) throw new Error("sin destinatario");
-    const userRef = usersCol.doc(targetId); const us = await tx.get(userRef);
-    const udata = us.exists ? us.data() : {ratingsCount:0, stars:0, rating:5};
-    const newCount  = Number(udata.ratingsCount||0) + 1;
-    const newStars  = Number(udata.stars||0) + Number(value||5);
-    const newAvg    = +(newStars / newCount).toFixed(2);
-    tx.set(userRef, {ratingsCount:newCount, stars:newStars, rating:newAvg}, {merge:true});
-    const upd = isRider ? {riderRated:true, riderRatingValue:value} : {driverRated:true, driverRatingValue:value};
-    tx.set(refRide, upd, {merge:true});
+
+function cardInicio(){
+  const el = document.createElement('div');
+  el.className='grid';
+  el.innerHTML = `
+    <div class="card">
+      <div class="row wrap" style="justify-content:space-between">
+        <div>
+          <div class="label">Sesión</div>
+          <div class="chip">${state.user?.nombre || ''} (${state.user?.rol})</div>
+        </div>
+        <div>
+          <div class="label">Viajes</div>
+          <div class="chip">${state.viajes.length}</div>
+        </div>
+        <div>
+          <div class="label">Estado</div>
+          <div class="badge warn">modo demo</div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:.8rem;gap:.5rem;flex-wrap:wrap">
+        <button class="btn" onclick="currentTab='pasajero'; renderSide()">Ir a Pasajero</button>
+        <button class="btn" onclick="currentTab='conductor'; renderSide()">Ir a Conductor</button>
+        <button class="btn danger" onclick="logout()">Cerrar sesión</button>
+      </div>
+    </div>
+  `;
+  return el;
+}
+
+function cardPasajero(){
+  const el = document.createElement('div'); el.className='grid';
+  el.innerHTML = `
+    <div class="card">
+      <div class="label">Cómo elegir puntos</div>
+      <p style="margin:.3rem 0;color:var(--muted)">Toca el mapa y elige si ese toque es <b>ORIGEN</b> o <b>DESTINO</b>. Podés usar tu ubicación como origen.</p>
+      <div class="row" style="gap:.5rem;flex-wrap:wrap">
+        <button class="btn" onclick="miUbicacionComoOrigen()">Usar mi ubicación</button>
+        <button class="btn ghost" onclick="limpiar()">Limpiar</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label">Solicitud</div>
+      <p id="solicitudTxt" style="margin:.3rem 0;color:var(--muted)">Aún no solicitaste un viaje.</p>
+      <div class="row" style="gap:.5rem;flex-wrap:wrap">
+        <button class="btn primary" onclick="solicitarViaje()">Solicitar viaje</button>
+        <button class="btn ghost" onclick="cancelarSolicitud()">Cancelar</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label">Chat con el conductor</div>
+      <div class="chatbox">
+        <div id="chatlogPax" class="chatlog"></div>
+        <div class="chatinput">
+          <input id="chatInPax" class="input" placeholder="Escribe un mensaje respetuoso…"/>
+          <button class="btn" onclick="enviarChat('pax')">Enviar</button>
+        </div>
+      </div>
+    </div>`;
+  return el;
+}
+
+function cardConductor(){
+  const el = document.createElement('div'); el.className='grid';
+  const req = state.pendingForDriver;
+  el.innerHTML = `
+    <div class="card">
+      <div class="label">Solicitudes</div>
+      ${ req ? `
+        <div class="row wrap" style="justify-content:space-between">
+          <div>
+            <div class="chip">Pasajero: ${req.pasajero.nombre}</div>
+            <div class="chip">Precio: ${fmt(req.precio)}</div>
+          </div>
+          <div>
+            <div class="chip">Dist: ${req.km.toFixed(2)} km</div>
+            <div class="chip">Estado: ${req.estado}</div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:.6rem;gap:.5rem;flex-wrap:wrap">
+          <button class="btn primary" onclick="aceptarViaje()">Aceptar</button>
+          <button class="btn ghost" onclick="rechazarViaje()">Rechazar</button>
+        </div>
+      ` : `<p style="margin:.3rem 0;color:var(--muted)">Sin solicitudes. Cuando el pasajero pida, aparecerá aquí.</p>`}
+    </div>
+    <div class="card">
+      <div class="label">Acciones</div>
+      <div class="row" style="gap:.5rem;flex-wrap:wrap">
+        <button class="btn" onclick="iniciarTrayecto()">Iniciar</button>
+        <button class="btn" onclick="finalizarTrayecto()">Finalizar</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label">Chat con el pasajero</div>
+      <div class="chatbox">
+        <div id="chatlogDrv" class="chatlog"></div>
+        <div class="chatinput">
+          <input id="chatInDrv" class="input" placeholder="Escribe un mensaje respetuoso…"/>
+          <button class="btn" onclick="enviarChat('drv')">Enviar</button>
+        </div>
+      </div>
+    </div>`;
+  return el;
+}
+
+function cardPerfil(){
+  const u = state.user;
+  const avg = u.rating.count? (u.rating.sum/u.rating.count):0;
+  const stars = [1,2,3,4,5].map(i=>`<span class="star ${avg>=i? '':'off'}">★</span>`).join('');
+  const totalStars = u.rating.sum; // acumulado para trofeos
+  let trofeos = '';
+  if(totalStars>=5000) trofeos += '🏆🥇';
+  else if(totalStars>=1000) trofeos += '🏆';
+  const el = document.createElement('div'); el.className='grid';
+  el.innerHTML = `
+    <div class="card">
+      <div class="row wrap" style="gap:.75rem;align-items:flex-start">
+        <img src="https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(u.nombre)}" alt="avatar" width="64" height="64" style="border-radius:12px;border:1px solid var(--line)"/>
+        <div>
+          <div style="font-weight:600">${u.nombre}</div>
+          <div class="chip">${u.email||'sin email'}</div>
+          <div class="chip">Rol: ${u.rol}</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label">Calificación</div>
+      <div class="row" style="gap:.35rem">${stars}</div>
+      <div class="row" style="gap:.5rem;margin-top:.4rem">
+        <div class="chip">${u.rating.count} opiniones</div>
+        <div class="chip">${avg.toFixed(2)} / 5.00</div>
+        <div class="chip trophy">${trofeos||'—'}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label">Cuenta</div>
+      <div class="row" style="gap:.5rem;flex-wrap:wrap">
+        <button class="btn danger" onclick="logout()">Cerrar sesión</button>
+        <button class="btn ghost" onclick="borrarTodo()">Borrar datos locales</button>
+      </div>
+    </div>`;
+  return el;
+}
+
+function logout(){ state.user=null; save(); renderSide(); }
+function borrarTodo(){ localStorage.removeItem('taxiya_state'); location.reload(); }
+
+// ======= Mapa y selección =======
+function initMap(){
+  map = L.map('map', { zoomControl:true }).setView([-34.6037,-58.3816], 12); // CABA por defecto
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(map);
+
+  map.on('click', (e)=>{
+    if(!state.user){ alert('Inicia sesión (demo) para usar el mapa.'); return; }
+    const useAsOrigin = confirm('¿Usar este punto como ORIGEN?\n(Cancelar = DESTINO)');
+    const p = { lat: e.latlng.lat, lng: e.latlng.lng };
+    if(useAsOrigin){ setOrigen(p); }
+    else { setDestino(p); }
   });
-  if(currentUser){ const meRef = usersCol.doc(currentUser.uid); const meSnap = await meRef.get(); currentUser = meSnap.data() || currentUser; renderAccount(); paintProfile(); }
 }
+
+function setOrigen(p){
+  if(origenMarker) map.removeLayer(origenMarker);
+  origenMarker = L.marker([p.lat, p.lng], { draggable:true }).addTo(map).bindPopup('Origen');
+  origenMarker.on('dragend',()=>{ const ll=origenMarker.getLatLng(); setOrigen({lat:ll.lat,lng:ll.lng}); });
+  state.origen=p; updateInfo();
+}
+function setDestino(p){
+  if(destinoMarker) map.removeLayer(destinoMarker);
+  destinoMarker = L.marker([p.lat, p.lng], { draggable:true, icon: L.divIcon({className:'', html:'<div style="background:#1e293b;border:2px solid #334155;color:#fff;padding:2px 6px;border-radius:6px">🎯</div>'}) }).addTo(map).bindPopup('Destino');
+  destinoMarker.on('dragend',()=>{ const ll=destinoMarker.getLatLng(); setDestino({lat:ll.lat,lng:ll.lng}); });
+  state.destino=p; updateInfo();
+}
+
+function miUbicacionComoOrigen(){
+  if(!navigator.geolocation){ alert('Geolocalización no disponible'); return; }
+  navigator.geolocation.getCurrentPosition((pos)=>{
+    const p={lat:pos.coords.latitude,lng:pos.coords.longitude};
+    if(meMarker) map.removeLayer(meMarker);
+    meMarker = L.circleMarker([p.lat,p.lng], {radius:7, color:'#34d399'}).addTo(map).bindPopup('Mi ubicación');
+    map.setView([p.lat,p.lng], 14);
+    setOrigen(p);
+  }, ()=> alert('No se pudo obtener ubicación'));
+}
+
+function limpiar(){
+  if(origenMarker) map.removeLayer(origenMarker); origenMarker=null; state.origen=null;
+  if(destinoMarker) map.removeLayer(destinoMarker); destinoMarker=null; state.destino=null;
+  updateInfo();
+}
+
+function updateInfo(){
+  const o = state.origen, d=state.destino;
+  $('#origenTxt').textContent = o? `${o.lat.toFixed(4)}, ${o.lng.toFixed(4)}` : '—';
+  $('#destinoTxt').textContent = d? `${d.lat.toFixed(4)}, ${d.lng.toFixed(4)}` : '—';
+  const dist = km(o,d);
+  $('#kmTxt').textContent = dist.toFixed(2);
+  const bruto = state.precios.base + dist*state.precios.porKm; // simple
+  const final = Math.max(0, Math.round(bruto*(1 - state.precios.descuento)));
+  $('#fareTxt').textContent = fmt(final);
+  save();
+}
+
+// ======= Flujo de viaje (demo local) =======
+function solicitarViaje(){
+  if(!state.user || state.user.rol!=='pasajero'){ alert('Inicia como pasajero.'); return; }
+  if(!state.origen || !state.destino){ alert('Elige origen y destino primero.'); return; }
+  const dist = km(state.origen, state.destino);
+  const precio = Math.max(0, Math.round((state.precios.base + dist*state.precios.porKm) * (1 - state.precios.descuento)));
+  const v = { id: uid(), pasajero: state.user, conductor: null, origen: state.origen, destino: state.destino, km: dist, precio, estado:'buscando', chat: [] };
+  state.activo = v;
+  state.pendingForDriver = v; // visible al panel Conductor
+  $('#actividad').textContent = 'Solicitud enviada. Esperando conductor…';
+  $('#solicitudTxt').textContent = `Solicitud #${v.id} por ${fmt(precio)} — ${dist.toFixed(2)} km (estado: buscando)`;
+  save(); renderSide();
+}
+
+function cancelarSolicitud(){
+  if(state.activo && state.activo.estado==='buscando'){
+    state.activo = null; state.pendingForDriver=null; save(); renderSide();
+    $('#actividad').textContent='Solicitud cancelada.';
+  }
+}
+
+function aceptarViaje(){
+  if(!state.user || state.user.rol!=='conductor'){ alert('Inicia como conductor.'); return; }
+  const req = state.pendingForDriver; if(!req){ alert('No hay solicitud.'); return; }
+  req.conductor = state.user; req.estado='aceptado';
+  state.activo = req; state.pendingForDriver=null; save(); renderSide();
+  $('#actividad').textContent = `Conductor asignado: ${state.user.nombre}.`;
+}
+function rechazarViaje(){ state.pendingForDriver=null; save(); renderSide(); }
+
+function iniciarTrayecto(){
+  if(!state.activo){ alert('No hay viaje activo.'); return; }
+  state.activo.estado='en curso'; save(); renderSide();
+  $('#actividad').textContent='En viaje…';
+}
+
+function finalizarTrayecto(){
+  if(!state.activo){ alert('No hay viaje activo.'); return; }
+  state.activo.estado='finalizado';
+  state.viajes.push(state.activo);
+  const pax = state.activo.pasajero; const drv = state.activo.conductor || {id:'demo', nombre:'Conductor Demo'};
+  // pedir estrellas
+  setTimeout(()=>{
+    const rp = Number(prompt(`Pasajero: califica al conductor de 1 a 5 estrellas`, '5'))||5;
+    const rd = Number(prompt(`Conductor: califica al pasajero de 1 a 5 estrellas`, '5'))||5;
+    // acumular en cada perfil si existen
+    if(drv.id===state.user?.id){ // si el conductor es el usuario actual y calificó al pasajero
+      // sumar al pasajero (en esta demo simple sumamos al propio usuario si es pasajero)
+    }
+    if(state.user){
+      state.user.rating.sum += (state.user.rol==='conductor'? rp : rd);
+      state.user.rating.count += 1;
+    }
+    alert('¡Gracias! Viaje finalizado.');
+    state.activo=null; save(); renderSide();
+  }, 50);
+}
+
+// ======= Chat (demo local compartido) =======
+function renderChat(){
+  const v = state.activo; const logP = $('#chatlogPax'); const logD = $('#chatlogDrv');
+  if(!logP||!logD) return;
+  const msgs = v?.chat || [];
+  logP.innerHTML=''; logD.innerHTML='';
+  for(const m of msgs){
+    const bubble = (who)=> `<div class="msg ${who}"><b>${m.from==='pax'?'Pasajero':'Conductor'}:</b> ${m.text}</div>`;
+    logP.insertAdjacentHTML('beforeend', bubble(m.from==='pax'?'me':''));
+    logD.insertAdjacentHTML('beforeend', bubble(m.from==='drv'?'me':''));
+  }
+  logP.scrollTop = logP.scrollHeight; logD.scrollTop = logD.scrollHeight;
+}
+
+function enviarChat(from){
+  if(!state.activo){ alert('No hay viaje activo.'); return; }
+  const input = from==='pax'? $('#chatInPax') : $('#chatInDrv');
+  let text = (input.value||'').trim(); if(!text) return;
+  const sanitized = sanitizeMsg(text);
+  // bloquear si todo quedó en *** (insulto puro)
+  if(/^\*{3,}$/.test(sanitized)){ alert('Mensaje bloqueado por lenguaje inapropiado.'); return; }
+  state.activo.chat.push({ id: uid(), ts: Date.now(), from, text: sanitized });
+  input.value=''; save(); renderChat();
+}
+
+// ======= Eventos y bootstrap =======
+window.addEventListener('DOMContentLoaded', ()=>{
+  initMap();
+  $('#btnMiUbicacion').onclick = miUbicacionComoOrigen;
+  $('#btnLimpiar').onclick = limpiar;
+  $('#btnSolicitar').onclick = solicitarViaje;
+  renderSide();
+  // refrescar chat cada 800ms (demo)
+  setInterval(renderChat, 800);
+});
 </script>
 </body>
 </html>
