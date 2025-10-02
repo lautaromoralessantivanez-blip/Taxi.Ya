@@ -52,7 +52,13 @@ button,input,select{font-family:inherit}
 .container{display:grid;grid-template-columns:360px 1fr;gap:1rem;padding:1rem;max-width:1300px;margin:0 auto}
 .aside,.main{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .panel-head{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--line);background:var(--card)}
-.panel-body{padding:1rem}
+.panel-body{
+  padding:1rem;
+  display:flex;
+  flex-direction:column;
+  gap:.75rem;
+  min-height:calc(100vh - 140px);
+}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1rem}
 .row{display:flex;gap:.6rem;align-items:center}
 .row.wrap{flex-wrap:wrap}
@@ -61,11 +67,23 @@ button,input,select{font-family:inherit}
 .badge.ok{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.35)}
 .help{color:var(--muted);font-size:.86rem}
 
-/* MAPA: altura estable y banner de estado */
-.map-wrap{position:relative}
-#map{width:100%;height:68vh;min-height:420px}
-.leaflet-container{background:#0b0f15} /* evita “parches” blancos al mover */
-.map-banner{position:absolute;top:18px;left:50%;transform:translateX(-50%);background:#0f172a;opacity:.96;border:1px solid #243045;padding:.4rem .8rem;border-radius:10px;font-weight:600}
+/* BARRA DE ESTADO (no se superpone) */
+.status-bar{
+  order: 50;
+  display:none;
+  align-items:center;
+  gap:.6rem;
+  background:#0f172a;
+  border:1px solid #243045;
+  padding:.55rem .75rem;
+  border-radius:10px;
+  font-weight:600;
+}
+
+/* MAPA: siempre abajo */
+.map-wrap{ order: 99; position:relative }
+#map{ width:100%; height:70vh; min-height:460px }
+.leaflet-container{ background:#0b0f15 } /* sin parches grises */
 
 /* Chat */
 .chatbox{display:grid;grid-template-rows:1fr auto;height:240px;background:#0d131b;border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -74,12 +92,12 @@ button,input,select{font-family:inherit}
 .msg.me{background:#1f2a37}
 
 /* Responsive */
-@media (max-width: 1080px){
+@media (max-width:1080px){
   .container{grid-template-columns:1fr}
   .aside{order:2}
   .main{order:1}
 }
-@media (max-width: 680px){
+@media (max-width:680px){
   .tabs{position:fixed;bottom:10px;left:0;right:0;justify-content:center;z-index:40}
   .tab{background:#131c28;border-color:#223043}
   #map{height:64vh;min-height:360px}
@@ -88,7 +106,7 @@ button,input,select{font-family:inherit}
 </head>
 <body>
 
-<!-- ==================== AUTH GATE (antes de entrar) ==================== -->
+<!-- ==================== AUTH GATE ==================== -->
 <div id="gate">
   <div class="gate-card">
     <div class="gate-title"><span class="dot"></span><b>Taxi Ya</b> <span class="chip" style="margin-left:.5rem;background:#121a24;border:1px solid var(--line);padding:.2rem .5rem;border-radius:999px;color:#a9b4c2">Registración</span></div>
@@ -124,7 +142,7 @@ button,input,select{font-family:inherit}
   </div>
 </div>
 
-<!-- ==================== APP (oculta hasta login) ==================== -->
+<!-- ==================== APP ==================== -->
 <div class="app" id="app" style="display:none">
   <header class="header">
     <div class="brand">
@@ -147,9 +165,8 @@ button,input,select{font-family:inherit}
     <main class="main">
       <div class="panel-head"><strong id="mainTitle">Mapa</strong></div>
       <div class="panel-body">
-        <div id="mapBanner" class="map-banner" style="display:none">BUSCANDO CONDUCTOR… <span id="searchTimer" style="opacity:.8;margin-left:.4rem">00:00</span></div>
-
-        <div class="card" style="margin-bottom:.75rem">
+        <!-- Controles superiores -->
+        <div class="card">
           <div class="row wrap" style="justify-content:space-between;gap:.75rem">
             <div class="row" style="gap:.5rem">
               <div class="label">Seleccionar en mapa:</div>
@@ -166,11 +183,14 @@ button,input,select{font-family:inherit}
           </div>
         </div>
 
-        <div class="map-wrap">
-          <div id="map"></div>
+        <!-- BARRA DE ESTADO (NO SUPERPUESTA) -->
+        <div id="statusBar" class="status-bar">
+          <span>BUSCANDO CONDUCTOR…</span>
+          <span class="chip" id="searchTimer">00:00</span>
         </div>
 
-        <div class="card" style="margin-top:.75rem">
+        <!-- Info viaje -->
+        <div class="card">
           <div class="row wrap" style="justify-content:space-between">
             <div><div class="label">Origen</div><div id="origenTxt" class="chip">—</div></div>
             <div><div class="label">Destino</div><div id="destinoTxt" class="chip">—</div></div>
@@ -180,7 +200,13 @@ button,input,select{font-family:inherit}
           <p class="help" id="actividad">Toca el mapa para fijar Origen/Destino.</p>
         </div>
 
-        <div class="card" style="margin-top:.75rem">
+        <!-- Mapa (siempre abajo) -->
+        <div class="map-wrap">
+          <div id="map"></div>
+        </div>
+
+        <!-- Chat -->
+        <div class="card">
           <div class="label">Chat del viaje</div>
           <div class="chatbox">
             <div id="chatlog" class="chatlog"></div>
@@ -198,13 +224,13 @@ button,input,select{font-family:inherit}
 
 <!-- ================= Firebase + App (Módulos) ================= -->
 <script type="module">
-/* Firebase (módulos via CDN) */
+/* Firebase */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, updateDoc, addDoc, collection, serverTimestamp, onSnapshot, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* === Config de tu proyecto === */
+/* Config */
 const firebaseConfig = {
   apiKey: "AIzaSyBu523IOGnIZGfAkdlLdVLcENwLgv5KU9o",
   authDomain: "taxi-ya-3be33.firebaseapp.com",
@@ -222,25 +248,23 @@ const db = getFirestore(appFB);
 
 const $ = s => document.querySelector(s);
 
-/* ======= Estado ======= */
-let map, origenMarker, destinoMarker, meMarker;
-let routing; // Leaflet Routing control
-let activeReqUnsub=null, chatUnsub=null, listUnsub=null, userUnsub=null, timerInt=null;
+/* Estado */
+let map, origenMarker, destinoMarker, meMarker, routing;
+let activeReqUnsub=null, chatUnsub=null, listUnsub=null, userUnsub=null, timerInt=null, ro=null;
 
 let uiTab = 'pasajero';
 let selectMode = 'origen';
 let state = {
   fbUser: null,
   profile: null,
-  tarifa: Object.freeze({ base: 800, porKm: 350, minima: 1200 }),
+  tarifa: Object.freeze({ base:800, porKm:350, minima:1200 }),
   descuento: 0.10,
-  origen: null, destino: null,
-  activeRequestId: null,
-  activeRequest: null,
-  requestCreatedAt: null
+  origen:null, destino:null,
+  activeRequestId:null, activeRequest:null,
+  requestCreatedAt:null
 };
 
-/* ======= Tabs ======= */
+/* Tabs */
 function tabsForState(){ return state.fbUser ? [
   {id:'pasajero', label:'Pasajero'},
   {id:'conductor', label:'Conductor'},
@@ -262,7 +286,7 @@ function onTabChange(){
   setTimeout(()=> map?.invalidateSize(), 120);
 }
 
-/* ======= Lateral ======= */
+/* Lateral */
 function renderSide(){
   const body = $('#sideBody'); const title = $('#sideTitle');
   const titles = { pasajero:'Pasajero', conductor:'Conductor', perfil:'Perfil' };
@@ -284,10 +308,7 @@ function cardPasajero(){
         <button class="btn" id="btnCancelReq">Cancelar</button>
       </div>
     </div>`;
-  setTimeout(()=>{
-    $('#btnReq').onclick = solicitarViaje;
-    $('#btnCancelReq').onclick = cancelarSolicitud;
-  },0);
+  setTimeout(()=>{ $('#btnReq').onclick=solicitarViaje; $('#btnCancelReq').onclick=cancelarSolicitud; },0);
   return el;
 }
 function cardConductor(){
@@ -304,11 +325,7 @@ function cardConductor(){
         <button class="btn" id="btnFinish">Finalizar</button>
       </div>
     </div>`;
-  setTimeout(()=>{
-    $('#btnStart').onclick = iniciarTrayecto;
-    $('#btnFinish').onclick = finalizarTrayecto;
-    suscribeListaPendientes();
-  },0);
+  setTimeout(()=>{ $('#btnStart').onclick=iniciarTrayecto; $('#btnFinish').onclick=finalizarTrayecto; suscribeListaPendientes(); },0);
   return el;
 }
 function cardPerfil(){
@@ -328,9 +345,7 @@ function cardPerfil(){
     </div>
     <div class="card">
       <div class="label">Sesión</div>
-      <div class="row" style="gap:.5rem;flex-wrap:wrap">
-        <button class="btn" id="btnLogout">Cerrar sesión</button>
-      </div>
+      <div class="row" style="gap:.5rem;flex-wrap:wrap"><button class="btn" id="btnLogout">Cerrar sesión</button></div>
     </div>
     <div class="card">
       <div class="label">Calificación</div>
@@ -340,227 +355,175 @@ function cardPerfil(){
         <div class="chip">${avg.toFixed(2)} / 5.00</div>
       </div>
     </div>`;
-  setTimeout(()=>{ $('#btnLogout').onclick = ()=> signOut(auth); },0);
+  setTimeout(()=>{ $('#btnLogout').onclick=()=>signOut(auth); },0);
   return el;
 }
 
-/* ======= Mapa + Routing ======= */
+/* Mapa + Routing */
 function initMap(){
-  map = L.map('map', { zoomControl:true, preferCanvas:true }).setView([-34.6037,-58.3816], 12);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(map);
-  // asegurar render correcto
+  map = L.map('map',{ zoomControl:true, preferCanvas:true }).setView([-34.6037,-58.3816],12);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
   setTimeout(()=> map.invalidateSize(), 200);
   window.addEventListener('resize', ()=> map.invalidateSize());
+  ro = new ResizeObserver(()=> map.invalidateSize());
+  ro.observe(document.querySelector('.main .panel-body'));
 
-  map.on('click', (e)=>{
-    const p = { lat: e.latlng.lat, lng: e.latlng.lng };
+  map.on('click',(e)=>{
+    const p = {lat:e.latlng.lat,lng:e.latlng.lng};
     if(selectMode==='origen'){ setOrigen(p,true); } else { setDestino(p,true); }
   });
 }
-
 function ensureRouting(){
   if(routing) return routing;
   routing = L.Routing.control({
     waypoints: [],
-    router: L.Routing.osrmv1({
-      serviceUrl: 'https://router.project-osrm.org/route/v1',
-      profile: 'driving' // sigue calles (auto)
-    }),
-    lineOptions: { addWaypoints:false, extendToWaypoints:true, missingRouteTolerance: 20 },
+    router: L.Routing.osrmv1({ serviceUrl:'https://router.project-osrm.org/route/v1', profile:'driving' }),
+    lineOptions:{ addWaypoints:false, extendToWaypoints:true, missingRouteTolerance:20 },
     show:false, collapsible:true, fitSelectedRoutes:true
   })
-  .on('routesfound', (e)=>{
-    const route = e.routes?.[0];
-    if(!route) return;
-    const distKm = (route.summary.totalDistance || 0) / 1000;
-    const durMin = Math.round((route.summary.totalTime || 0) / 60);
-    $('#kmTxt').textContent = distKm.toFixed(2);
-    $('#fareTxt').textContent = fmt(calcularTarifa(distKm));
-    // foco en la ruta
-    try{ map.fitBounds(route.bounds, {padding:[30,30]}); }catch(_){}
-    // actividad
-    $('#actividad').textContent = `Ruta: ${distKm.toFixed(2)} km • ~${durMin} min`;
+  .on('routesfound',(e)=>{
+    const route=e.routes?.[0]; if(!route) return;
+    const distKm=(route.summary.totalDistance||0)/1000;
+    const durMin=Math.round((route.summary.totalTime||0)/60);
+    $('#kmTxt').textContent=distKm.toFixed(2);
+    $('#fareTxt').textContent=fmt(calcularTarifa(distKm));
+    try{ map.fitBounds(route.bounds,{padding:[30,30]}); }catch(_){}
+    $('#actividad').textContent=`Ruta: ${distKm.toFixed(2)} km • ~${durMin} min`;
   })
-  .on('routingerror', ()=>{
-    // fallback a cálculo directo si falla OSRM
-    updateInfoHaversine();
-  })
+  .on('routingerror',()=> updateInfoHaversine())
   .addTo(map);
   return routing;
 }
-
-function setOrigen(p, recalc=false){
+function setOrigen(p,recalc=false){
   if(origenMarker) map.removeLayer(origenMarker);
-  origenMarker = L.marker([p.lat,p.lng], {draggable:true}).addTo(map).bindPopup('Origen');
-  origenMarker.on('dragend', ()=> {
-    const ll = origenMarker.getLatLng();
-    setOrigen({lat:ll.lat,lng:ll.lng}, true);
-  });
-  state.origen=p;
-  $('#origenTxt').textContent = `${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`;
+  origenMarker=L.marker([p.lat,p.lng],{draggable:true}).addTo(map).bindPopup('Origen');
+  origenMarker.on('dragend',()=>{ const ll=origenMarker.getLatLng(); setOrigen({lat:ll.lat,lng:ll.lng},true); });
+  state.origen=p; $('#origenTxt').textContent=`${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`;
   if(recalc) recalcRoute();
 }
-function setDestino(p, recalc=false){
+function setDestino(p,recalc=false){
   if(destinoMarker) map.removeLayer(destinoMarker);
-  destinoMarker = L.marker([p.lat,p.lng], {draggable:true}).addTo(map).bindPopup('Destino');
-  destinoMarker.on('dragend', ()=> {
-    const ll = destinoMarker.getLatLng();
-    setDestino({lat:ll.lat,lng:ll.lng}, true);
-  });
-  state.destino=p;
-  $('#destinoTxt').textContent = `${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`;
+  destinoMarker=L.marker([p.lat,p.lng],{draggable:true}).addTo(map).bindPopup('Destino');
+  destinoMarker.on('dragend',()=>{ const ll=destinoMarker.getLatLng(); setDestino({lat:ll.lat,lng:ll.lng},true); });
+  state.destino=p; $('#destinoTxt').textContent=`${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`;
   if(recalc) recalcRoute();
 }
-
 function recalcRoute(){
-  if(!(state.origen && state.destino)) { updateInfoHaversine(); return; }
-  const r = ensureRouting();
-  r.setWaypoints([ L.latLng(state.origen.lat,state.origen.lng), L.latLng(state.destino.lat,state.destino.lng) ]);
+  if(!(state.origen&&state.destino)){ updateInfoHaversine(); return; }
+  const r=ensureRouting();
+  r.setWaypoints([L.latLng(state.origen.lat,state.origen.lng), L.latLng(state.destino.lat,state.destino.lng)]);
 }
-
 function miUbicacionComoOrigen(){
   if(!navigator.geolocation){ alert('Geolocalización no disponible'); return; }
   navigator.geolocation.getCurrentPosition((pos)=>{
     const p={lat:pos.coords.latitude,lng:pos.coords.longitude};
     if(meMarker) map.removeLayer(meMarker);
-    meMarker = L.circleMarker([p.lat,p.lng], {radius:7, color:'#34d399'}).addTo(map).bindPopup('Mi ubicación');
-    map.setView([p.lat,p.lng], 14);
-    setOrigen(p,true);
-  }, ()=> alert('No se pudo obtener ubicación'));
+    meMarker=L.circleMarker([p.lat,p.lng],{radius:7,color:'#34d399'}).addTo(map).bindPopup('Mi ubicación');
+    map.setView([p.lat,p.lng],14); setOrigen(p,true);
+  },()=> alert('No se pudo obtener ubicación'));
 }
-
 function limpiar(){
   if(origenMarker) map.removeLayer(origenMarker); origenMarker=null; state.origen=null;
   if(destinoMarker) map.removeLayer(destinoMarker); destinoMarker=null; state.destino=null;
   if(routing){ routing.setWaypoints([]); }
-  $('#origenTxt').textContent = '—';
-  $('#destinoTxt').textContent = '—';
-  $('#kmTxt').textContent = '0.00';
-  $('#fareTxt').textContent = fmt(0);
-  $('#actividad').textContent = 'Toca el mapa para fijar Origen/Destino.';
+  $('#origenTxt').textContent='—'; $('#destinoTxt').textContent='—';
+  $('#kmTxt').textContent='0.00'; $('#fareTxt').textContent=fmt(0);
+  $('#actividad').textContent='Toca el mapa para fijar Origen/Destino.';
 }
 
-function fmt(n){ return new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', maximumFractionDigits:0}).format(n); }
-function km(a,b){
-  if(!a||!b) return 0;
-  const R=6371; const dLat=(b.lat-a.lat)*Math.PI/180, dLon=(b.lng-a.lng)*Math.PI/180;
+/* Utilidades */
+function fmt(n){ return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n); }
+function km(a,b){ if(!a||!b) return 0; const R=6371;
+  const dLat=(b.lat-a.lat)*Math.PI/180, dLon=(b.lng-a.lng)*Math.PI/180;
   const la1=a.lat*Math.PI/180, la2=b.lat*Math.PI/180;
   const h=Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;
   return 2*R*Math.asin(Math.sqrt(h));
 }
 function calcularTarifa(distKm){
-  const t = state.tarifa;
-  const bruto = t.base + distKm * t.porKm;
-  const conDesc = bruto * (1 - state.descuento);
+  const t=state.tarifa; const bruto=t.base + distKm*t.porKm; const conDesc=bruto*(1-state.descuento);
   return Math.max(t.minima, Math.round(conDesc));
 }
 function updateInfoHaversine(){
-  const dist = km(state.origen, state.destino);
-  $('#kmTxt').textContent = dist.toFixed(2);
-  $('#fareTxt').textContent = fmt(calcularTarifa(dist));
+  const dist=km(state.origen,state.destino);
+  $('#kmTxt').textContent=dist.toFixed(2);
+  $('#fareTxt').textContent=fmt(calcularTarifa(dist));
 }
 
-/* ======= Chat ======= */
-const bannedWords = ['puta','puto','cagar','mierda','hdp','concha','pija','forro','insulto','boludo'];
-function sanitizeMsg(text){
-  let t = text.trim();
-  for(const w of bannedWords){ t = t.replace(new RegExp('\\b'+w+'\\b','gi'), '***'); }
-  return t;
-}
-function mySide(){
-  const r = state.activeRequest;
-  if(!r || !state.fbUser) return 'pax';
-  if(r.pasajeroId === state.fbUser.uid) return 'pax';
-  if(r.conductorId === state.fbUser.uid) return 'drv';
-  return uiTab==='conductor' ? 'drv' : 'pax';
+/* Chat */
+const bannedWords=['puta','puto','cagar','mierda','hdp','concha','pija','forro','insulto','boludo'];
+function sanitizeMsg(t){ let x=t.trim(); for(const w of bannedWords){ x=x.replace(new RegExp('\\b'+w+'\\b','gi'),'***'); } return x; }
+function mySide(){ const r=state.activeRequest; if(!r||!state.fbUser) return 'pax';
+  if(r.pasajeroId===state.fbUser.uid) return 'pax';
+  if(r.conductorId===state.fbUser.uid) return 'drv';
+  return uiTab==='conductor'?'drv':'pax';
 }
 $('#chatSend').addEventListener('click', async ()=>{
   if(!state.activeRequestId) return alert('Sin viaje activo');
-  const input = $('#chatInput'); const text = (input.value||'').trim(); if(!text) return;
-  const sanitized = sanitizeMsg(text); if(/^\*{3,}$/.test(sanitized)) return alert('Mensaje bloqueado');
-  await addDoc(collection(db,'requests',state.activeRequestId,'messages'),{
-    from: mySide(), text: sanitized, ts: serverTimestamp()
-  });
+  const input=$('#chatInput'); const text=(input.value||'').trim(); if(!text) return;
+  const sanitized=sanitizeMsg(text); if(/^\*{3,}$/.test(sanitized)) return alert('Mensaje bloqueado');
+  await addDoc(collection(db,'requests',state.activeRequestId,'messages'),{ from:mySide(), text:sanitized, ts:serverTimestamp() });
   input.value='';
 });
 
-/* ======= Firestore: Solicitudes ======= */
+/* Firestore: Solicitudes */
 async function solicitarViaje(){
-  if(!(state.origen && state.destino)) return alert('Elegí origen y destino');
-  // si hay ruta, usar distancia real del último cálculo (si no, fallback)
-  let distKm = Number($('#kmTxt').textContent.replace(',','.')) || km(state.origen,state.destino);
-  const precio = calcularTarifa(distKm);
-  const docRef = await addDoc(collection(db,'requests'),{
+  if(!(state.origen&&state.destino)) return alert('Elegí origen y destino');
+  let distKm=Number($('#kmTxt').textContent.replace(',','.')) || km(state.origen,state.destino);
+  const precio=calcularTarifa(distKm);
+  const docRef=await addDoc(collection(db,'requests'),{
     status:'buscando',
-    pasajeroId: state.fbUser.uid,
-    pasajeroNombre: state.profile?.name || state.fbUser.email,
-    origen: state.origen, destino: state.destino,
-    km: distKm, precio,
-    createdAt: serverTimestamp()
+    pasajeroId:state.fbUser.uid,
+    pasajeroNombre:state.profile?.name||state.fbUser.email,
+    origen:state.origen, destino:state.destino,
+    km:distKm, precio, createdAt:serverTimestamp()
   });
-  state.activeRequestId = docRef.id;
-  startSearchingUI(true);
-  watchActiveRequest(docRef.id);
+  state.activeRequestId=docRef.id; startSearchingUI(true); watchActiveRequest(docRef.id);
   uiTab='pasajero'; renderTabs(); renderSide();
 }
-async function cancelarSolicitud(){
-  if(!state.activeRequestId) return;
-  await updateDoc(doc(db,'requests',state.activeRequestId), { status:'cancelado' });
+async function cancelarSolicitud(){ if(!state.activeRequestId) return;
+  await updateDoc(doc(db,'requests',state.activeRequestId),{status:'cancelado'});
 }
 function suscribeListaPendientes(){
   if(listUnsub) listUnsub();
-  listUnsub = onSnapshot(
-    query(collection(db,'requests'), where('status','==','buscando'), orderBy('createdAt','desc'), limit(20)),
-    qs=>{
-      const cont = $('#reqList'); if(!cont) return; cont.innerHTML='';
-      qs.forEach(docu=>{
-        const r = docu.data(); const id=docu.id;
-        const card = document.createElement('div'); card.className='card';
-        card.innerHTML = `
-          <div class="row wrap" style="justify-content:space-between">
-            <div><div class="chip">#${id.slice(0,6)}</div><div class="chip">Pasajero: ${r.pasajeroNombre}</div></div>
-            <div><div class="chip">${(r.km||0).toFixed(2)} km</div><div class="chip">${fmt(r.precio||0)}</div></div>
-          </div>
-          <div class="row" style="margin-top:.5rem;gap:.5rem"><button class="btn primary" data-id="${id}">Aceptar</button></div>`;
-        card.querySelector('button').onclick = ()=> aceptarViaje(id);
-        cont.appendChild(card);
-      });
-    }
-  );
+  listUnsub = onSnapshot(query(collection(db,'requests'), where('status','==','buscando'), orderBy('createdAt','desc'), limit(20)), qs=>{
+    const cont=$('#reqList'); if(!cont) return; cont.innerHTML='';
+    qs.forEach(docu=>{
+      const r=docu.data(); const id=docu.id;
+      const card=document.createElement('div'); card.className='card';
+      card.innerHTML=`
+        <div class="row wrap" style="justify-content:space-between">
+          <div><div class="chip">#${id.slice(0,6)}</div><div class="chip">Pasajero: ${r.pasajeroNombre}</div></div>
+          <div><div class="chip">${(r.km||0).toFixed(2)} km</div><div class="chip">${fmt(r.precio||0)}</div></div>
+        </div>
+        <div class="row" style="margin-top:.5rem;gap:.5rem"><button class="btn primary" data-id="${id}">Aceptar</button></div>`;
+      card.querySelector('button').onclick=()=>aceptarViaje(id);
+      cont.appendChild(card);
+    });
+  });
 }
 async function aceptarViaje(id){
-  await updateDoc(doc(db,'requests',id), {
-    status:'aceptado',
-    conductorId: state.fbUser.uid,
-    conductorNombre: state.profile?.name || state.fbUser.email
-  });
-  state.activeRequestId = id; watchActiveRequest(id);
+  await updateDoc(doc(db,'requests',id),{ status:'aceptado', conductorId:state.fbUser.uid, conductorNombre: state.profile?.name||state.fbUser.email });
+  state.activeRequestId=id; watchActiveRequest(id);
 }
-async function iniciarTrayecto(){
-  if(!state.activeRequestId) return alert('Sin viaje activo');
-  await updateDoc(doc(db,'requests',state.activeRequestId), { status:'en_curso' });
+async function iniciarTrayecto(){ if(!state.activeRequestId) return alert('Sin viaje activo');
+  await updateDoc(doc(db,'requests',state.activeRequestId),{status:'en_curso'});
 }
-async function finalizarTrayecto(){
-  if(!state.activeRequestId) return alert('Sin viaje activo');
-  await updateDoc(doc(db,'requests',state.activeRequestId), { status:'finalizado' });
+async function finalizarTrayecto(){ if(!state.activeRequestId) return alert('Sin viaje activo');
+  await updateDoc(doc(db,'requests',state.activeRequestId),{status:'finalizado'});
 }
 
-/* ======= Watch request + UI “buscando” ======= */
+/* Watch + barra de estado */
 function watchActiveRequest(id){
   if(activeReqUnsub) activeReqUnsub();
-  activeReqUnsub = onSnapshot(doc(db,'requests',id), async (snap)=>{
+  activeReqUnsub = onSnapshot(doc(db,'requests',id), (snap)=>{
     if(!snap.exists()) return;
-    const r = snap.data();
-    state.activeRequest = { id: snap.id, ...r };
-    $('#actividad').textContent = `#${id.slice(0,6)} — ${r.status.toUpperCase()} — ${fmt(r.precio)} (${(r.km||0).toFixed(2)} km)`;
-
-    if(r.status==='buscando'){ startSearchingUI(true); }
-    else { startSearchingUI(false); }
-
+    const r=snap.data(); state.activeRequest={id:snap.id,...r};
+    $('#actividad').textContent=`#${id.slice(0,6)} — ${r.status.toUpperCase()} — ${fmt(r.precio)} (${(r.km||0).toFixed(2)} km)`;
+    if(r.status==='buscando'){ startSearchingUI(true); } else { startSearchingUI(false); }
     if(r.status==='finalizado' || r.status==='cancelado'){
       state.activeRequestId=null; state.activeRequest=null;
       if(chatUnsub){ chatUnsub(); chatUnsub=null; }
-      alert(r.status==='finalizado' ? '¡Viaje finalizado!' : 'Solicitud cancelada');
+      alert(r.status==='finalizado'?'¡Viaje finalizado!':'Solicitud cancelada');
     }else{
       ensureChatListener(id);
     }
@@ -568,64 +531,54 @@ function watchActiveRequest(id){
 }
 function ensureChatListener(reqId){
   if(chatUnsub) return;
-  const msgsRef = collection(db,'requests',reqId,'messages');
+  const msgsRef=collection(db,'requests',reqId,'messages');
   chatUnsub = onSnapshot(query(msgsRef, orderBy('ts','asc'), limit(100)), (qs)=>{
-    const log = $('#chatlog'); log.innerHTML='';
-    const mine = mySide();
+    const log=$('#chatlog'); log.innerHTML='';
+    const mine=mySide();
     qs.forEach(d=>{
-      const m=d.data();
-      const who = (m.from===mine)? 'me':'';
+      const m=d.data(); const who=(m.from===mine)?'me':'';
       log.insertAdjacentHTML('beforeend', `<div class="msg ${who}"><b>${m.from==='pax'?'Pasajero':'Conductor'}:</b> ${m.text}</div>`);
     });
-    log.scrollTop = log.scrollHeight;
+    log.scrollTop=log.scrollHeight;
   });
 }
 function startSearchingUI(on){
-  const banner = $('#mapBanner');
+  const bar=$('#statusBar');
   if(on){
-    banner.style.display='block';
-    if(!state.requestCreatedAt) state.requestCreatedAt = Date.now();
+    bar.style.display='flex';
+    if(!state.requestCreatedAt) state.requestCreatedAt=Date.now();
     if(timerInt) clearInterval(timerInt);
-    timerInt = setInterval(()=>{
-      const elapsed = Math.floor((Date.now()-state.requestCreatedAt)/1000);
-      const mm = String(Math.floor(elapsed/60)).padStart(2,'0');
-      const ss = String(elapsed%60).padStart(2,'0');
-      $('#searchTimer').textContent = `${mm}:${ss}`;
-    }, 500);
+    timerInt=setInterval(()=>{
+      const elapsed=Math.floor((Date.now()-state.requestCreatedAt)/1000);
+      const mm=String(Math.floor(elapsed/60)).padStart(2,'0');
+      const ss=String(elapsed%60).padStart(2,'0');
+      $('#searchTimer').textContent=`${mm}:${ss}`;
+    },500);
   }else{
-    banner.style.display='none';
+    bar.style.display='none';
     if(timerInt) clearInterval(timerInt);
     timerInt=null; state.requestCreatedAt=null;
-    $('#searchTimer').textContent = '00:00';
+    $('#searchTimer').textContent='00:00';
   }
 }
 
-/* ======= AUTH: gate estricto ======= */
+/* AUTH */
 onAuthStateChanged(auth, async (user)=>{
-  state.fbUser = user;
+  state.fbUser=user;
   if(user){
-    // Cargar perfil
     if(userUnsub) userUnsub();
-    const uref = doc(db,'users',user.uid);
+    const uref=doc(db,'users',user.uid);
     userUnsub = onSnapshot(uref, async (snap)=>{
       if(!snap.exists()){
-        await setDoc(uref, { name: user.displayName||'', email:user.email||'', ratingSum:0, ratingCount:0, createdAt: serverTimestamp() });
-        state.profile = { name:user.displayName||'', email:user.email||'', ratingSum:0, ratingCount:0 };
-      }else{
-        state.profile = snap.data();
-      }
-      // Mostrar app (recién ahora) y crear mapa
-      $('#gate').style.display='none';
-      $('#app').style.display='grid';
-      if(!map) initMap(); // se inicializa aquí, no antes
-      setTimeout(()=> map.invalidateSize(), 200);
+        await setDoc(uref,{name:user.displayName||'',email:user.email||'',ratingSum:0,ratingCount:0,createdAt:serverTimestamp()});
+        state.profile={name:user.displayName||'',email:user.email||'',ratingSum:0,ratingCount:0};
+      }else{ state.profile=snap.data(); }
+      $('#gate').style.display='none'; $('#app').style.display='grid';
+      if(!map) initMap(); setTimeout(()=> map.invalidateSize(), 200);
       renderTabs(); renderSide();
     });
-  } else {
-    // Volver a gate
-    $('#app').style.display='none';
-    $('#gate').style.display='grid';
-    // limpiar suscripciones
+  }else{
+    $('#app').style.display='none'; $('#gate').style.display='grid';
     state.profile=null; state.activeRequestId=null; state.activeRequest=null;
     if(activeReqUnsub){ activeReqUnsub(); activeReqUnsub=null; }
     if(chatUnsub){ chatUnsub(); chatUnsub=null; }
@@ -634,7 +587,7 @@ onAuthStateChanged(auth, async (user)=>{
   }
 });
 
-/* ======= Gate handlers ======= */
+/* Gate */
 $('#btnReg').onclick = async ()=>{
   const name=$('#regName').value.trim();
   const email=$('#regEmail').value.trim();
@@ -643,27 +596,27 @@ $('#btnReg').onclick = async ()=>{
   if(!name) return $('#regErr').textContent='Ingresá tu nombre';
   if(pass!==pass2) return $('#regErr').textContent='Las contraseñas no coinciden';
   try{
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
-    await updateProfile(cred.user, { displayName: name });
-    await setDoc(doc(db,'users',cred.user.uid), { name, email, ratingSum:0, ratingCount:0, createdAt: serverTimestamp() });
-  }catch(e){ $('#regErr').textContent = e.message; }
+    const cred=await createUserWithEmailAndPassword(auth,email,pass);
+    await updateProfile(cred.user,{displayName:name});
+    await setDoc(doc(db,'users',cred.user.uid),{name,email,ratingSum:0,ratingCount:0,createdAt:serverTimestamp()});
+  }catch(e){ $('#regErr').textContent=e.message; }
 };
 $('#btnLogin').onclick = async ()=>{
   $('#loginErr').textContent='';
-  try{ await signInWithEmailAndPassword(auth, $('#inEmail').value.trim(), $('#inPass').value); }
-  catch(e){ $('#loginErr').textContent = e.message; }
+  try{ await signInWithEmailAndPassword(auth,$('#inEmail').value.trim(),$('#inPass').value); }
+  catch(e){ $('#loginErr').textContent=e.message; }
 };
 
-/* ======= Controles de UI ======= */
+/* Botones superiores */
 function bootstrapButtons(){
-  $('#btnMiUbicacion').onclick = miUbicacionComoOrigen;
-  $('#btnLimpiar').onclick = limpiar;
-  $('#btnSolicitar').onclick = solicitarViaje;
-  const bO = $('#modeOrigen'), bD = $('#modeDestino');
-  bO.onclick = ()=>{ selectMode='origen'; bO.setAttribute('aria-pressed','true'); bD.setAttribute('aria-pressed','false'); };
-  bD.onclick = ()=>{ selectMode='destino'; bD.setAttribute('aria-pressed','true'); bO.setAttribute('aria-pressed','false'); };
+  $('#btnMiUbicacion').onclick=miUbicacionComoOrigen;
+  $('#btnLimpiar').onclick=limpiar;
+  $('#btnSolicitar').onclick=solicitarViaje;
+  const bO=$('#modeOrigen'), bD=$('#modeDestino');
+  bO.onclick=()=>{ selectMode='origen'; bO.setAttribute('aria-pressed','true'); bD.setAttribute('aria-pressed','false'); };
+  bD.onclick=()=>{ selectMode='destino'; bD.setAttribute('aria-pressed','true'); bO.setAttribute('aria-pressed','false'); };
 }
-bootstrapButtons(); // sólo enlaza botones; mapa se crea post-login
+bootstrapButtons();
 </script>
 </body>
 </html>
