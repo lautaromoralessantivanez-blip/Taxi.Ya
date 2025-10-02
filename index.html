@@ -21,82 +21,104 @@ html,body{height:100%}
 body{margin:0;background:linear-gradient(180deg,#0b0f15,#0b0f15 60%,#0a0f19);color:var(--ink);font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial}
 button,input,select{font-family:inherit}
 
-/* Layout */
+/* Gate (login/registro previo) */
+#gate{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(1200px 800px at 50% -10%,#13202e 0%, #0b0f15 60%, #0a0f19 100%);z-index:100}
+.gate-card{width:min(920px,92vw);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1rem}
+.gate-title{display:flex;align-items:center;gap:.6rem;margin:.25rem 0 1rem}
+.gate-title .dot{width:.9rem;height:.9rem;border-radius:999px;background:var(--accent);box-shadow:0 0 16px rgba(255,211,77,.7)}
+.grid{display:grid;gap:.75rem}
+.grid.cols-2{grid-template-columns:1fr 1fr}
+.field{display:grid;gap:.35rem}
+.label{font-size:.9rem;color:var(--muted)}
+.input{width:100%;background:#0e1620;border:1px solid var(--line);color:var(--ink);padding:.65rem .75rem;border-radius:12px}
+.btn{display:inline-flex;align-items:center;gap:.5rem;border:1px solid var(--line);background:#12202e;color:var(--ink);padding:.6rem .9rem;border-radius:12px;cursor:pointer;transition:.2s;text-decoration:none}
+.btn.primary{background:var(--accent);color:#111;border-color:#e6b800}
+.err{color:#fecaca}
+
+/* App */
 .app{min-height:100dvh;display:grid;grid-template-rows:auto 1fr}
 .header{display:flex;gap:.5rem;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--line);background:rgba(13,19,27,.7);backdrop-filter:blur(12px);position:sticky;top:0;z-index:20}
 .brand{display:flex;align-items:center;gap:.6rem}
 .brand .dot{width:.9rem;height:.9rem;border-radius:999px;background:var(--accent);box-shadow:0 0 16px rgba(255,211,77,.7)}
 .brand b{letter-spacing:.5px}
 .tabs{display:flex;gap:.35rem;flex-wrap:wrap}
-.tab{padding:.45rem .75rem;border:1px solid var(--line);border-radius:999px;background:var(--chip);color:var(--ink);opacity:.85;cursor:pointer;transition:.2s}
+.tab{padding:.45rem .75rem;border:1px solid var(--line);border-radius:999px;background:#17202a;color:var(--ink);opacity:.85;cursor:pointer;transition:.2s}
 .tab[aria-selected="true"]{background:var(--accent);color:#111;opacity:1;border-color:#e6b800}
 
 .container{display:grid;grid-template-columns:360px 1fr;gap:1rem;padding:1rem;max-width:1300px;margin:0 auto}
 .aside,.main{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .panel-head{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--line);background:var(--card)}
 .panel-body{padding:1rem}
-
-/* Cards & chips */
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1rem}
 .row{display:flex;gap:.6rem;align-items:center}
 .row.wrap{flex-wrap:wrap}
 .chip{background:#121a24;border:1px solid var(--line);padding:.35rem .6rem;border-radius:999px;font-size:.85rem;color:var(--muted)}
 .badge{padding:.3rem .5rem;border-radius:8px;border:1px solid var(--line);font-size:.78rem}
 .badge.ok{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.35)}
-
-/* Buttons */
-.btn{display:inline-flex;align-items:center;gap:.5rem;border:1px solid var(--line);background:#12202e;color:var(--ink);padding:.6rem .9rem;border-radius:12px;cursor:pointer;transition:.2s;text-decoration:none}
-.btn:hover{transform:translateY(-1px)}
-.btn.primary{background:var(--accent);color:#111;border-color:#e6b800}
-.btn.ghost{background:transparent}
-.btn.danger{background:#2a0f12;border-color:#40161b;color:#fecaca}
-.btn.block{display:flex;justify-content:center;width:100%}
-
-/* Inputs */
-.input{width:100%;background:#0e1620;border:1px solid var(--line);color:var(--ink);padding:.65rem .75rem;border-radius:12px}
-.label{font-size:.9rem;color:var(--muted);margin-bottom:.35rem}
-.field{display:grid;gap:.35rem}
 .help{color:var(--muted);font-size:.86rem}
-
-.grid{display:grid;gap:.75rem}
-.grid.cols-2{grid-template-columns:1fr 1fr}
 
 /* Map */
 #map{width:100%;min-height:520px;height:520px}
+.map-banner{position:absolute;top:18px;left:50%;transform:translateX(-50%);background:#0f172a;opacity:.96;border:1px solid #243045;padding:.4rem .8rem;border-radius:10px;font-weight:600}
 
-/* Mobile */
+/* Chat */
+.chatbox{display:grid;grid-template-rows:1fr auto;height:240px;background:#0d131b;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.chatlog{overflow:auto;padding:.6rem}
+.msg{display:inline-block;background:#12202e;border:1px solid var(--line);padding:.5rem .65rem;border-radius:10px;margin:.25rem 0}
+.msg.me{background:#1f2a37}
+
+/* Mobile tweaks */
 @media (max-width: 1080px){
   .container{grid-template-columns:1fr}
   .aside{order:2}
   .main{order:1}
 }
-
-/* Bottom nav on small screens */
 @media (max-width: 680px){
   .tabs{position:fixed;bottom:10px;left:0;right:0;justify-content:center;z-index:40}
   .tab{background:#131c28;border-color:#223043}
 }
-
-.star{font-size:1.1rem;color:#fcd34d}
-.star.off{opacity:.35;filter:grayscale(1)}
-.trophy{filter:drop-shadow(0 6px 16px rgba(255,211,77,.35))}
-
-.chatbox{display:grid;grid-template-rows:1fr auto;height:240px;background:#0d131b;border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.chatlog{overflow:auto;padding:.6rem}
-.msg{display:inline-block;background:#12202e;border:1px solid var(--line);padding:.5rem .65rem;border-radius:10px;margin:.25rem 0}
-.msg.me{background:#1f2a37}
-.chatinput{display:flex;gap:.5rem;padding:.6rem;border-top:1px solid var(--line)}
-
-/* Segmented control */
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
-.seg button{border:0;background:#0e1620;color:#fff;padding:.45rem .8rem;cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--accent);color:#111}
-
-.err{color:#fecaca}
 </style>
 </head>
 <body>
-<div class="app" id="app">
+
+<!-- ==================== AUTH GATE (antes de entrar) ==================== -->
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-title"><span class="dot"></span><b>Taxi Ya</b> <span class="chip" style="margin-left:.5rem;background:#121a24;border:1px solid var(--line);padding:.2rem .5rem;border-radius:999px;color:#a9b4c2">Registración</span></div>
+    <div class="grid cols-2">
+      <div class="card" style="background:#0d131b">
+        <h3 style="margin:0 0 .5rem 0">Crear cuenta</h3>
+        <div class="grid cols-2">
+          <div class="field"><label class="label">Nombre</label><input id="regName" class="input" placeholder="Ana, Mauro…"></div>
+          <div class="field"><label class="label">Email</label><input id="regEmail" type="email" class="input" placeholder="nombre@mail.com"></div>
+        </div>
+        <div class="grid cols-2">
+          <div class="field"><label class="label">Contraseña</label><input id="regPass" type="password" class="input" placeholder="mín. 6 caracteres"></div>
+          <div class="field"><label class="label">Repetir contraseña</label><input id="regPass2" type="password" class="input" placeholder="repite la contraseña"></div>
+        </div>
+        <div class="row" style="margin-top:.8rem;gap:.5rem;flex-wrap:wrap">
+          <button class="btn primary" id="btnReg">Registrarme</button>
+        </div>
+        <div id="regErr" class="err"></div>
+      </div>
+      <div class="card" style="background:#0d131b">
+        <h3 style="margin:0 0 .5rem 0">Ya tengo cuenta</h3>
+        <div class="grid cols-2">
+          <div class="field"><label class="label">Email</label><input id="inEmail" type="email" class="input"></div>
+          <div class="field"><label class="label">Contraseña</label><input id="inPass" type="password" class="input"></div>
+        </div>
+        <div class="row" style="margin-top:.8rem;gap:.5rem;flex-wrap:wrap">
+          <button class="btn" id="btnLogin">Entrar</button>
+        </div>
+        <div id="loginErr" class="err"></div>
+      </div>
+    </div>
+    <p class="help" style="margin-top:.5rem">Ingresá para continuar al mapa.</p>
+  </div>
+</div>
+
+<!-- ==================== APP ==================== -->
+<div class="app" id="app" style="display:none">
   <header class="header">
     <div class="brand">
       <span class="dot"></span>
@@ -110,14 +132,16 @@ button,input,select{font-family:inherit}
     <aside class="aside">
       <div class="panel-head">
         <strong id="sideTitle">Panel</strong>
-        <span class="badge ok" id="authBadge">No conectado</span>
+        <span class="badge ok" id="authBadge">Conectado</span>
       </div>
       <div class="panel-body" id="sideBody"><!-- lateral dinámico --></div>
     </aside>
 
     <main class="main">
       <div class="panel-head"><strong id="mainTitle">Mapa</strong></div>
-      <div class="panel-body">
+      <div class="panel-body" style="position:relative">
+        <div id="mapBanner" class="map-banner" style="display:none">BUSCANDO CONDUCTOR… <span id="searchTimer" style="opacity:.8;margin-left:.4rem">00:00</span></div>
+
         <div class="card" style="margin-bottom:.75rem">
           <div class="row wrap" style="justify-content:space-between;gap:.75rem">
             <div class="row" style="gap:.5rem">
@@ -129,46 +153,34 @@ button,input,select{font-family:inherit}
             </div>
             <div class="row" style="gap:.5rem;flex-wrap:wrap">
               <button class="btn" id="btnMiUbicacion">Usar mi ubicación</button>
-              <button class="btn ghost" id="btnLimpiar">Limpiar</button>
+              <button class="btn" id="btnLimpiar">Limpiar</button>
               <button class="btn primary" id="btnSolicitar">Solicitar viaje</button>
             </div>
           </div>
         </div>
-        <div id="map"></div>
-        <div class="grid cols-2" style="margin-top:.75rem">
-          <div class="card">
-            <div class="row wrap" style="justify-content:space-between">
-              <div>
-                <div class="label">Origen</div>
-                <div id="origenTxt" class="chip">—</div>
-              </div>
-              <div>
-                <div class="label">Destino</div>
-                <div id="destinoTxt" class="chip">—</div>
-              </div>
-              <div>
-                <div class="label">Distancia (km)</div>
-                <div id="kmTxt" class="chip">0.00</div>
-              </div>
-              <div>
-                <div class="label">Tarifa estimada</div>
-                <div id="fareTxt" class="chip">$ 0</div>
-              </div>
-            </div>
-            <p class="help" id="actividad">Toca el mapa para fijar el punto según el selector (Origen/Destino).</p>
-          </div>
 
-          <div class="card">
-            <div class="label">Chat del viaje</div>
-            <div class="chatbox">
-              <div id="chatlog" class="chatlog"></div>
-              <div class="chatinput">
-                <input id="chatInput" class="input" placeholder="Escribe un mensaje respetuoso…"/>
-                <button class="btn" id="chatSend">Enviar</button>
-              </div>
-            </div>
-            <div class="help">El chat se habilita al tener un viaje activo.</div>
+        <div id="map" style="position:relative"></div>
+
+        <div class="card" style="margin-top:.75rem">
+          <div class="row wrap" style="justify-content:space-between">
+            <div><div class="label">Origen</div><div id="origenTxt" class="chip">—</div></div>
+            <div><div class="label">Destino</div><div id="destinoTxt" class="chip">—</div></div>
+            <div><div class="label">Distancia (km)</div><div id="kmTxt" class="chip">0.00</div></div>
+            <div><div class="label">Tarifa estimada</div><div id="fareTxt" class="chip">$ 0</div></div>
           </div>
+          <p class="help" id="actividad">Toca el mapa para fijar Origen/Destino.</p>
+        </div>
+
+        <div class="card" style="margin-top:.75rem">
+          <div class="label">Chat del viaje</div>
+          <div class="chatbox">
+            <div id="chatlog" class="chatlog"></div>
+            <div class="chatinput">
+              <input id="chatInput" class="input" placeholder="Escribe un mensaje respetuoso…"/>
+              <button class="btn" id="chatSend">Enviar</button>
+            </div>
+          </div>
+          <div class="help">El chat se habilita al tener un viaje activo.</div>
         </div>
       </div>
     </main>
@@ -177,7 +189,6 @@ button,input,select{font-family:inherit}
 
 <!-- ================= Firebase + App (Módulos) ================= -->
 <script type="module">
-// ===== Firebase SDK (módulos via CDN) =====
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -195,177 +206,96 @@ const firebaseConfig = {
 };
 
 const appFB = initializeApp(firebaseConfig);
-try{ getAnalytics(appFB); }catch(e){ /* puede fallar fuera de https */ }
+try{ getAnalytics(appFB); }catch(e){}
 const auth = getAuth(appFB);
 const db = getFirestore(appFB);
 
-// ======= Estado y utilidades =======
-const $ = (sel) => document.querySelector(sel);
+// ======= Estado/constantes =======
+const $ = s => document.querySelector(s);
 let map, origenMarker, destinoMarker, meMarker, line;
-let activeReqUnsub=null, chatUnsub=null, listUnsub=null, userUnsub=null;
-let selectMode = 'origen'; // origen | destino
+let activeReqUnsub=null, chatUnsub=null, listUnsub=null, userUnsub=null, timerInt=null;
+
+let uiTab = 'pasajero'; // pestaña activa define “modo”
+let selectMode = 'origen'; // selector de puntos en el mapa
 let state = {
   fbUser: null,
-  profile: null, // {name, role, ratingSum, ratingCount}
-  precios: { base: 800, porKm: 350, descuento: 0.10 },
+  profile: null,
+  // Tarifa "estilo Uber" FIJA (no editable en UI)
+  tarifa: Object.freeze({
+    base: 800,     // cargo base
+    porKm: 350,    // por kilómetro
+    minima: 1200   // mínimo cobrable
+    // (podés ajustar estos números en código si querés)
+  }),
+  descuento: 0.10,         // descuento de la app
   origen: null, destino: null,
-  activeRequestId: null, // id en Firestore
-  activeRequest: null,   // snapshot actual del request (para saber lado pax/drv)
+  activeRequestId: null,
+  activeRequest: null,
+  requestCreatedAt: null    // para el timer “buscando”
 };
 
-// (seguimos permitiendo roles en Perfil, pero no los usamos para bloquear)
-function normalizeRole(r){
-  r=(r||'').toLowerCase();
-  if(['pasajero','passenger','pax'].includes(r)) return 'pasajero';
-  if(['conductor','driver','drv'].includes(r)) return 'conductor';
-  return 'pasajero';
-}
-
-const bannedWords = ['puta','puto','cagar','mierda','hdp','concha','pija','forro','insulto','boludo'];
-function sanitizeMsg(text){
-  let t = text.trim();
-  for(const w of bannedWords){ t = t.replace(new RegExp('\\b'+w+'\\b','gi'), '***'); }
-  return t;
-}
-
-function fmt(n){ return new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', maximumFractionDigits:0}).format(n); }
-function km(a,b){
-  if(!a||!b) return 0;
-  const R=6371; // km
-  const dLat=(b.lat-a.lat)*Math.PI/180; const dLon=(b.lng-a.lng)*Math.PI/180;
-  const la1=a.lat*Math.PI/180, la2=b.lat*Math.PI/180;
-  const h=Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;
-  return 2*R*Math.asin(Math.sqrt(h));
-}
-
-// ======= Tabs dinámicas =======
-let currentTab = 'registro'; // siempre empezamos en Registración
-
+// ======= Tabs =======
 function tabsForState(){
-  if(!state.fbUser){
-    return [{id:'registro', label:'Registración'}];
-  }
+  if(!state.fbUser) return [];
   return [
     {id:'pasajero', label:'Pasajero'},
     {id:'conductor', label:'Conductor'},
-    {id:'perfil', label:'Perfil'},
-    {id:'ajustes', label:'Ajustes'}
+    {id:'perfil',    label:'Perfil'}
   ];
 }
-
 function renderTabs(){
-  const tabs = tabsForState();
-  const nav = document.getElementById('tabs');
-  nav.innerHTML = '';
-  if(!tabs.find(t=>t.id===currentTab)){ currentTab = tabs[0].id; }
-  for(const t of tabs){
+  const nav = $('#tabs'); nav.innerHTML='';
+  for(const t of tabsForState()){
     const el = document.createElement('button');
-    el.className = 'tab';
-    el.textContent = t.label;
-    el.setAttribute('aria-selected', t.id===currentTab);
-    el.onclick = ()=>{ currentTab=t.id; renderSide(); if(map) setTimeout(()=>map.invalidateSize(), 120); };
+    el.className='tab';
+    el.textContent=t.label;
+    el.setAttribute('aria-selected', uiTab===t.id);
+    el.onclick = ()=>{ uiTab=t.id; onTabChange(); };
     nav.appendChild(el);
   }
   setStatusChip();
 }
-
-// ======= Lateral =======
-function setStatusChip(){
-  const sc = document.getElementById('statusChip');
-  if(state.fbUser){ sc.textContent = (state.profile?.name || 'online'); }
-  else { sc.textContent = 'offline'; }
-  sc.className = 'chip';
-  document.getElementById('authBadge').textContent = state.fbUser? 'Conectado' : 'No conectado';
+function onTabChange(){
+  // Cambiamos automáticamente el modo de mapa en función de la pestaña, si hace falta algo específico
+  // (por ahora, solo actualizamos lateral)
+  renderSide();
+  if(map) setTimeout(()=>map.invalidateSize(), 120);
 }
 
+// ======= UI Aux =======
+function setStatusChip(){
+  const sc = $('#statusChip');
+  sc.textContent = state.fbUser? (state.profile?.name || 'online') : 'offline';
+}
 function renderSide(){
-  renderTabs();
-  const title = document.getElementById('sideTitle');
-  const body = document.getElementById('sideBody');
-  title.textContent = ({registro:'Registración', pasajero:'Pasajero', conductor:'Conductor', perfil:'Perfil', ajustes:'Ajustes'})[currentTab];
+  const body = $('#sideBody'); const title = $('#sideTitle');
+  const titles = { pasajero:'Pasajero', conductor:'Conductor', perfil:'Perfil' };
+  title.textContent = titles[uiTab]||'Panel';
   body.innerHTML='';
 
-  if(currentTab==='registro') return body.appendChild(cardRegistro());
-  if(!state.fbUser){ body.innerHTML = '<div class="card"><b>Inicia sesión</b><p class="help">Registrate en la pestaña de arriba.</p></div>'; return; }
-  if(currentTab==='pasajero') return body.appendChild(cardPasajero());
-  if(currentTab==='conductor') return body.appendChild(cardConductor());
-  if(currentTab==='perfil') return body.appendChild(cardPerfil());
-  if(currentTab==='ajustes') return body.appendChild(cardAjustes());
+  if(uiTab==='pasajero') return body.appendChild(cardPasajero());
+  if(uiTab==='conductor') return body.appendChild(cardConductor());
+  if(uiTab==='perfil')    return body.appendChild(cardPerfil());
 }
 
 // ======= Componentes =======
-function cardRegistro(){
-  const el = document.createElement('div'); el.className='grid';
-  el.innerHTML = `
-    <div class="card">
-      <h3 style="margin:0 0 .5rem 0">Crear cuenta</h3>
-      <div class="grid cols-2">
-        <div class="field"><label class="label">Nombre</label><input id="regName" class="input" placeholder="Ana, Mauro…"></div>
-        <div class="field"><label class="label">Rol</label>
-          <select id="regRole" class="input"><option value="pasajero">Pasajero</option><option value="conductor">Conductor</option></select>
-        </div>
-      </div>
-      <div class="grid cols-2">
-        <div class="field"><label class="label">Email</label><input id="regEmail" type="email" class="input" placeholder="nombre@mail.com"></div>
-        <div class="field"><label class="label">Contraseña</label><input id="regPass" type="password" class="input" placeholder="mín. 6 caracteres"></div>
-      </div>
-      <div class="row" style="margin-top:.8rem;gap:.5rem;flex-wrap:wrap">
-        <button class="btn primary" id="btnReg">Registrarme</button>
-      </div>
-      <div id="regErr" class="err"></div>
-    </div>
-    <div class="card">
-      <h3 style="margin:0 0 .5rem 0">Ya tengo cuenta</h3>
-      <div class="grid cols-2">
-        <div class="field"><label class="label">Email</label><input id="inEmail" type="email" class="input"></div>
-        <div class="field"><label class="label">Contraseña</label><input id="inPass" type="password" class="input"></div>
-      </div>
-      <div class="row" style="margin-top:.8rem;gap:.5rem;flex-wrap:wrap">
-        <button class="btn" id="btnLogin">Entrar</button>
-      </div>
-      <div id="loginErr" class="err"></div>
-    </div>`;
-  setTimeout(()=>{
-    document.getElementById('btnReg').onclick = async ()=>{
-      const name=document.getElementById('regName').value.trim();
-      const role=document.getElementById('regRole').value; const email=document.getElementById('regEmail').value.trim(); const pass=document.getElementById('regPass').value;
-      document.getElementById('regErr').textContent='';
-      try{
-        const cred = await createUserWithEmailAndPassword(auth, email, pass);
-        await updateProfile(cred.user, { displayName: name });
-        await setDoc(doc(db,'users',cred.user.uid), {
-          name, role, email, ratingSum:0, ratingCount:0, createdAt: serverTimestamp()
-        });
-        // onAuthStateChanged te lleva a “Pasajero”
-      }catch(e){ document.getElementById('regErr').textContent = e.message; }
-    };
-    document.getElementById('btnLogin').onclick = async ()=>{
-      document.getElementById('loginErr').textContent='';
-      try{ await signInWithEmailAndPassword(auth, document.getElementById('inEmail').value.trim(), document.getElementById('inPass').value); }
-      catch(e){ document.getElementById('loginErr').textContent = e.message; }
-    };
-  },0);
-  return el;
-}
-
 function cardPasajero(){
   const el = document.createElement('div'); el.className='grid';
   el.innerHTML = `
     <div class="card">
       <div class="label">Solicitud</div>
-      <p id="solicitudTxt" class="help">Elige puntos en el mapa y solicita el viaje.</p>
+      <p id="solicitudTxt" class="help">Elegí origen y destino en el mapa y solicitá tu viaje.</p>
       <div class="row" style="gap:.5rem;flex-wrap:wrap">
         <button class="btn primary" id="btnReq">Solicitar viaje</button>
-        <button class="btn ghost" id="btnCancelReq">Cancelar</button>
+        <button class="btn" id="btnCancelReq">Cancelar</button>
       </div>
     </div>`;
   setTimeout(()=>{
-    document.getElementById('btnReq').onclick = solicitarViaje;
-    document.getElementById('btnCancelReq').onclick = cancelarSolicitud;
+    $('#btnReq').onclick = solicitarViaje;
+    $('#btnCancelReq').onclick = cancelarSolicitud;
   },0);
   return el;
 }
-
 function cardConductor(){
   const el = document.createElement('div'); el.className='grid';
   el.innerHTML = `
@@ -381,21 +311,16 @@ function cardConductor(){
       </div>
     </div>`;
   setTimeout(()=>{
-    document.getElementById('btnStart').onclick = iniciarTrayecto;
-    document.getElementById('btnFinish').onclick = finalizarTrayecto;
+    $('#btnStart').onclick = iniciarTrayecto;
+    $('#btnFinish').onclick = finalizarTrayecto;
     suscribeListaPendientes();
   },0);
   return el;
 }
-
 function cardPerfil(){
-  const p = state.profile || {ratingSum:0, ratingCount:0, role:'pasajero'};
-  const rol = normalizeRole(p.role);
+  const p = state.profile || {ratingSum:0, ratingCount:0};
   const avg = p.ratingCount? (p.ratingSum/p.ratingCount):0;
-  const stars = [1,2,3,4,5].map(i=>`<span class="star ${avg>=i? '':'off'}">★</span>`).join('');
-  const totalStars = p.ratingSum;
-  let trofeos = '';
-  if(totalStars>=5000) trofeos += '🏆🥇'; else if(totalStars>=1000) trofeos += '🏆';
+  const stars = [1,2,3,4,5].map(i=>`<span style="color:#fcd34d;opacity:${avg>=i?1:.35}">★</span>`).join('');
   const el = document.createElement('div'); el.className='grid';
   el.innerHTML = `
     <div class="card">
@@ -404,70 +329,33 @@ function cardPerfil(){
         <div>
           <div style="font-weight:600">${p.name||'Usuario'}</div>
           <div class="chip">${state.fbUser?.email||''}</div>
-          <div class="chip">Rol actual: ${rol}</div>
         </div>
       </div>
     </div>
     <div class="card">
-      <div class="label">Cambiar rol (opcional)</div>
+      <div class="label">Sesión</div>
       <div class="row" style="gap:.5rem;flex-wrap:wrap">
-        <select id="roleSel" class="input" style="max-width:220px"><option value="pasajero">Pasajero</option><option value="conductor">Conductor</option></select>
-        <button class="btn" id="btnRole">Guardar</button>
-        <button class="btn danger" id="btnLogout">Cerrar sesión</button>
+        <button class="btn" id="btnLogout">Cerrar sesión</button>
       </div>
     </div>
     <div class="card">
       <div class="label">Calificación</div>
       <div class="row" style="gap:.35rem">${stars}</div>
       <div class="row" style="gap:.5rem;margin-top:.4rem">
-        <div class="chip">${p.ratingCount} opiniones</div>
+        <div class="chip">${p.ratingCount||0} opiniones</div>
         <div class="chip">${avg.toFixed(2)} / 5.00</div>
-        <div class="chip trophy">${trofeos||'—'}</div>
       </div>
     </div>`;
-  setTimeout(()=>{
-    document.getElementById('roleSel').value = rol;
-    document.getElementById('btnRole').onclick = async ()=>{
-      const r = document.getElementById('roleSel').value;
-      await updateDoc(doc(db,'users',state.fbUser.uid), { role:r });
-    };
-    document.getElementById('btnLogout').onclick = ()=> signOut(auth);
-  },0);
-  return el;
-}
-
-function cardAjustes(){
-  const pr = state.precios;
-  const el = document.createElement('div'); el.className='grid';
-  el.innerHTML = `
-    <div class="card">
-      <div class="label">Tarifas</div>
-      <div class="grid cols-2">
-        <div class="field"><label class="label">Base (ARS)</label><input id="pBase" class="input" type="number" value="${pr.base}"></div>
-        <div class="field"><label class="label">Por km (ARS)</label><input id="pKm" class="input" type="number" value="${pr.porKm}"></div>
-      </div>
-      <div class="field"><label class="label">Descuento app (0–0.9)</label><input id="pDesc" class="input" type="number" step="0.01" value="${pr.descuento}"></div>
-      <div class="row" style="margin-top:.6rem;gap:.5rem"><button class="btn" id="btnSaveTarifas">Guardar</button></div>
-    </div>`;
-  setTimeout(()=>{
-    document.getElementById('btnSaveTarifas').onclick = ()=>{
-      state.precios.base = Number(document.getElementById('pBase').value||0);
-      state.precios.porKm = Number(document.getElementById('pKm').value||0);
-      state.precios.descuento = Number(document.getElementById('pDesc').value||0);
-      updateInfo();
-      alert('Tarifas actualizadas');
-    };
-  },0);
+  setTimeout(()=>{ $('#btnLogout').onclick = ()=> signOut(auth); },0);
   return el;
 }
 
 // ======= Mapa =======
 function initMap(){
-  map = L.map('map', { zoomControl:true }).setView([-34.6037,-58.3816], 12); // CABA por defecto
+  map = L.map('map', { zoomControl:true }).setView([-34.6037,-58.3816], 12);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(map);
-  setTimeout(()=>{ map.invalidateSize(); }, 250);
+  setTimeout(()=>map.invalidateSize(), 250);
   map.on('click', (e)=>{
-    if(!state.fbUser){ alert('Inicia sesión para usar el mapa.'); return; }
     const p = { lat: e.latlng.lat, lng: e.latlng.lng };
     if(selectMode==='origen'){ setOrigen(p); } else { setDestino(p); }
   });
@@ -506,24 +394,58 @@ function limpiar(){
   if(line) map.removeLayer(line); line=null;
   updateInfo();
 }
+function fmt(n){ return new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', maximumFractionDigits:0}).format(n); }
+function km(a,b){
+  if(!a||!b) return 0;
+  const R=6371;
+  const dLat=(b.lat-a.lat)*Math.PI/180, dLon=(b.lng-a.lng)*Math.PI/180;
+  const la1=a.lat*Math.PI/180, la2=b.lat*Math.PI/180;
+  const h=Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+function calcularTarifa(distKm){
+  const t = state.tarifa;
+  const bruto = t.base + distKm * t.porKm;
+  const conDesc = bruto * (1 - state.descuento);
+  return Math.max(t.minima, Math.round(conDesc));
+}
 function updateInfo(){
   const o = state.origen, d=state.destino; const dist = km(o,d);
-  document.getElementById('origenTxt').textContent = o? `${o.lat.toFixed(4)}, ${o.lng.toFixed(4)}` : '—';
-  document.getElementById('destinoTxt').textContent = d? `${d.lat.toFixed(4)}, ${d.lng.toFixed(4)}` : '—';
-  document.getElementById('kmTxt').textContent = dist.toFixed(2);
-  const bruto = state.precios.base + dist*state.precios.porKm;
-  const final = Math.max(0, Math.round(bruto*(1 - state.precios.descuento)));
-  document.getElementById('fareTxt').textContent = fmt(final);
+  $('#origenTxt').textContent = o? `${o.lat.toFixed(4)}, ${o.lng.toFixed(4)}` : '—';
+  $('#destinoTxt').textContent = d? `${d.lat.toFixed(4)}, ${d.lng.toFixed(4)}` : '—';
+  $('#kmTxt').textContent = dist.toFixed(2);
+  $('#fareTxt').textContent = fmt(calcularTarifa(dist));
 }
 
-// ======= Firestore: Solicitudes/ Viaje =======
-// *** FIX: cualquiera puede pedir viaje (sin chequear rol) ***
-async function solicitarViaje(){
-  if(!state.fbUser) return alert('Inicia sesión');
-  if(!state.origen || !state.destino) return alert('Elegí origen y destino');
+// ======= Chat =======
+const bannedWords = ['puta','puto','cagar','mierda','hdp','concha','pija','forro','insulto','boludo'];
+function sanitizeMsg(text){
+  let t = text.trim();
+  for(const w of bannedWords){ t = t.replace(new RegExp('\\b'+w+'\\b','gi'), '***'); }
+  return t;
+}
+function mySide(){
+  const r = state.activeRequest;
+  if(!r || !state.fbUser) return 'pax';
+  if(r.pasajeroId === state.fbUser.uid) return 'pax';
+  if(r.conductorId === state.fbUser.uid) return 'drv';
+  return uiTab==='conductor' ? 'drv' : 'pax';
+}
+$('#chatSend').addEventListener('click', async ()=>{
+  if(!state.activeRequestId) return alert('Sin viaje activo');
+  const input = $('#chatInput'); const text = (input.value||'').trim(); if(!text) return;
+  const sanitized = sanitizeMsg(text); if(/^\*{3,}$/.test(sanitized)) return alert('Mensaje bloqueado');
+  await addDoc(collection(db,'requests',state.activeRequestId,'messages'),{
+    from: mySide(), text: sanitized, ts: serverTimestamp()
+  });
+  input.value='';
+});
 
+// ======= Firestore: Solicitudes =======
+async function solicitarViaje(){
+  if(!state.origen || !state.destino) return alert('Elegí origen y destino');
   const dist = km(state.origen,state.destino);
-  const precio = Math.max(0, Math.round((state.precios.base + dist*state.precios.porKm) * (1 - state.precios.descuento)));
+  const precio = calcularTarifa(dist);
   const docRef = await addDoc(collection(db,'requests'),{
     status:'buscando',
     pasajeroId: state.fbUser.uid,
@@ -533,56 +455,78 @@ async function solicitarViaje(){
     createdAt: serverTimestamp()
   });
   state.activeRequestId = docRef.id;
+  startSearchingUI(true);
   watchActiveRequest(docRef.id);
-  currentTab='pasajero'; renderSide();
+  uiTab='pasajero'; renderTabs(); renderSide();
 }
-
 async function cancelarSolicitud(){
   if(!state.activeRequestId) return;
   await updateDoc(doc(db,'requests',state.activeRequestId), { status:'cancelado' });
 }
+function suscribeListaPendientes(){
+  if(listUnsub) listUnsub();
+  listUnsub = onSnapshot(
+    query(collection(db,'requests'), where('status','==','buscando'), orderBy('createdAt','desc'), limit(20)),
+    qs=>{
+      const cont = $('#reqList'); if(!cont) return; cont.innerHTML='';
+      qs.forEach(docu=>{
+        const r = docu.data(); const id=docu.id;
+        const card = document.createElement('div'); card.className='card';
+        card.innerHTML = `
+          <div class="row wrap" style="justify-content:space-between">
+            <div><div class="chip">#${id.slice(0,6)}</div><div class="chip">Pasajero: ${r.pasajeroNombre}</div></div>
+            <div><div class="chip">${(r.km||0).toFixed(2)} km</div><div class="chip">${fmt(r.precio||0)}</div></div>
+          </div>
+          <div class="row" style="margin-top:.5rem;gap:.5rem"><button class="btn primary" data-id="${id}">Aceptar</button></div>`;
+        card.querySelector('button').onclick = ()=> aceptarViaje(id);
+        cont.appendChild(card);
+      });
+    }
+  );
+}
+async function aceptarViaje(id){
+  await updateDoc(doc(db,'requests',id), {
+    status:'aceptado',
+    conductorId: state.fbUser.uid,
+    conductorNombre: state.profile?.name || state.fbUser.email
+  });
+  state.activeRequestId = id; watchActiveRequest(id);
+}
+async function iniciarTrayecto(){
+  if(!state.activeRequestId) return alert('Sin viaje activo');
+  await updateDoc(doc(db,'requests',state.activeRequestId), { status:'en_curso' });
+}
+async function finalizarTrayecto(){
+  if(!state.activeRequestId) return alert('Sin viaje activo');
+  await updateDoc(doc(db,'requests',state.activeRequestId), { status:'finalizado' });
+}
 
-// Mantiene info del viaje activo y habilita chat dinámico
+// ======= Watch request + UI de “buscando” =======
 function watchActiveRequest(id){
   if(activeReqUnsub) activeReqUnsub();
-  activeReqUnsub = onSnapshot(doc(db,'requests',id), (snap)=>{
+  activeReqUnsub = onSnapshot(doc(db,'requests',id), async (snap)=>{
     if(!snap.exists()) return;
     const r = snap.data();
     state.activeRequest = { id: snap.id, ...r };
-    document.getElementById('actividad').textContent = `#${id.slice(0,6)} — ${r.status.toUpperCase()} — ${fmt(r.precio)} (${(r.km||0).toFixed(2)} km)`;
+    $('#actividad').textContent = `#${id.slice(0,6)} — ${r.status.toUpperCase()} — ${fmt(r.precio)} (${(r.km||0).toFixed(2)} km)`;
+
+    if(r.status==='buscando'){ startSearchingUI(true); }
+    else { startSearchingUI(false); }
+
     if(r.status==='finalizado' || r.status==='cancelado'){
-      setTimeout(async ()=>{
-        const stars = Number(prompt('Califica de 1 a 5 estrellas','5'))||5;
-        const uRef = doc(db,'users',state.fbUser.uid);
-        const u = await getDoc(uRef);
-        const sum=(u.data().ratingSum||0)+stars, cnt=(u.data().ratingCount||0)+1;
-        await updateDoc(uRef,{ratingSum:sum,ratingCount:cnt});
-        alert('¡Gracias por calificar!');
-      }, 50);
-      state.activeRequestId=null;
-      state.activeRequest=null;
+      state.activeRequestId=null; state.activeRequest=null;
       if(chatUnsub){ chatUnsub(); chatUnsub=null; }
+      alert(r.status==='finalizado' ? '¡Viaje finalizado!' : 'Solicitud cancelada');
     }else{
       ensureChatListener(id);
     }
   });
 }
-
-// devuelve 'pax' o 'drv' según el usuario actual en el request activo
-function mySide(){
-  const r = state.activeRequest;
-  if(!r || !state.fbUser) return 'pax';
-  if(r.pasajeroId === state.fbUser.uid) return 'pax';
-  if(r.conductorId === state.fbUser.uid) return 'drv';
-  return 'pax';
-}
-
 function ensureChatListener(reqId){
   if(chatUnsub) return;
   const msgsRef = collection(db,'requests',reqId,'messages');
   chatUnsub = onSnapshot(query(msgsRef, orderBy('ts','asc'), limit(100)), (qs)=>{
-    const log = document.getElementById('chatlog'); log.innerHTML='';
-    const r = state.activeRequest;
+    const log = $('#chatlog'); log.innerHTML='';
     const mine = mySide();
     qs.forEach(d=>{
       const m=d.data();
@@ -593,66 +537,28 @@ function ensureChatListener(reqId){
   });
 }
 
-// enviar chat (sin depender del rol del Perfil)
-document.getElementById('chatSend').addEventListener('click', async ()=>{
-  if(!state.activeRequestId) return alert('Sin viaje activo');
-  const input = document.getElementById('chatInput'); let text = (input.value||'').trim(); if(!text) return;
-  const sanitized = sanitizeMsg(text); if(/^\*{3,}$/.test(sanitized)) return alert('Mensaje bloqueado');
-  await addDoc(collection(db,'requests',state.activeRequestId,'messages'),{
-    from: mySide(), text: sanitized, ts: serverTimestamp()
-  });
-  input.value='';
-});
-
-// Conductor: lista pendientes y acciones
-function suscribeListaPendientes(){
-  if(listUnsub) listUnsub();
-  listUnsub = onSnapshot(query(collection(db,'requests'), where('status','==','buscando'), orderBy('createdAt','desc'), limit(20)), (qs)=>{
-    const cont = document.getElementById('reqList'); if(!cont) return; cont.innerHTML='';
-    qs.forEach(docu=>{
-      const r = docu.data(); const id=docu.id;
-      const card = document.createElement('div'); card.className='card';
-      card.innerHTML = `
-        <div class="row wrap" style="justify-content:space-between">
-          <div>
-            <div class="chip">#${id.slice(0,6)}</div>
-            <div class="chip">Pasajero: ${r.pasajeroNombre}</div>
-          </div>
-          <div>
-            <div class="chip">${(r.km||0).toFixed(2)} km</div>
-            <div class="chip">${fmt(r.precio||0)}</div>
-          </div>
-        </div>
-        <div class="row" style="margin-top:.5rem;gap:.5rem">
-          <button class="btn primary" data-id="${id}">Aceptar</button>
-        </div>`;
-      cont.appendChild(card);
-      card.querySelector('button').onclick = ()=> aceptarViaje(id);
-    });
-  });
+// Timer + Banner “BUSCANDO…”
+function startSearchingUI(on){
+  const banner = $('#mapBanner');
+  if(on){
+    banner.style.display='block';
+    if(!state.requestCreatedAt) state.requestCreatedAt = Date.now();
+    if(timerInt) clearInterval(timerInt);
+    timerInt = setInterval(()=>{
+      const elapsed = Math.floor((Date.now()-state.requestCreatedAt)/1000);
+      const mm = String(Math.floor(elapsed/60)).padStart(2,'0');
+      const ss = String(elapsed%60).padStart(2,'0');
+      $('#searchTimer').textContent = `${mm}:${ss}`;
+    }, 500);
+  }else{
+    banner.style.display='none';
+    if(timerInt) clearInterval(timerInt);
+    timerInt=null; state.requestCreatedAt=null;
+    $('#searchTimer').textContent = '00:00';
+  }
 }
 
-// *** FIX: permitir aceptar sin chequear rol del Perfil ***
-async function aceptarViaje(id){
-  if(!state.fbUser) return alert('Inicia sesión');
-  await updateDoc(doc(db,'requests',id), {
-    status:'aceptado',
-    conductorId: state.fbUser.uid,
-    conductorNombre: state.profile?.name || state.fbUser.email
-  });
-  state.activeRequestId = id; watchActiveRequest(id);
-}
-
-async function iniciarTrayecto(){
-  if(!state.activeRequestId) return alert('Sin viaje activo');
-  await updateDoc(doc(db,'requests',state.activeRequestId), { status:'en_curso' });
-}
-async function finalizarTrayecto(){
-  if(!state.activeRequestId) return alert('Sin viaje activo');
-  await updateDoc(doc(db,'requests',state.activeRequestId), { status:'finalizado' });
-}
-
-// ======= Auth (con escucha en vivo del perfil) =======
+// ======= Auth + Gate =======
 onAuthStateChanged(auth, async (user)=>{
   state.fbUser = user;
   if(user){
@@ -660,34 +566,53 @@ onAuthStateChanged(auth, async (user)=>{
     const uref = doc(db,'users',user.uid);
     userUnsub = onSnapshot(uref, async (snap)=>{
       if(!snap.exists()){
-        await setDoc(uref, { name: user.displayName||'', email:user.email||'', role:'pasajero', ratingSum:0, ratingCount:0, createdAt: serverTimestamp() });
-        state.profile = { name:user.displayName||'', email:user.email||'', role:'pasajero', ratingSum:0, ratingCount:0 };
+        await setDoc(uref, { name: user.displayName||'', email:user.email||'', ratingSum:0, ratingCount:0, createdAt: serverTimestamp() });
+        state.profile = { name:user.displayName||'', email:user.email||'', ratingSum:0, ratingCount:0 };
       }else{
         state.profile = snap.data();
       }
+      $('#gate').style.display='none';
+      $('#app').style.display='grid';
       renderTabs(); renderSide();
     });
-    currentTab='pasajero'; // *** aparece Registro primero y luego desaparece ***
   } else {
-    state.profile = null; state.activeRequestId=null; state.activeRequest=null;
+    // Mostrar gate, esconder app
+    $('#app').style.display='none';
+    $('#gate').style.display='grid';
+    state.profile=null; state.activeRequestId=null; state.activeRequest=null;
     if(activeReqUnsub){ activeReqUnsub(); activeReqUnsub=null; }
     if(chatUnsub){ chatUnsub(); chatUnsub=null; }
     if(listUnsub){ listUnsub(); listUnsub=null; }
     if(userUnsub){ userUnsub(); userUnsub=null; }
-    currentTab='registro';
-    renderTabs(); renderSide();
   }
 });
 
+// ======= Gate handlers =======
+$('#btnReg').onclick = async ()=>{
+  const name=$('#regName').value.trim();
+  const email=$('#regEmail').value.trim();
+  const pass=$('#regPass').value; const pass2=$('#regPass2').value;
+  $('#regErr').textContent='';
+  if(pass!==pass2) return $('#regErr').textContent='Las contraseñas no coinciden';
+  try{
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    await updateProfile(cred.user, { displayName: name });
+    await setDoc(doc(db,'users',cred.user.uid), { name, email, ratingSum:0, ratingCount:0, createdAt: serverTimestamp() });
+  }catch(e){ $('#regErr').textContent = e.message; }
+};
+$('#btnLogin').onclick = async ()=>{
+  $('#loginErr').textContent='';
+  try{ await signInWithEmailAndPassword(auth, $('#inEmail').value.trim(), $('#inPass').value); }
+  catch(e){ $('#loginErr').textContent = e.message; }
+};
+
 // ======= Bootstrap =======
 function bootstrap(){
-  renderTabs();
-  renderSide(); // muestra Registración al entrar
   initMap();
-  document.getElementById('btnMiUbicacion').onclick = miUbicacionComoOrigen;
-  document.getElementById('btnLimpiar').onclick = limpiar;
-  document.getElementById('btnSolicitar').onclick = solicitarViaje;
-  const bO = document.getElementById('modeOrigen'), bD = document.getElementById('modeDestino');
+  $('#btnMiUbicacion').onclick = miUbicacionComoOrigen;
+  $('#btnLimpiar').onclick = limpiar;
+  $('#btnSolicitar').onclick = solicitarViaje;
+  const bO = $('#modeOrigen'), bD = $('#modeDestino');
   bO.onclick = ()=>{ selectMode='origen'; bO.setAttribute('aria-pressed','true'); bD.setAttribute('aria-pressed','false'); };
   bD.onclick = ()=>{ selectMode='destino'; bD.setAttribute('aria-pressed','true'); bO.setAttribute('aria-pressed','false'); };
 }
