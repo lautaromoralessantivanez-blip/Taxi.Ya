@@ -85,7 +85,7 @@ button,input,select{font-family:inherit}
 .ac-item:last-child{border-bottom:0}
 .ac-item:hover{background:#142032}
 .ac-title{font-weight:600}
-.ac-sub{font-size:.85rem;color:var(--muted)}
+.ac-sub{font-size:.85rem;color:#a9b4c2}
 
 /* Responsive */
 @media (max-width:1080px){.container{grid-template-columns:1fr}.aside{order:2}.main{order:1}}
@@ -114,10 +114,10 @@ button,input,select{font-family:inherit}
     <!-- LOGIN -->
     <div class="card" style="background:#0d131b">
       <div class="grid">
-        <div class="field"><label class="label">Email (Gmail)</label><input id="inEmail" type="email" class="input" placeholder="tu@gmail.com"></div>
-        <div class="field"><label class="label">Contraseña</label><input id="inPass" type="password" class="input" placeholder="••••••••"></div>
+        <div class="field"><label class="label">Email (Gmail)</label><input id="inEmail" type="email" class="input" placeholder="tu@gmail.com" autocomplete="email"></div>
+        <div class="field"><label class="label">Contraseña</label><input id="inPass" type="password" class="input" placeholder="••••••••" autocomplete="current-password"></div>
         <div class="row" style="gap:.6rem">
-          <button class="btn primary" id="btnLogin">Entrar</button>
+          <button class="btn primary" id="btnLogin" type="button">Entrar</button>
         </div>
         <div id="loginErr" class="err"></div>
       </div>
@@ -140,18 +140,19 @@ button,input,select{font-family:inherit}
         <div class="field" style="flex:1"><label class="label">Nombre</label><input id="regName" class="input" placeholder="Ana, Mauro…"></div>
       </div>
       <div class="grid">
-        <div class="field"><label class="label">Email (Gmail)</label><input id="regEmail" type="email" class="input" placeholder="tu@gmail.com"></div>
-        <div class="field"><label class="label">Contraseña</label><input id="regPass" type="password" class="input" placeholder="mín. 6 caracteres"></div>
-        <div class="field"><label class="label">Repetir contraseña</label><input id="regPass2" type="password" class="input" placeholder="repite la contraseña"></div>
+        <div class="field"><label class="label">Email (Gmail)</label><input id="regEmail" type="email" class="input" placeholder="tu@gmail.com" autocomplete="email"></div>
+        <div class="field"><label class="label">Contraseña</label><input id="regPass" type="password" class="input" placeholder="mín. 6 caracteres" autocomplete="new-password"></div>
+        <div class="field"><label class="label">Repetir contraseña</label><input id="regPass2" type="password" class="input" placeholder="repite la contraseña" autocomplete="new-password"></div>
       </div>
       <div class="row" style="margin-top:.6rem;gap:.6rem">
-        <button class="btn" id="btnCancelReg">Cancelar</button>
-        <button class="btn primary" id="btnReg">Crear cuenta</button>
+        <button class="btn" id="btnCancelReg" type="button">Cancelar</button>
+        <button class="btn primary" id="btnReg" type="button">Crear cuenta</button>
       </div>
       <div id="regErr" class="err"></div>
     </div>
 
     <p class="help" style="margin-top:.5rem">Iniciá sesión para continuar al mapa.</p>
+    <div id="fatal" class="err" style="display:none;margin-top:10px"></div>
   </div>
 </div>
 
@@ -187,15 +188,15 @@ button,input,select{font-family:inherit}
               <div class="row" style="gap:.5rem">
                 <div class="label">Seleccionar en mapa:</div>
                 <div class="seg" id="modeSeg" style="display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden">
-                  <button id="modeOrigen" aria-pressed="true" style="border:0;background:#0e1620;color:#fff;padding:.45rem .8rem;cursor:pointer">Origen</button>
-                  <button id="modeDestino" aria-pressed="false" style="border:0;background:#0e1620;color:#fff;padding:.45rem .8rem;cursor:pointer">Destino</button>
+                  <button id="modeOrigen" type="button" aria-pressed="true" style="border:0;background:#0e1620;color:#fff;padding:.45rem .8rem;cursor:pointer">Origen</button>
+                  <button id="modeDestino" type="button" aria-pressed="false" style="border:0;background:#0e1620;color:#fff;padding:.45rem .8rem;cursor:pointer">Destino</button>
                 </div>
               </div>
               <div class="row" style="gap:.5rem;flex-wrap:wrap;justify-content:flex-start">
-                <button class="btn" id="btnMiUbicacion">Usar mi ubicación</button>
-                <button class="btn" id="btnLimpiar">Limpiar</button>
-                <button class="btn" id="btnCancelReqTop">Cancelar</button>
-                <button class="btn primary" id="btnSolicitar">Solicitar viaje</button>
+                <button class="btn" id="btnMiUbicacion" type="button">Usar mi ubicación</button>
+                <button class="btn" id="btnLimpiar" type="button">Limpiar</button>
+                <button class="btn" id="btnCancelReqTop" type="button">Cancelar</button>
+                <button class="btn primary" id="btnSolicitar" type="button">Solicitar viaje</button>
               </div>
             </div>
           </div>
@@ -230,7 +231,7 @@ button,input,select{font-family:inherit}
             <div id="chatlog" class="chatlog"></div>
             <div class="chatinput" style="display:flex;gap:.5rem;padding:.6rem;border-top:1px solid var(--line)">
               <input id="chatInput" class="input" placeholder="Escribe un mensaje respetuoso…"/>
-              <button class="btn" id="chatSend">Enviar</button>
+              <button class="btn" id="chatSend" type="button">Enviar</button>
             </div>
           </div>
           <div class="help">Visible en “aceptado / en curso”.</div>
@@ -241,22 +242,28 @@ button,input,select{font-family:inherit}
   </div>
 </div>
 
+<!-- ===== AVISO ENTORNO incluso si falla el módulo ===== -->
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var warn = document.getElementById('envWarn');
+  if(!warn) return;
+  var bad = (location.protocol !== 'http:' && location.protocol !== 'https:');
+  warn.style.display = bad ? 'block' : 'none';
+});
+window.addEventListener('error', function(e){
+  var f = document.getElementById('fatal');
+  if(f){ f.style.display='block'; f.textContent='Error de carga: ' + (e.message || 'desconocido') + '. Mirá la consola.'; }
+});
+</script>
+
 <!-- ================= Firebase + App (Módulos) ================= -->
 <script type="module">
 /* Firebase */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 import {
-  getAuth,
-  setPersistence,
-  browserLocalPersistence,
-  browserSessionPersistence,
-  inMemoryPersistence,
-  onAuthStateChanged,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  updateProfile
+  getAuth, setPersistence, browserLocalPersistence, browserSessionPersistence, inMemoryPersistence,
+  onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore, doc, setDoc, getDoc, updateDoc, addDoc, collection,
@@ -277,13 +284,9 @@ const firebaseConfig = {
   measurementId: "G-2RQRP1G2KB"
 };
 
-const appFB = initializeApp(firebaseConfig);
-try{ getAnalytics(appFB); }catch(e){}
-const auth = getAuth(appFB);
-const db = getFirestore(appFB);
-const storage = getStorage(appFB);
-
+/* ===== Helpers DOM ===== */
 const $ = s => document.querySelector(s);
+const text = (el, msg) => { if(el) el.textContent = msg; };
 
 /* ===== Estado ===== */
 let map, origenMarker, destinoMarker, meMarker, routing;
@@ -302,11 +305,24 @@ let state = {
   activeRequestId:null, activeRequest:null, requestCreatedAt:null
 };
 
-/* ===== Utilidades ===== */
-function showEnvWarnIfNeeded(){
-  const bad = (location.protocol !== 'http:' && location.protocol !== 'https:');
-  const warn = $('#envWarn'); if(warn) warn.style.display = bad ? 'block' : 'none';
+/* ===== Inicialización ===== */
+let appFB, auth, db, storage;
+try{
+  appFB = initializeApp(firebaseConfig);
+  try{ getAnalytics(appFB); }catch(e){}
+  auth = getAuth(appFB);
+  db = getFirestore(appFB);
+  storage = getStorage(appFB);
+}catch(e){
+  const fatal = $('#fatal'); if(fatal){ fatal.style.display='block'; fatal.textContent='No se pudo inicializar Firebase: ' + (e.message||e); }
 }
+
+/* ===== Utilidades ===== */
+function fmt(n){ return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n); }
+function km(a,b){ if(!a||!b) return 0; const R=6371, dLat=(b.lat-a.lat)*Math.PI/180, dLon=(b.lng-a.lng)*Math.PI/180, la1=a.lat*Math.PI/180, la2=b.lat*Math.PI/180;
+  const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2; return 2*R*Math.asin(Math.sqrt(h));
+}
+function calcFare(distKm,durMin){ const p=state.pricing; const bruto=p.base+(distKm*p.perKm)+(durMin*p.perMin)+p.serviceFee; const surged=bruto*(state.surge||1.0); return Math.max(p.minimum,Math.round(surged)); }
 function mapAuthError(err){
   const c = (err && err.code) ? String(err.code) : '';
   const M = {
@@ -318,20 +334,123 @@ function mapAuthError(err){
     'auth/user-not-found': 'Usuario no encontrado.',
     'auth/wrong-password': 'Contraseña incorrecta.',
     'auth/too-many-requests': 'Demasiados intentos. Probá más tarde.',
-    'auth/network-request-failed': 'Fallo de red. Revisa tu conexión.',
-    'auth/operation-not-allowed': 'El método de inicio de sesión no está habilitado en Firebase.',
-    'auth/unauthorized-domain': 'Dominio no autorizado. Agregá este dominio en Authentication > Authorized domains.',
+    'auth/network-request-failed': 'Fallo de red. Revisá tu conexión.',
+    'auth/operation-not-allowed': 'Habilitá Email/Password en Firebase Console.',
+    'auth/unauthorized-domain': 'Dominio no autorizado. Agregalo en Authorized domains.',
     'auth/internal-error': 'Error interno. Reintentá en unos segundos.'
   };
   return M[c] || (err?.message || 'Error desconocido');
 }
-async function setupAuthPersistence(authInstance){
-  try{ await setPersistence(authInstance, browserLocalPersistence); }
-  catch(_1){ try{ await setPersistence(authInstance, browserSessionPersistence); }
-  catch(_2){ await setPersistence(authInstance, inMemoryPersistence); } }
+async function setupAuthPersistence(){
+  try{ await setPersistence(auth, browserLocalPersistence); }
+  catch(_1){ try{ await setPersistence(auth, browserSessionPersistence); }
+  catch(_2){ await setPersistence(auth, inMemoryPersistence); } }
 }
 
-/* ===== Tabs ===== */
+/* ===== Delegación de eventos: clicks seguros ===== */
+document.addEventListener('click', async (e)=>{
+  const id = e.target.id;
+
+  // Toggle registrar
+  if(id === 'showReg'){ const c=$('#regCard'); if(c) c.style.display='block'; return; }
+  if(id === 'btnCancelReg'){ const c=$('#regCard'); if(c) c.style.display='none'; return; }
+
+  // Login
+  if(id === 'btnLogin'){
+    e.preventDefault();
+    text($('#loginErr'),'');
+    const email=$('#inEmail')?.value?.trim()||'', pass=$('#inPass')?.value||'';
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return text($('#loginErr'),'Email inválido');
+    if(!pass) return text($('#loginErr'),'Ingresá tu contraseña');
+    const btn = e.target; btn.disabled=true; btn.textContent='Entrando…';
+    try{ await setupAuthPersistence(); await signInWithEmailAndPassword(auth,email,pass); }
+    catch(err){ text($('#loginErr'), mapAuthError(err)); btn.disabled=false; btn.textContent='Entrar'; }
+    return;
+  }
+
+  // Registro
+  if(id === 'btnReg'){
+    e.preventDefault();
+    text($('#regErr'),'');
+    const name=$('#regName')?.value?.trim()||'', email=$('#regEmail')?.value?.trim()||'';
+    const pass=$('#regPass')?.value||'', pass2=$('#regPass2')?.value||'';
+    const file=$('#regPhoto')?.files?.[0]||null;
+    if(!name) return text($('#regErr'),'Ingresá tu nombre');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return text($('#regErr'),'Email inválido');
+    if(pass.length<6) return text($('#regErr'),'La contraseña debe tener al menos 6 caracteres');
+    if(pass!==pass2) return text($('#regErr'),'Las contraseñas no coinciden');
+    const btn = e.target; btn.disabled=true; btn.textContent='Creando…';
+    try{
+      await setupAuthPersistence();
+      const cred=await createUserWithEmailAndPassword(auth,email,pass);
+      let photoURL='';
+      if(file){
+        const path=`avatars/${cred.user.uid}.jpg`;
+        await uploadBytes(sRef(storage,path),file);
+        photoURL=await getDownloadURL(sRef(storage,path));
+      }
+      await updateProfile(cred.user,{displayName:name,photoURL:photoURL||null});
+      await setDoc(doc(db,'users',cred.user.uid),{name,email,photoURL:photoURL||'',ratingSum:0,ratingCount:0,createdAt:serverTimestamp()});
+      const c=$('#regCard'); if(c) c.style.display='none';
+    }catch(err){ text($('#regErr'), mapAuthError(err)); btn.disabled=false; btn.textContent='Crear cuenta'; }
+    return;
+  }
+
+  // Botones principales
+  if(id === 'btnMiUbicacion'){ miUbicacionComoOrigen(); return; }
+  if(id === 'btnLimpiar'){ limpiar(); return; }
+  if(id === 'btnSolicitar'){ solicitarViaje(); return; }
+  if(id === 'btnCancelReqTop'){ cancelarSolicitud(); return; }
+  if(id === 'modeOrigen'){ if(state.pointsLocked) return alert('Bloqueado por viaje activo'); selectMode='origen'; $('#modeOrigen').setAttribute('aria-pressed','true'); $('#modeDestino').setAttribute('aria-pressed','false'); return; }
+  if(id === 'modeDestino'){ if(state.pointsLocked) return alert('Bloqueado por viaje activo'); selectMode='destino'; $('#modeDestino').setAttribute('aria-pressed','true'); $('#modeOrigen').setAttribute('aria-pressed','false'); return; }
+
+  // Conductor
+  if(id === 'btnDrvStart'){ driverStart(); return; }
+  if(id === 'btnDrvPause'){ driverPauseToggle(); return; }
+  if(id === 'btnDrvFinish'){ driverFinish(); return; }
+
+  // Chat
+  if(id === 'chatSend'){ sendChat(); return; }
+});
+
+// Preview foto registro
+document.addEventListener('change', (e)=>{
+  if(e.target && e.target.id === 'regPhoto'){
+    const f=e.target.files?.[0]; const prev=$('#regPreview');
+    if(!f){ if(prev) prev.src=''; return; }
+    const r=new FileReader(); r.onload=()=>{ if(prev) prev.src=r.result; }; r.readAsDataURL(f);
+  }
+});
+
+/* ===== Auth state ===== */
+onAuthStateChanged(auth, async (user)=>{
+  state.fbUser=user;
+  if(user){
+    if(userUnsub) userUnsub();
+    const uref=doc(db,'users',user.uid);
+    userUnsub=onSnapshot(uref,async snap=>{
+      if(!snap.exists()){
+        await setDoc(uref,{name:user.displayName||'',email:user.email||'',photoURL:user.photoURL||'',ratingSum:0,ratingCount:0,createdAt:serverTimestamp()});
+        state.profile={name:user.displayName||'',email:user.email||'',photoURL:user.photoURL||'',ratingSum:0,ratingCount:0};
+      }else{ state.profile=snap.data(); }
+      $('#gate').style.display='none'; $('#app').style.display='grid';
+      if(!map) initMap(); setTimeout(()=>map.invalidateSize(),200);
+      renderTabs(); renderSide();
+    });
+  }else{
+    $('#app').style.display='none'; $('#gate').style.display='grid';
+    state.profile=null; state.activeRequestId=null; state.activeRequest=null; lockPoints(false);
+    startSearchingUI(false); stopDriverFollower(); stopDriverShare(); stopDriverTimer();
+    driverOnline=false; driverPaused=false; updateDriverHeader();
+    if(activeReqUnsub){ activeReqUnsub(); activeReqUnsub=null; }
+    if(chatUnsub){ chatUnsub(); chatUnsub=null; }
+    if(listUnsub){ listUnsub(); listUnsub=null; }
+    if(earningsUnsub){ earningsUnsub(); earningsUnsub=null; }
+    if(userUnsub){ userUnsub(); userUnsub=null; }
+  }
+});
+
+/* ===== Tabs / Side ===== */
 function tabsForState(){ return state.fbUser?[
   {id:'pasajero',label:'Pasajero'},{id:'conductor',label:'Conductor'},{id:'perfil',label:'Perfil'}
 ]:[]; }
@@ -343,8 +462,6 @@ function renderTabs(){ const nav=$('#tabs'); nav.innerHTML='';
   $('#statusChip').textContent=state.fbUser?(state.profile?.name||'online'):'offline';
 }
 function onTabChange(){ renderSide(); setTimeout(()=> map?.invalidateSize(),120); }
-
-/* ===== Lateral ===== */
 function renderSide(){
   const body=$('#sideBody'); const title=$('#sideTitle');
   title.textContent={pasajero:'Pasajero',conductor:'Conductor',perfil:'Perfil'}[uiTab]||'Panel';
@@ -363,9 +480,9 @@ function cardConductor(){
         <span class="chip">Ganancias: <b id="drvEarn">$ 0</b></span>
       </div>
       <div class="row" style="gap:.5rem;flex-wrap:wrap">
-        <button class="btn primary" id="btnDrvStart">Iniciar</button>
-        <button class="btn" id="btnDrvPause" disabled>Pausar</button>
-        <button class="btn" id="btnDrvFinish" disabled>Finalizar</button>
+        <button class="btn primary" id="btnDrvStart" type="button">Iniciar</button>
+        <button class="btn" id="btnDrvPause" type="button" disabled>Pausar</button>
+        <button class="btn" id="btnDrvFinish" type="button" disabled>Finalizar</button>
       </div>
     </div>
     <p class="help" style="margin-top:.4rem">“Iniciar” te pone disponible para recibir viajes; “Pausar” te saca de la cola; “Finalizar” cierra la sesión de conductor.</p>
@@ -375,9 +492,6 @@ function cardConductor(){
     <div id="reqList" class="grid"></div>
   </div>`;
   setTimeout(()=>{
-    $('#btnDrvStart').onclick=driverStart;
-    $('#btnDrvPause').onclick=driverPauseToggle;
-    $('#btnDrvFinish').onclick=driverFinish;
     updateDriverHeader();
     attachEarningsListener();
     if(driverOnline&&!driverPaused) suscribeListaPendientes(); else unsusbcribePendientes();
@@ -402,7 +516,7 @@ function cardPerfil(){
   </div>
   <div class="card">
     <div class="label">Sesión</div>
-    <div class="row" style="gap:.5rem;flex-wrap:wrap"><button class="btn" id="btnLogout">Cerrar sesión</button></div>
+    <div class="row" style="gap:.5rem;flex-wrap:wrap"><button class="btn" id="btnLogout" type="button">Cerrar sesión</button></div>
   </div>
   <div class="card">
     <div class="label">Calificación</div>
@@ -412,7 +526,7 @@ function cardPerfil(){
       <div class="chip">${avg.toFixed(2)} / 5.00</div>
     </div>
   </div>`;
-  setTimeout(()=> $('#btnLogout').onclick=()=>signOut(auth),0);
+  setTimeout(()=> document.getElementById('btnLogout')?.addEventListener('click',()=>signOut(auth)),0);
   return el;
 }
 
@@ -422,7 +536,7 @@ function updateDriverHeader(){
   $('#btnDrvStart')?.toggleAttribute('disabled',driverOnline&&!driverPaused);
   $('#btnDrvPause')?.toggleAttribute('disabled',!driverOnline);
   $('#btnDrvFinish')?.toggleAttribute('disabled',!driverOnline);
-  $('#btnDrvPause')?.textContent=driverPaused?'Reanudar':'Pausar';
+  const pauseBtn=$('#btnDrvPause'); if(pauseBtn) pauseBtn.textContent=driverPaused?'Reanudar':'Pausar';
   $('#drvQueueCard')?.style.setProperty('display',(driverOnline&&!driverPaused)?'block':'none');
 }
 function driverStart(){
@@ -448,7 +562,7 @@ function startDriverTimer(){
     const hh=String(Math.floor(s/3600)).padStart(2,'0');
     const mm=String(Math.floor((s%3600)/60)).padStart(2,'0');
     const ss=String(s%60).padStart(2,'0');
-    $('#drvTime')?.textContent=`${hh}:${mm}:${ss}`;
+    const el=$('#drvTime'); if(el) el.textContent=`${hh}:${mm}:${ss}`;
   }; tick(); driverTimer=setInterval(tick,1000);
 }
 function stopDriverTimer(){ if(driverTimer){ clearInterval(driverTimer); driverTimer=null; } }
@@ -473,9 +587,10 @@ function ensureRouting(){
   }).on('routesfound',e=>{
     const r=e.routes?.[0]; if(!r) return;
     const km=(r.summary.totalDistance||0)/1000; const min=Math.round((r.summary.totalTime||0)/60);
-    state.routeKm=km; state.routeMin=min; $('#kmTxt').textContent=km.toFixed(2); $('#minTxt').textContent=String(min); updateFareUI();
+    state.routeKm=km; state.routeMin=min;
+    const k=$('#kmTxt'), m=$('#minTxt'); if(k) k.textContent=km.toFixed(2); if(m) m.textContent=String(min); updateFareUI();
     try{ map.fitBounds(r.bounds,{padding:[30,30]}); }catch(_){}
-    $('#actividad').textContent=`Ruta: ${km.toFixed(2)} km • ~${min} min`;
+    const act=$('#actividad'); if(act) act.textContent=`Ruta: ${km.toFixed(2)} km • ~${min} min`;
   }).on('routingerror',()=>updateInfoHaversine()).addTo(map);
   return routing;
 }
@@ -483,13 +598,13 @@ function setOrigen(p,recalc=false){
   if(origenMarker) map.removeLayer(origenMarker);
   origenMarker=L.marker([p.lat,p.lng],{draggable:!state.pointsLocked}).addTo(map).bindPopup('Origen');
   origenMarker.on('dragend',()=>{ if(state.pointsLocked) return; const ll=origenMarker.getLatLng(); setOrigen({lat:ll.lat,lng:ll.lng},true); });
-  state.origen=p; $('#origenTxt').textContent=`${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`; if(recalc) recalcRoute();
+  state.origen=p; const t=$('#origenTxt'); if(t) t.textContent=`${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`; if(recalc) recalcRoute();
 }
 function setDestino(p,recalc=false){
   if(destinoMarker) map.removeLayer(destinoMarker);
   destinoMarker=L.marker([p.lat,p.lng],{draggable:!state.pointsLocked}).addTo(map).bindPopup('Destino');
   destinoMarker.on('dragend',()=>{ if(state.pointsLocked) return; const ll=destinoMarker.getLatLng(); setDestino({lat:ll.lat,lng:ll.lng},true); });
-  state.destino=p; $('#destinoTxt').textContent=`${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`; if(recalc) recalcRoute();
+  state.destino=p; const t=$('#destinoTxt'); if(t) t.textContent=`${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`; if(recalc) recalcRoute();
 }
 function recalcRoute(){ if(!(state.origen&&state.destino)){ updateInfoHaversine(); return; }
   ensureRouting().setWaypoints([L.latLng(state.origen.lat,state.origen.lng),L.latLng(state.destino.lat,state.destino.lng)]);
@@ -509,20 +624,13 @@ function limpiar(){
   if(origenMarker) map.removeLayer(origenMarker); origenMarker=null; state.origen=null;
   if(destinoMarker) map.removeLayer(destinoMarker); destinoMarker=null; state.destino=null;
   if(routing){ routing.setWaypoints([]); } state.routeKm=0; state.routeMin=0;
-  $('#origenTxt').textContent='—'; $('#destinoTxt').textContent='—'; $('#kmTxt').textContent='0.00'; $('#minTxt').textContent='0'; $('#fareTxt').textContent=fmt(0);
-  $('#actividad').textContent='Toca el mapa para fijar Origen/Destino.';
+  const o=$('#origenTxt'), d=$('#destinoTxt'), k=$('#kmTxt'), m=$('#minTxt'), f=$('#fareTxt'); if(o) o.textContent='—'; if(d) d.textContent='—'; if(k) k.textContent='0.00'; if(m) m.textContent='0'; if(f) f.textContent=fmt(0);
+  const a=$('#actividad'); if(a) a.textContent='Toca el mapa para fijar Origen/Destino.';
 }
+function updateFareUI(){ const fare=calcFare(state.routeKm||0,state.routeMin||0); const ft=$('#fareTxt'); if(ft) ft.textContent=fmt(fare); const s=$('#surgeTxt'); if(s) s.textContent=`x${(state.surge||1).toFixed(1)}`; }
+function updateInfoHaversine(){ const d=km(state.origen,state.destino); state.routeKm=d; state.routeMin=Math.round((d/25)*60); const k=$('#kmTxt'), m=$('#minTxt'); if(k) k.textContent=d.toFixed(2); if(m) m.textContent=String(state.routeMin); updateFareUI(); }
 
-/* ===== Precios ===== */
-function fmt(n){ return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n); }
-function km(a,b){ if(!a||!b) return 0; const R=6371, dLat=(b.lat-a.lat)*Math.PI/180, dLon=(b.lng-a.lng)*Math.PI/180, la1=a.lat*Math.PI/180, la2=b.lat*Math.PI/180;
-  const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2; return 2*R*Math.asin(Math.sqrt(h));
-}
-function calcFare(distKm,durMin){ const p=state.pricing; const bruto=p.base+(distKm*p.perKm)+(durMin*p.perMin)+p.serviceFee; const surged=bruto*(state.surge||1.0); return Math.max(p.minimum,Math.round(surged)); }
-function updateFareUI(){ const fare=calcFare(state.routeKm||0,state.routeMin||0); $('#fareTxt').textContent=fmt(fare); $('#surgeTxt').textContent=`x${(state.surge||1).toFixed(1)}`; }
-function updateInfoHaversine(){ const d=km(state.origen,state.destino); state.routeKm=d; state.routeMin=Math.round((d/25)*60); $('#kmTxt').textContent=d.toFixed(2); $('#minTxt').textContent=String(state.routeMin); updateFareUI(); }
-
-/* ===== Autocomplete (Nominatim) ===== */
+/* ===== Autocomplete ===== */
 const addrInput=$('#addrSearch'), addrBox=$('#addrResults');
 function debounce(fn,ms=350){let t=null;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
 async function geocodeSearch(q){ const url=`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&q=${encodeURIComponent(q)}`; const r=await fetch(url,{headers:{'Accept-Language':'es-AR,es;q=0.9'}}); return r.ok?r.json():[]; }
@@ -547,10 +655,13 @@ document.addEventListener('click',e=>{ if(!addrBox.contains(e.target)&&e.target!
 const bannedWords=['puta','puto','cagar','mierda','hdp','concha','pija','forro','insulto','boludo'];
 function sanitizeMsg(t){ let x=t.trim(); for(const w of bannedWords){ x=x.replace(new RegExp('\\b'+w+'\\b','gi'),'***'); } return x; }
 function mySide(){ const r=state.activeRequest; if(!r||!state.fbUser) return 'pax'; if(r.pasajeroId===state.fbUser.uid) return 'pax'; if(r.conductorId===state.fbUser.uid) return 'drv'; return 'pax'; }
-$('#chatSend')?.addEventListener('click',async()=>{
-  if(!state.activeRequestId) return alert('Sin viaje activo'); const input=$('#chatInput'); const text=(input.value||'').trim(); if(!text) return;
-  const s=sanitizeMsg(text); if(/^\*{3,}$/.test(s)) return alert('Mensaje bloqueado'); await addDoc(collection(db,'requests',state.activeRequestId,'messages'),{from:mySide(),text:s,ts:serverTimestamp()}); input.value='';
-});
+async function sendChat(){
+  if(!state.activeRequestId) return alert('Sin viaje activo');
+  const input=$('#chatInput'); const textMsg=(input?.value||'').trim(); if(!textMsg) return;
+  const s=sanitizeMsg(textMsg); if(/^\*{3,}$/.test(s)) return alert('Mensaje bloqueado');
+  await addDoc(collection(db,'requests',state.activeRequestId,'messages'),{from:mySide(),text:s,ts:serverTimestamp()});
+  if(input) input.value='';
+}
 
 /* ===== Firestore: Solicitudes ===== */
 async function solicitarViaje(){
@@ -595,8 +706,8 @@ function suscribeListaPendientes(){
           <div class="chip">Origen: ${r.origen?.lat?.toFixed(4)||'-'}, ${r.origen?.lng?.toFixed(4)||'-'}</div>
           <div class="chip">Destino: ${r.destino?.lat?.toFixed(4)||'-'}, ${r.destino?.lng?.toFixed(4)||'-'}</div>
         </div>
-        <div class="row" style="margin-top:.6rem;gap:.5rem"><button class="btn primary" data-id="${id}">Aceptar</button></div>`;
-      card.querySelector('button').onclick=()=>aceptarViaje(id);
+        <div class="row" style="margin-top:.6rem;gap:.5rem"><button class="btn primary" data-id="${id}" type="button">Aceptar</button></div>`;
+      card.querySelector('button').addEventListener('click',()=>aceptarViaje(id));
       cont.appendChild(card);
     }
   });
@@ -612,8 +723,8 @@ function watchActiveRequest(id){
   activeReqUnsub=onSnapshot(doc(db,'requests',id),(snap)=>{
     if(!snap.exists()) return;
     const r=snap.data(); state.activeRequest={id:snap.id,...r};
-    $('#actividad').textContent=`#${id.slice(0,6)} — ${r.status.toUpperCase()} — ${fmt(r.precio)} (${(r.km||0).toFixed(2)} km, ${r.min||0} min)`;
-    const bar=$('#statusBar'), txt=$('#statusText');
+    const act=$('#actividad'); if(act) act.textContent=`#${id.slice(0,6)} — ${r.status.toUpperCase()} — ${fmt(r.precio)} (${(r.km||0).toFixed(2)} km, ${r.min||0} min)`;
+    const bar=$('#statusBar'), txt=$('#statusText'); if(!bar||!txt) return;
     if(r.status==='buscando'){ txt.textContent='BUSCANDO CONDUCTOR…'; startSearchingUI(true); showChat(false); stopDriverFollower(); }
     if(r.status==='aceptado'){ txt.textContent='CONDUCTOR ACEPTÓ — EN CAMINO'; startSearchingUI(false); showChat(true); startDriverFollower(id); }
     if(r.status==='en_curso'){ txt.textContent='VIAJE EN CURSO'; startSearchingUI(false); showChat(true); startDriverFollower(id); }
@@ -635,7 +746,7 @@ function ensureChatListener(reqId){
   });
 }
 function startSearchingUI(on){
-  const t=$('#searchTimer');
+  const t=$('#searchTimer'); if(!t) return;
   if(on){ if(!state.requestCreatedAt) state.requestCreatedAt=Date.now(); if(timerInt) clearInterval(timerInt);
     timerInt=setInterval(()=>{ const s=Math.floor((Date.now()-state.requestCreatedAt)/1000);
       const mm=String(Math.floor(s/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); t.textContent=`${mm}:${ss}`; },500);
@@ -689,99 +800,36 @@ function attachEarningsListener(){
   if(earningsUnsub) earningsUnsub();
   if(!state.fbUser) return;
   earningsUnsub=onSnapshot(query(collection(db,'requests'),where('conductorId','==',state.fbUser.uid),where('status','==','finalizado')),qs=>{
-    let sum=0; qs.forEach(d=> sum+=Number(d.data().precio||0)); totalEarnings=sum; $('#drvEarn')?.textContent=fmt(sum);
+    let sum=0; qs.forEach(d=> sum+=Number(d.data().precio||0)); totalEarnings=sum; const e=$('#drvEarn'); if(e) e.textContent=fmt(sum);
   });
 }
 
-/* ===== AUTH: estado global ===== */
-onAuthStateChanged(auth,async(user)=>{
-  state.fbUser=user;
-  if(user){
-    if(userUnsub) userUnsub();
-    const uref=doc(db,'users',user.uid);
-    userUnsub=onSnapshot(uref,async snap=>{
-      if(!snap.exists()){
-        await setDoc(uref,{name:user.displayName||'',email:user.email||'',photoURL:user.photoURL||'',ratingSum:0,ratingCount:0,createdAt:serverTimestamp()});
-        state.profile={name:user.displayName||'',email:user.email||'',photoURL:user.photoURL||'',ratingSum:0,ratingCount:0};
-      }else{ state.profile=snap.data(); }
-      $('#gate').style.display='none'; $('#app').style.display='grid';
-      if(!map) initMap(); setTimeout(()=>map.invalidateSize(),200);
-      renderTabs(); renderSide();
-    });
-  }else{
-    $('#app').style.display='none'; $('#gate').style.display='grid';
-    state.profile=null; state.activeRequestId=null; state.activeRequest=null; lockPoints(false);
-    startSearchingUI(false); stopDriverFollower(); stopDriverShare(); stopDriverTimer();
-    driverOnline=false; driverPaused=false; updateDriverHeader();
-    if(activeReqUnsub){ activeReqUnsub(); activeReqUnsub=null; }
-    if(chatUnsub){ chatUnsub(); chatUnsub=null; }
-    if(listUnsub){ listUnsub(); listUnsub=null; }
-    if(earningsUnsub){ earningsUnsub(); earningsUnsub=null; }
-    if(userUnsub){ userUnsub(); userUnsub=null; }
-  }
-});
-
-/* ===== LOGIN + REGISTRO ===== */
-function isEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
-$('#showReg').onclick=()=>{ $('#regCard').style.display='block'; };
-$('#btnCancelReg').onclick=()=>{ $('#regCard').style.display='none'; };
-$('#regPhoto').addEventListener('change',e=>{
-  const f=e.target.files?.[0]; if(!f){ $('#regPreview').src=''; return; }
-  const r=new FileReader(); r.onload=()=> $('#regPreview').src=r.result; r.readAsDataURL(f);
-});
-
-$('#btnLogin').onclick=async()=>{
-  $('#loginErr').textContent=''; showEnvWarnIfNeeded();
-  const email=$('#inEmail').value.trim(), pass=$('#inPass').value;
-  if(!isEmail(email)) return $('#loginErr').textContent='Email inválido';
-  if(!pass) return $('#loginErr').textContent='Ingresá tu contraseña';
-  const btn=$('#btnLogin'); btn.disabled=true; btn.textContent='Entrando…';
-  try{
-    await setupAuthPersistence(auth);
-    await signInWithEmailAndPassword(auth,email,pass);
-  }catch(e){
-    $('#loginErr').textContent=mapAuthError(e);
-    btn.disabled=false; btn.textContent='Entrar';
-  }
-};
-
-$('#btnReg').onclick=async()=>{
-  $('#regErr').textContent=''; showEnvWarnIfNeeded();
-  const name=$('#regName').value.trim(), email=$('#regEmail').value.trim(), pass=$('#regPass').value, pass2=$('#regPass2').value, file=$('#regPhoto').files?.[0]||null;
-  if(!name) return $('#regErr').textContent='Ingresá tu nombre';
-  if(!isEmail(email)) return $('#regErr').textContent='Email inválido';
-  if(pass.length<6) return $('#regErr').textContent='La contraseña debe tener al menos 6 caracteres';
-  if(pass!==pass2) return $('#regErr').textContent='Las contraseñas no coinciden';
-  const btn=$('#btnReg'); btn.disabled=true; btn.textContent='Creando…';
-  try{
-    await setupAuthPersistence(auth);
-    const cred=await createUserWithEmailAndPassword(auth,email,pass);
-    let photoURL='';
-    if(file){
-      const path=`avatars/${cred.user.uid}.jpg`;
-      await uploadBytes(sRef(storage,path),file);
-      photoURL=await getDownloadURL(sRef(storage,path));
-    }
-    await updateProfile(cred.user,{displayName:name,photoURL:photoURL||null});
-    await setDoc(doc(db,'users',cred.user.uid),{name,email,photoURL:photoURL||'',ratingSum:0,ratingCount:0,createdAt:serverTimestamp()});
-    $('#regCard').style.display='none';
-  }catch(e){
-    $('#regErr').textContent=mapAuthError(e);
-    btn.disabled=false; btn.textContent='Crear cuenta';
-  }
-};
-
-/* ===== Botones principales ===== */
-function bootstrapButtons(){
-  $('#btnMiUbicacion').onclick=miUbicacionComoOrigen;
-  $('#btnLimpiar').onclick=limpiar;
-  $('#btnSolicitar').onclick=solicitarViaje;
-  $('#btnCancelReqTop').onclick=cancelarSolicitud;
-  const bO=$('#modeOrigen'), bD=$('#modeDestino');
-  bO.onclick=()=>{ if(state.pointsLocked) return alert('Bloqueado por viaje activo'); selectMode='origen'; bO.setAttribute('aria-pressed','true'); bD.setAttribute('aria-pressed','false'); };
-  bD.onclick=()=>{ if(state.pointsLocked) return alert('Bloqueado por viaje activo'); selectMode='destino'; bD.setAttribute('aria-pressed','true'); bO.setAttribute('aria-pressed','false'); };
+/* ===== UI conductor ===== */
+function updateDriverHeader(){
+  $('#drvStatus')?.textContent=driverOnline?(driverPaused?'Pausado':'Online'):'Offline';
+  $('#btnDrvStart')?.toggleAttribute('disabled',driverOnline&&!driverPaused);
+  $('#btnDrvPause')?.toggleAttribute('disabled',!driverOnline);
+  $('#btnDrvFinish')?.toggleAttribute('disabled',!driverOnline);
+  const pauseBtn=$('#btnDrvPause'); if(pauseBtn) pauseBtn.textContent=driverPaused?'Reanudar':'Pausar';
+  $('#drvQueueCard')?.style.setProperty('display',(driverOnline&&!driverPaused)?'block':'none');
 }
-bootstrapButtons();
+
+/* ===== Search timer ===== */
+function startSearchingUI(on){
+  const t=$('#searchTimer'); if(!t) return;
+  if(on){ if(!state.requestCreatedAt) state.requestCreatedAt=Date.now(); if(timerInt) clearInterval(timerInt);
+    timerInt=setInterval(()=>{ const s=Math.floor((Date.now()-state.requestCreatedAt)/1000);
+      const mm=String(Math.floor(s/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); t.textContent=`${mm}:${ss}`; },500);
+  }else{ if(timerInt) clearInterval(timerInt); timerInt=null; state.requestCreatedAt=null; t.textContent='00:00'; }
+}
+
+/* ===== Boot ===== */
+document.addEventListener('DOMContentLoaded', ()=>{
+  const bad = (location.protocol !== 'http:' && location.protocol !== 'https:');
+  const warn = $('#envWarn'); if(warn) warn.style.display = bad ? 'block' : 'none';
+});
+
+/* ===== Side helpers already referenced above ===== */
 </script>
 </body>
 </html>
