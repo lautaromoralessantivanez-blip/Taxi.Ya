@@ -5,9 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>Taxi Ya — Firebase</title>
 
-<!-- Leaflet -->
+<!-- Leaflet core -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Leaflet Routing Machine + OSRM -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
 
@@ -21,7 +25,7 @@ html,body{height:100%}
 body{margin:0;background:linear-gradient(180deg,#0b0f15,#0b0f15 60%,#0a0f19);color:var(--ink);font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial}
 button,input,select{font-family:inherit}
 
-/* Gate (login/registro previo) */
+/* AUTH GATE (bloquea hasta logueo/registro) */
 #gate{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(1200px 800px at 50% -10%,#13202e 0%, #0b0f15 60%, #0a0f19 100%);z-index:100}
 .gate-card{width:min(920px,92vw);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1rem}
 .gate-title{display:flex;align-items:center;gap:.6rem;margin:.25rem 0 1rem}
@@ -35,7 +39,7 @@ button,input,select{font-family:inherit}
 .btn.primary{background:var(--accent);color:#111;border-color:#e6b800}
 .err{color:#fecaca}
 
-/* App */
+/* APP */
 .app{min-height:100dvh;display:grid;grid-template-rows:auto 1fr}
 .header{display:flex;gap:.5rem;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--line);background:rgba(13,19,27,.7);backdrop-filter:blur(12px);position:sticky;top:0;z-index:20}
 .brand{display:flex;align-items:center;gap:.6rem}
@@ -57,8 +61,10 @@ button,input,select{font-family:inherit}
 .badge.ok{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.35)}
 .help{color:var(--muted);font-size:.86rem}
 
-/* Map */
-#map{width:100%;min-height:520px;height:520px}
+/* MAPA: altura estable y banner de estado */
+.map-wrap{position:relative}
+#map{width:100%;height:68vh;min-height:420px}
+.leaflet-container{background:#0b0f15} /* evita “parches” blancos al mover */
 .map-banner{position:absolute;top:18px;left:50%;transform:translateX(-50%);background:#0f172a;opacity:.96;border:1px solid #243045;padding:.4rem .8rem;border-radius:10px;font-weight:600}
 
 /* Chat */
@@ -67,7 +73,7 @@ button,input,select{font-family:inherit}
 .msg{display:inline-block;background:#12202e;border:1px solid var(--line);padding:.5rem .65rem;border-radius:10px;margin:.25rem 0}
 .msg.me{background:#1f2a37}
 
-/* Mobile tweaks */
+/* Responsive */
 @media (max-width: 1080px){
   .container{grid-template-columns:1fr}
   .aside{order:2}
@@ -76,6 +82,7 @@ button,input,select{font-family:inherit}
 @media (max-width: 680px){
   .tabs{position:fixed;bottom:10px;left:0;right:0;justify-content:center;z-index:40}
   .tab{background:#131c28;border-color:#223043}
+  #map{height:64vh;min-height:360px}
 }
 </style>
 </head>
@@ -117,7 +124,7 @@ button,input,select{font-family:inherit}
   </div>
 </div>
 
-<!-- ==================== APP ==================== -->
+<!-- ==================== APP (oculta hasta login) ==================== -->
 <div class="app" id="app" style="display:none">
   <header class="header">
     <div class="brand">
@@ -139,16 +146,16 @@ button,input,select{font-family:inherit}
 
     <main class="main">
       <div class="panel-head"><strong id="mainTitle">Mapa</strong></div>
-      <div class="panel-body" style="position:relative">
+      <div class="panel-body">
         <div id="mapBanner" class="map-banner" style="display:none">BUSCANDO CONDUCTOR… <span id="searchTimer" style="opacity:.8;margin-left:.4rem">00:00</span></div>
 
         <div class="card" style="margin-bottom:.75rem">
           <div class="row wrap" style="justify-content:space-between;gap:.75rem">
             <div class="row" style="gap:.5rem">
               <div class="label">Seleccionar en mapa:</div>
-              <div class="seg" id="modeSeg">
-                <button id="modeOrigen" aria-pressed="true">Origen</button>
-                <button id="modeDestino" aria-pressed="false">Destino</button>
+              <div class="seg" id="modeSeg" style="display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden">
+                <button id="modeOrigen" aria-pressed="true" style="border:0;background:#0e1620;color:#fff;padding:.45rem .8rem;cursor:pointer">Origen</button>
+                <button id="modeDestino" aria-pressed="false" style="border:0;background:#0e1620;color:#fff;padding:.45rem .8rem;cursor:pointer">Destino</button>
               </div>
             </div>
             <div class="row" style="gap:.5rem;flex-wrap:wrap">
@@ -159,7 +166,9 @@ button,input,select{font-family:inherit}
           </div>
         </div>
 
-        <div id="map" style="position:relative"></div>
+        <div class="map-wrap">
+          <div id="map"></div>
+        </div>
 
         <div class="card" style="margin-top:.75rem">
           <div class="row wrap" style="justify-content:space-between">
@@ -189,12 +198,13 @@ button,input,select{font-family:inherit}
 
 <!-- ================= Firebase + App (Módulos) ================= -->
 <script type="module">
+/* Firebase (módulos via CDN) */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, updateDoc, addDoc, collection, serverTimestamp, onSnapshot, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// *** Config de tu proyecto ***
+/* === Config de tu proyecto === */
 const firebaseConfig = {
   apiKey: "AIzaSyBu523IOGnIZGfAkdlLdVLcENwLgv5KU9o",
   authDomain: "taxi-ya-3be33.firebaseapp.com",
@@ -210,75 +220,59 @@ try{ getAnalytics(appFB); }catch(e){}
 const auth = getAuth(appFB);
 const db = getFirestore(appFB);
 
-// ======= Estado/constantes =======
 const $ = s => document.querySelector(s);
-let map, origenMarker, destinoMarker, meMarker, line;
+
+/* ======= Estado ======= */
+let map, origenMarker, destinoMarker, meMarker;
+let routing; // Leaflet Routing control
 let activeReqUnsub=null, chatUnsub=null, listUnsub=null, userUnsub=null, timerInt=null;
 
-let uiTab = 'pasajero'; // pestaña activa define “modo”
-let selectMode = 'origen'; // selector de puntos en el mapa
+let uiTab = 'pasajero';
+let selectMode = 'origen';
 let state = {
   fbUser: null,
   profile: null,
-  // Tarifa "estilo Uber" FIJA (no editable en UI)
-  tarifa: Object.freeze({
-    base: 800,     // cargo base
-    porKm: 350,    // por kilómetro
-    minima: 1200   // mínimo cobrable
-    // (podés ajustar estos números en código si querés)
-  }),
-  descuento: 0.10,         // descuento de la app
+  tarifa: Object.freeze({ base: 800, porKm: 350, minima: 1200 }),
+  descuento: 0.10,
   origen: null, destino: null,
   activeRequestId: null,
   activeRequest: null,
-  requestCreatedAt: null    // para el timer “buscando”
+  requestCreatedAt: null
 };
 
-// ======= Tabs =======
-function tabsForState(){
-  if(!state.fbUser) return [];
-  return [
-    {id:'pasajero', label:'Pasajero'},
-    {id:'conductor', label:'Conductor'},
-    {id:'perfil',    label:'Perfil'}
-  ];
-}
+/* ======= Tabs ======= */
+function tabsForState(){ return state.fbUser ? [
+  {id:'pasajero', label:'Pasajero'},
+  {id:'conductor', label:'Conductor'},
+  {id:'perfil',    label:'Perfil'}
+] : []; }
 function renderTabs(){
   const nav = $('#tabs'); nav.innerHTML='';
   for(const t of tabsForState()){
     const el = document.createElement('button');
-    el.className='tab';
-    el.textContent=t.label;
+    el.className='tab'; el.textContent=t.label;
     el.setAttribute('aria-selected', uiTab===t.id);
     el.onclick = ()=>{ uiTab=t.id; onTabChange(); };
     nav.appendChild(el);
   }
-  setStatusChip();
+  $('#statusChip').textContent = state.fbUser? (state.profile?.name || 'online') : 'offline';
 }
 function onTabChange(){
-  // Cambiamos automáticamente el modo de mapa en función de la pestaña, si hace falta algo específico
-  // (por ahora, solo actualizamos lateral)
   renderSide();
-  if(map) setTimeout(()=>map.invalidateSize(), 120);
+  setTimeout(()=> map?.invalidateSize(), 120);
 }
 
-// ======= UI Aux =======
-function setStatusChip(){
-  const sc = $('#statusChip');
-  sc.textContent = state.fbUser? (state.profile?.name || 'online') : 'offline';
-}
+/* ======= Lateral ======= */
 function renderSide(){
   const body = $('#sideBody'); const title = $('#sideTitle');
   const titles = { pasajero:'Pasajero', conductor:'Conductor', perfil:'Perfil' };
   title.textContent = titles[uiTab]||'Panel';
   body.innerHTML='';
 
-  if(uiTab==='pasajero') return body.appendChild(cardPasajero());
-  if(uiTab==='conductor') return body.appendChild(cardConductor());
-  if(uiTab==='perfil')    return body.appendChild(cardPerfil());
+  if(uiTab==='pasajero') body.appendChild(cardPasajero());
+  if(uiTab==='conductor') body.appendChild(cardConductor());
+  if(uiTab==='perfil')    body.appendChild(cardPerfil());
 }
-
-// ======= Componentes =======
 function cardPasajero(){
   const el = document.createElement('div'); el.className='grid';
   el.innerHTML = `
@@ -350,34 +344,80 @@ function cardPerfil(){
   return el;
 }
 
-// ======= Mapa =======
+/* ======= Mapa + Routing ======= */
 function initMap(){
-  map = L.map('map', { zoomControl:true }).setView([-34.6037,-58.3816], 12);
+  map = L.map('map', { zoomControl:true, preferCanvas:true }).setView([-34.6037,-58.3816], 12);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(map);
-  setTimeout(()=>map.invalidateSize(), 250);
+  // asegurar render correcto
+  setTimeout(()=> map.invalidateSize(), 200);
+  window.addEventListener('resize', ()=> map.invalidateSize());
+
   map.on('click', (e)=>{
     const p = { lat: e.latlng.lat, lng: e.latlng.lng };
-    if(selectMode==='origen'){ setOrigen(p); } else { setDestino(p); }
+    if(selectMode==='origen'){ setOrigen(p,true); } else { setDestino(p,true); }
   });
 }
-function drawLine(){
-  if(line){ map.removeLayer(line); line=null; }
-  if(state.origen && state.destino){
-    line = L.polyline([[state.origen.lat,state.origen.lng],[state.destino.lat,state.destino.lng]], {color:'#ffd34d'}).addTo(map);
-  }
+
+function ensureRouting(){
+  if(routing) return routing;
+  routing = L.Routing.control({
+    waypoints: [],
+    router: L.Routing.osrmv1({
+      serviceUrl: 'https://router.project-osrm.org/route/v1',
+      profile: 'driving' // sigue calles (auto)
+    }),
+    lineOptions: { addWaypoints:false, extendToWaypoints:true, missingRouteTolerance: 20 },
+    show:false, collapsible:true, fitSelectedRoutes:true
+  })
+  .on('routesfound', (e)=>{
+    const route = e.routes?.[0];
+    if(!route) return;
+    const distKm = (route.summary.totalDistance || 0) / 1000;
+    const durMin = Math.round((route.summary.totalTime || 0) / 60);
+    $('#kmTxt').textContent = distKm.toFixed(2);
+    $('#fareTxt').textContent = fmt(calcularTarifa(distKm));
+    // foco en la ruta
+    try{ map.fitBounds(route.bounds, {padding:[30,30]}); }catch(_){}
+    // actividad
+    $('#actividad').textContent = `Ruta: ${distKm.toFixed(2)} km • ~${durMin} min`;
+  })
+  .on('routingerror', ()=>{
+    // fallback a cálculo directo si falla OSRM
+    updateInfoHaversine();
+  })
+  .addTo(map);
+  return routing;
 }
-function setOrigen(p){
+
+function setOrigen(p, recalc=false){
   if(origenMarker) map.removeLayer(origenMarker);
-  origenMarker = L.marker([p.lat, p.lng], { draggable:true }).addTo(map).bindPopup('Origen');
-  origenMarker.on('dragend',()=>{ const ll=origenMarker.getLatLng(); setOrigen({lat:ll.lat,lng:ll.lng}); });
-  state.origen=p; updateInfo(); drawLine();
+  origenMarker = L.marker([p.lat,p.lng], {draggable:true}).addTo(map).bindPopup('Origen');
+  origenMarker.on('dragend', ()=> {
+    const ll = origenMarker.getLatLng();
+    setOrigen({lat:ll.lat,lng:ll.lng}, true);
+  });
+  state.origen=p;
+  $('#origenTxt').textContent = `${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`;
+  if(recalc) recalcRoute();
 }
-function setDestino(p){
+function setDestino(p, recalc=false){
   if(destinoMarker) map.removeLayer(destinoMarker);
-  destinoMarker = L.marker([p.lat, p.lng], { draggable:true, icon: L.divIcon({className:'', html:'<div style="background:#1e293b;border:2px solid #334155;color:#fff;padding:2px 6px;border-radius:6px">🎯</div>'}) }).addTo(map).bindPopup('Destino');
-  destinoMarker.on('dragend',()=>{ const ll=destinoMarker.getLatLng(); setDestino({lat:ll.lat,lng:ll.lng}); });
-  state.destino=p; updateInfo(); drawLine();
+  destinoMarker = L.marker([p.lat,p.lng], {draggable:true}).addTo(map).bindPopup('Destino');
+  destinoMarker.on('dragend', ()=> {
+    const ll = destinoMarker.getLatLng();
+    setDestino({lat:ll.lat,lng:ll.lng}, true);
+  });
+  state.destino=p;
+  $('#destinoTxt').textContent = `${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`;
+  if(recalc) recalcRoute();
 }
+
+function recalcRoute(){
+  if(!(state.origen && state.destino)) { updateInfoHaversine(); return; }
+  const r = ensureRouting();
+  r.setWaypoints([ L.latLng(state.origen.lat,state.origen.lng), L.latLng(state.destino.lat,state.destino.lng) ]);
+}
+
 function miUbicacionComoOrigen(){
   if(!navigator.geolocation){ alert('Geolocalización no disponible'); return; }
   navigator.geolocation.getCurrentPosition((pos)=>{
@@ -385,20 +425,25 @@ function miUbicacionComoOrigen(){
     if(meMarker) map.removeLayer(meMarker);
     meMarker = L.circleMarker([p.lat,p.lng], {radius:7, color:'#34d399'}).addTo(map).bindPopup('Mi ubicación');
     map.setView([p.lat,p.lng], 14);
-    setOrigen(p);
+    setOrigen(p,true);
   }, ()=> alert('No se pudo obtener ubicación'));
 }
+
 function limpiar(){
   if(origenMarker) map.removeLayer(origenMarker); origenMarker=null; state.origen=null;
   if(destinoMarker) map.removeLayer(destinoMarker); destinoMarker=null; state.destino=null;
-  if(line) map.removeLayer(line); line=null;
-  updateInfo();
+  if(routing){ routing.setWaypoints([]); }
+  $('#origenTxt').textContent = '—';
+  $('#destinoTxt').textContent = '—';
+  $('#kmTxt').textContent = '0.00';
+  $('#fareTxt').textContent = fmt(0);
+  $('#actividad').textContent = 'Toca el mapa para fijar Origen/Destino.';
 }
+
 function fmt(n){ return new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', maximumFractionDigits:0}).format(n); }
 function km(a,b){
   if(!a||!b) return 0;
-  const R=6371;
-  const dLat=(b.lat-a.lat)*Math.PI/180, dLon=(b.lng-a.lng)*Math.PI/180;
+  const R=6371; const dLat=(b.lat-a.lat)*Math.PI/180, dLon=(b.lng-a.lng)*Math.PI/180;
   const la1=a.lat*Math.PI/180, la2=b.lat*Math.PI/180;
   const h=Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;
   return 2*R*Math.asin(Math.sqrt(h));
@@ -409,15 +454,13 @@ function calcularTarifa(distKm){
   const conDesc = bruto * (1 - state.descuento);
   return Math.max(t.minima, Math.round(conDesc));
 }
-function updateInfo(){
-  const o = state.origen, d=state.destino; const dist = km(o,d);
-  $('#origenTxt').textContent = o? `${o.lat.toFixed(4)}, ${o.lng.toFixed(4)}` : '—';
-  $('#destinoTxt').textContent = d? `${d.lat.toFixed(4)}, ${d.lng.toFixed(4)}` : '—';
+function updateInfoHaversine(){
+  const dist = km(state.origen, state.destino);
   $('#kmTxt').textContent = dist.toFixed(2);
   $('#fareTxt').textContent = fmt(calcularTarifa(dist));
 }
 
-// ======= Chat =======
+/* ======= Chat ======= */
 const bannedWords = ['puta','puto','cagar','mierda','hdp','concha','pija','forro','insulto','boludo'];
 function sanitizeMsg(text){
   let t = text.trim();
@@ -441,17 +484,18 @@ $('#chatSend').addEventListener('click', async ()=>{
   input.value='';
 });
 
-// ======= Firestore: Solicitudes =======
+/* ======= Firestore: Solicitudes ======= */
 async function solicitarViaje(){
-  if(!state.origen || !state.destino) return alert('Elegí origen y destino');
-  const dist = km(state.origen,state.destino);
-  const precio = calcularTarifa(dist);
+  if(!(state.origen && state.destino)) return alert('Elegí origen y destino');
+  // si hay ruta, usar distancia real del último cálculo (si no, fallback)
+  let distKm = Number($('#kmTxt').textContent.replace(',','.')) || km(state.origen,state.destino);
+  const precio = calcularTarifa(distKm);
   const docRef = await addDoc(collection(db,'requests'),{
     status:'buscando',
     pasajeroId: state.fbUser.uid,
     pasajeroNombre: state.profile?.name || state.fbUser.email,
     origen: state.origen, destino: state.destino,
-    km: dist, precio,
+    km: distKm, precio,
     createdAt: serverTimestamp()
   });
   state.activeRequestId = docRef.id;
@@ -501,7 +545,7 @@ async function finalizarTrayecto(){
   await updateDoc(doc(db,'requests',state.activeRequestId), { status:'finalizado' });
 }
 
-// ======= Watch request + UI de “buscando” =======
+/* ======= Watch request + UI “buscando” ======= */
 function watchActiveRequest(id){
   if(activeReqUnsub) activeReqUnsub();
   activeReqUnsub = onSnapshot(doc(db,'requests',id), async (snap)=>{
@@ -536,8 +580,6 @@ function ensureChatListener(reqId){
     log.scrollTop = log.scrollHeight;
   });
 }
-
-// Timer + Banner “BUSCANDO…”
 function startSearchingUI(on){
   const banner = $('#mapBanner');
   if(on){
@@ -558,10 +600,11 @@ function startSearchingUI(on){
   }
 }
 
-// ======= Auth + Gate =======
+/* ======= AUTH: gate estricto ======= */
 onAuthStateChanged(auth, async (user)=>{
   state.fbUser = user;
   if(user){
+    // Cargar perfil
     if(userUnsub) userUnsub();
     const uref = doc(db,'users',user.uid);
     userUnsub = onSnapshot(uref, async (snap)=>{
@@ -571,14 +614,18 @@ onAuthStateChanged(auth, async (user)=>{
       }else{
         state.profile = snap.data();
       }
+      // Mostrar app (recién ahora) y crear mapa
       $('#gate').style.display='none';
       $('#app').style.display='grid';
+      if(!map) initMap(); // se inicializa aquí, no antes
+      setTimeout(()=> map.invalidateSize(), 200);
       renderTabs(); renderSide();
     });
   } else {
-    // Mostrar gate, esconder app
+    // Volver a gate
     $('#app').style.display='none';
     $('#gate').style.display='grid';
+    // limpiar suscripciones
     state.profile=null; state.activeRequestId=null; state.activeRequest=null;
     if(activeReqUnsub){ activeReqUnsub(); activeReqUnsub=null; }
     if(chatUnsub){ chatUnsub(); chatUnsub=null; }
@@ -587,12 +634,13 @@ onAuthStateChanged(auth, async (user)=>{
   }
 });
 
-// ======= Gate handlers =======
+/* ======= Gate handlers ======= */
 $('#btnReg').onclick = async ()=>{
   const name=$('#regName').value.trim();
   const email=$('#regEmail').value.trim();
   const pass=$('#regPass').value; const pass2=$('#regPass2').value;
   $('#regErr').textContent='';
+  if(!name) return $('#regErr').textContent='Ingresá tu nombre';
   if(pass!==pass2) return $('#regErr').textContent='Las contraseñas no coinciden';
   try{
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
@@ -606,9 +654,8 @@ $('#btnLogin').onclick = async ()=>{
   catch(e){ $('#loginErr').textContent = e.message; }
 };
 
-// ======= Bootstrap =======
-function bootstrap(){
-  initMap();
+/* ======= Controles de UI ======= */
+function bootstrapButtons(){
   $('#btnMiUbicacion').onclick = miUbicacionComoOrigen;
   $('#btnLimpiar').onclick = limpiar;
   $('#btnSolicitar').onclick = solicitarViaje;
@@ -616,7 +663,7 @@ function bootstrap(){
   bO.onclick = ()=>{ selectMode='origen'; bO.setAttribute('aria-pressed','true'); bD.setAttribute('aria-pressed','false'); };
   bD.onclick = ()=>{ selectMode='destino'; bD.setAttribute('aria-pressed','true'); bO.setAttribute('aria-pressed','false'); };
 }
-bootstrap();
+bootstrapButtons(); // sólo enlaza botones; mapa se crea post-login
 </script>
 </body>
 </html>
