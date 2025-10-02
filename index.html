@@ -210,8 +210,10 @@ let state = {
   precios: { base: 800, porKm: 350, descuento: 0.10 },
   origen: null, destino: null,
   activeRequestId: null, // id en Firestore
+  activeRequest: null,   // snapshot actual del request (para saber lado pax/drv)
 };
 
+// (seguimos permitiendo roles en Perfil, pero no los usamos para bloquear)
 function normalizeRole(r){
   r=(r||'').toLowerCase();
   if(['pasajero','passenger','pax'].includes(r)) return 'pasajero';
@@ -270,7 +272,7 @@ function renderTabs(){
 // ======= Lateral =======
 function setStatusChip(){
   const sc = document.getElementById('statusChip');
-  if(state.fbUser){ sc.textContent = normalizeRole(state.profile?.role); }
+  if(state.fbUser){ sc.textContent = (state.profile?.name || 'online'); }
   else { sc.textContent = 'offline'; }
   sc.className = 'chip';
   document.getElementById('authBadge').textContent = state.fbUser? 'Conectado' : 'No conectado';
@@ -334,7 +336,7 @@ function cardRegistro(){
         await setDoc(doc(db,'users',cred.user.uid), {
           name, role, email, ratingSum:0, ratingCount:0, createdAt: serverTimestamp()
         });
-        // onAuthStateChanged moverá a Pasajero automáticamente
+        // onAuthStateChanged te lleva a “Pasajero”
       }catch(e){ document.getElementById('regErr').textContent = e.message; }
     };
     document.getElementById('btnLogin').onclick = async ()=>{
@@ -407,7 +409,7 @@ function cardPerfil(){
       </div>
     </div>
     <div class="card">
-      <div class="label">Cambiar rol</div>
+      <div class="label">Cambiar rol (opcional)</div>
       <div class="row" style="gap:.5rem;flex-wrap:wrap">
         <select id="roleSel" class="input" style="max-width:220px"><option value="pasajero">Pasajero</option><option value="conductor">Conductor</option></select>
         <button class="btn" id="btnRole">Guardar</button>
@@ -515,11 +517,11 @@ function updateInfo(){
 }
 
 // ======= Firestore: Solicitudes/ Viaje =======
+// *** FIX: cualquiera puede pedir viaje (sin chequear rol) ***
 async function solicitarViaje(){
   if(!state.fbUser) return alert('Inicia sesión');
-  const role = normalizeRole(state.profile?.role);
-  if(role!=='pasajero') return alert('Cambiá a rol PASAJERO en Perfil.');
   if(!state.origen || !state.destino) return alert('Elegí origen y destino');
+
   const dist = km(state.origen,state.destino);
   const precio = Math.max(0, Math.round((state.precios.base + dist*state.precios.porKm) * (1 - state.precios.descuento)));
   const docRef = await addDoc(collection(db,'requests'),{
@@ -540,11 +542,13 @@ async function cancelarSolicitud(){
   await updateDoc(doc(db,'requests',state.activeRequestId), { status:'cancelado' });
 }
 
+// Mantiene info del viaje activo y habilita chat dinámico
 function watchActiveRequest(id){
   if(activeReqUnsub) activeReqUnsub();
   activeReqUnsub = onSnapshot(doc(db,'requests',id), (snap)=>{
     if(!snap.exists()) return;
     const r = snap.data();
+    state.activeRequest = { id: snap.id, ...r };
     document.getElementById('actividad').textContent = `#${id.slice(0,6)} — ${r.status.toUpperCase()} — ${fmt(r.precio)} (${(r.km||0).toFixed(2)} km)`;
     if(r.status==='finalizado' || r.status==='cancelado'){
       setTimeout(async ()=>{
@@ -556,6 +560,7 @@ function watchActiveRequest(id){
         alert('¡Gracias por calificar!');
       }, 50);
       state.activeRequestId=null;
+      state.activeRequest=null;
       if(chatUnsub){ chatUnsub(); chatUnsub=null; }
     }else{
       ensureChatListener(id);
@@ -563,27 +568,38 @@ function watchActiveRequest(id){
   });
 }
 
+// devuelve 'pax' o 'drv' según el usuario actual en el request activo
+function mySide(){
+  const r = state.activeRequest;
+  if(!r || !state.fbUser) return 'pax';
+  if(r.pasajeroId === state.fbUser.uid) return 'pax';
+  if(r.conductorId === state.fbUser.uid) return 'drv';
+  return 'pax';
+}
+
 function ensureChatListener(reqId){
   if(chatUnsub) return;
   const msgsRef = collection(db,'requests',reqId,'messages');
   chatUnsub = onSnapshot(query(msgsRef, orderBy('ts','asc'), limit(100)), (qs)=>{
     const log = document.getElementById('chatlog'); log.innerHTML='';
+    const r = state.activeRequest;
+    const mine = mySide();
     qs.forEach(d=>{
       const m=d.data();
-      const who = m.from === (normalizeRole(state.profile?.role)==='pasajero'?'pax':'drv') ? 'me':'';
+      const who = (m.from===mine)? 'me':'';
       log.insertAdjacentHTML('beforeend', `<div class="msg ${who}"><b>${m.from==='pax'?'Pasajero':'Conductor'}:</b> ${m.text}</div>`);
     });
     log.scrollTop = log.scrollHeight;
   });
 }
 
-// enviar chat
+// enviar chat (sin depender del rol del Perfil)
 document.getElementById('chatSend').addEventListener('click', async ()=>{
   if(!state.activeRequestId) return alert('Sin viaje activo');
   const input = document.getElementById('chatInput'); let text = (input.value||'').trim(); if(!text) return;
   const sanitized = sanitizeMsg(text); if(/^\*{3,}$/.test(sanitized)) return alert('Mensaje bloqueado');
   await addDoc(collection(db,'requests',state.activeRequestId,'messages'),{
-    from: normalizeRole(state.profile?.role)==='pasajero'?'pax':'drv', text: sanitized, ts: serverTimestamp()
+    from: mySide(), text: sanitized, ts: serverTimestamp()
   });
   input.value='';
 });
@@ -616,9 +632,9 @@ function suscribeListaPendientes(){
   });
 }
 
+// *** FIX: permitir aceptar sin chequear rol del Perfil ***
 async function aceptarViaje(id){
   if(!state.fbUser) return alert('Inicia sesión');
-  if(normalizeRole(state.profile?.role)!=='conductor') return alert('Cambiá a rol CONDUCTOR en Perfil.');
   await updateDoc(doc(db,'requests',id), {
     status:'aceptado',
     conductorId: state.fbUser.uid,
@@ -651,9 +667,9 @@ onAuthStateChanged(auth, async (user)=>{
       }
       renderTabs(); renderSide();
     });
-    currentTab='pasajero';
+    currentTab='pasajero'; // *** aparece Registro primero y luego desaparece ***
   } else {
-    state.profile = null; state.activeRequestId=null;
+    state.profile = null; state.activeRequestId=null; state.activeRequest=null;
     if(activeReqUnsub){ activeReqUnsub(); activeReqUnsub=null; }
     if(chatUnsub){ chatUnsub(); chatUnsub=null; }
     if(listUnsub){ listUnsub(); listUnsub=null; }
