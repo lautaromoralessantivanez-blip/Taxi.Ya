@@ -358,9 +358,9 @@ const db   = firebase.firestore();
 const usersCol = db.collection("users");
 const ridesCol = db.collection("rides");
 
-// Persistencia y lenguaje
+// Persistencia y lenguaje (sin await de nivel superior)
 auth.useDeviceLanguage();
-try { await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); } catch(_) {}
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
 /* ================= Utils ================= */
 const $=s=>document.querySelector(s);
@@ -409,7 +409,7 @@ document.body.classList.toggle("theme-light", currentTheme==="light");
 
 let mapRide=null, mapDriver=null;
 let riderMarkers={origin:null,dest:null,driver:null}, riderLines={o2d:null,drv:null};
-let origin=null, dest=null, riderActiveUnsub=null, lastDriverPt=null;
+let origin=null, dest=null, riderActiveUnsub=null, lastDriverPt=null; /* <-- ÚNICA declaración */
 let pickPendingPt=null;
 
 function tileLayerFor(theme){
@@ -563,7 +563,6 @@ $("#chatInputRider").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#ch
 $("#chatInputDriver").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#chatSendDriver").click(); });
 
 /* ===== Viajes: pasajero activo (chat + rating) ===== */
-let lastDriverPt=null, riderActiveUnsub=null;
 function riderAttachActiveRide(){
   if(riderActiveUnsub) riderActiveUnsub();
   riderActiveUnsub = ridesCol.where("riderId","==", auth.currentUser.uid).where("finished","==", false).limit(1)
@@ -596,7 +595,7 @@ function riderAttachActiveRide(){
   });
 }
 
-/* ===== Conductor (recortado por espacio: igual que antes) ===== */
+/* ===== Conductor ===== */
 let mapDriverReady=false, driverMarker=null, prevDriverPoint=null;
 let activePolylineToPick=null, activePolylineO2D=null;
 let driverAvailUnsub=null, driverMineUnsub=null;
@@ -834,8 +833,8 @@ async function emailExists(email){
 /* ============ REGISTRO / INICIO DE SESIÓN (ARREGLADO) ============ */
 function setBusy(btn, busy){
   btn.disabled = !!busy;
-  btn.dataset._t = btn.textContent;
-  btn.textContent = busy ? "Procesando…" : (btn.dataset._t || btn.textContent);
+  btn.dataset._t ??= btn.textContent;
+  btn.textContent = busy ? "Procesando…" : btn.dataset._t;
 }
 
 $("#btnSignUp").addEventListener("click", async ()=>{
@@ -876,7 +875,7 @@ $("#btnSignIn").addEventListener("click", async ()=>{
     pill($("#msg"), "Listo, sesión iniciada.", "ok");
   }catch(e){
     const code=e?.code||"";
-    if(code==="auth/unauthorized-domain"){ pill($("#msg"), "Dominio no autorizado en Firebase Auth. Agregá tu dominio (GitHub Pages) en Authentication → Settings → Authorized domains.", "error"); }
+    if(code==="auth/unauthorized-domain"){ pill($("#msg"), "Dominio no autorizado en Firebase Auth. Agregá tu dominio en Authentication → Settings → Authorized domains.", "error"); }
     else if(code==="auth/user-not-found"){ pill($("#msg"), "No existe una cuenta con ese correo. Registrate o usá ‘Entrar rápido (demo)’.", "warn"); }
     else if(code==="auth/wrong-password" || code==="auth/invalid-credential"){ pill($("#msg"), "Correo o contraseña incorrectos.", "error"); }
     else pill($("#msg"), `No se pudo iniciar sesión (${code}).`, "error");
@@ -908,7 +907,7 @@ $("#btnForgot").addEventListener("click", async ()=>{
 $("#btnFast").addEventListener("click", async ()=>{
   const emailTyped = $("#loginEmail").value.trim();
   const demoEmail = emailTyped || `demo-${Date.now()}@demo.local`;
-  const demoPass  = "demo12345"; // contraseña fija para demo
+  const demoPass  = "demo12345";
   const btn = $("#btnFast");
   try{
     setBusy(btn,true);
@@ -1023,7 +1022,7 @@ auth.onAuthStateChanged(async (u)=>{
   }
 });
 
-/* Historial local (placeholder) */
+/* Historial local */
 function renderHistory(){
   if(!currentUser) return; const key=`taxiya_rider_history_${currentUser.uid}`; let list=[]; try{list=JSON.parse(localStorage.getItem(key)||"[]");}catch(_){}
   const wrap=$("#riderHistory"); wrap.innerHTML=""; if(!list.length) wrap.innerHTML=`<div class="small muted">Sin viajes.</div>`;
