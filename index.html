@@ -1,10 +1,9 @@
-# Save the latest HTML code from canvas into a downloadable file
-code = """<!doctype html>
+<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>Taxi Ya — Firebase + Pestañas</title>
+<title>Taxi Ya — Firebase</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -90,7 +89,7 @@ button,input,select{font-family:inherit}
 
 /* Segmented control */
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
-.seg button{border:0;background:#0e1620;color:var(--ink);padding:.45rem .8rem;cursor:pointer}
+.seg button{border:0;background:#0e1620;color:#fff;padding:.45rem .8rem;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--accent);color:#111}
 
 .err{color:#fecaca}
@@ -110,7 +109,7 @@ button,input,select{font-family:inherit}
   <div class="container">
     <aside class="aside">
       <div class="panel-head">
-        <strong id="sideTitle">Cuenta</strong>
+        <strong id="sideTitle">Panel</strong>
         <span class="badge ok" id="authBadge">No conectado</span>
       </div>
       <div class="panel-body" id="sideBody"><!-- lateral dinámico --></div>
@@ -184,7 +183,7 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebas
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, updateDoc, addDoc, collection, serverTimestamp, onSnapshot, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// *** Config proporcionada ***
+// *** Config de tu proyecto ***
 const firebaseConfig = {
   apiKey: "AIzaSyBu523IOGnIZGfAkdlLdVLcENwLgv5KU9o",
   authDomain: "taxi-ya-3be33.firebaseapp.com",
@@ -196,14 +195,14 @@ const firebaseConfig = {
 };
 
 const appFB = initializeApp(firebaseConfig);
-try{ getAnalytics(appFB); }catch(e){ /* analytics puede fallar fuera de https; ignorar */ }
+try{ getAnalytics(appFB); }catch(e){ /* puede fallar fuera de https */ }
 const auth = getAuth(appFB);
 const db = getFirestore(appFB);
 
 // ======= Estado y utilidades =======
 const $ = (sel) => document.querySelector(sel);
-const tabsEl = $('#tabs');
-let map, origenMarker, destinoMarker, meMarker, line, activeReqUnsub=null, chatUnsub=null, listUnsub=null;
+let map, origenMarker, destinoMarker, meMarker, line;
+let activeReqUnsub=null, chatUnsub=null, listUnsub=null, userUnsub=null;
 let selectMode = 'origen'; // origen | destino
 let state = {
   fbUser: null,
@@ -212,6 +211,13 @@ let state = {
   origen: null, destino: null,
   activeRequestId: null, // id en Firestore
 };
+
+function normalizeRole(r){
+  r=(r||'').toLowerCase();
+  if(['pasajero','passenger','pax'].includes(r)) return 'pasajero';
+  if(['conductor','driver','drv'].includes(r)) return 'conductor';
+  return 'pasajero';
+}
 
 const bannedWords = ['puta','puto','cagar','mierda','hdp','concha','pija','forro','insulto','boludo'];
 function sanitizeMsg(text){
@@ -230,60 +236,67 @@ function km(a,b){
   return 2*R*Math.asin(Math.sqrt(h));
 }
 
-// ======= Tabs =======
-const TABS = [
-  {id:'cuenta', label:'Cuenta'},
-  {id:'pasajero', label:'Pasajero'},
-  {id:'conductor', label:'Conductor'},
-  {id:'perfil', label:'Perfil'},
-  {id:'ajustes', label:'Ajustes'}
-];
-let currentTab = 'cuenta';
+// ======= Tabs dinámicas =======
+let currentTab = 'registro'; // siempre empezamos en Registración
+
+function tabsForState(){
+  if(!state.fbUser){
+    return [{id:'registro', label:'Registración'}];
+  }
+  return [
+    {id:'pasajero', label:'Pasajero'},
+    {id:'conductor', label:'Conductor'},
+    {id:'perfil', label:'Perfil'},
+    {id:'ajustes', label:'Ajustes'}
+  ];
+}
 
 function renderTabs(){
-  tabsEl.innerHTML = '';
-  for(const t of TABS){
+  const tabs = tabsForState();
+  const nav = document.getElementById('tabs');
+  nav.innerHTML = '';
+  if(!tabs.find(t=>t.id===currentTab)){ currentTab = tabs[0].id; }
+  for(const t of tabs){
     const el = document.createElement('button');
     el.className = 'tab';
     el.textContent = t.label;
     el.setAttribute('aria-selected', t.id===currentTab);
-    el.onclick = ()=>{ currentTab=t.id; renderSide(); };
-    tabsEl.appendChild(el);
+    el.onclick = ()=>{ currentTab=t.id; renderSide(); if(map) setTimeout(()=>map.invalidateSize(), 120); };
+    nav.appendChild(el);
   }
-}
-
-function setStatusChip(){
-  const sc = $('#statusChip');
-  if(state.fbUser){ sc.textContent = state.profile? state.profile.role : 'conectado'; }
-  else { sc.textContent = 'offline'; }
-  sc.className = 'chip';
-  $('#authBadge').textContent = state.fbUser? 'Conectado' : 'No conectado';
+  setStatusChip();
 }
 
 // ======= Lateral =======
+function setStatusChip(){
+  const sc = document.getElementById('statusChip');
+  if(state.fbUser){ sc.textContent = normalizeRole(state.profile?.role); }
+  else { sc.textContent = 'offline'; }
+  sc.className = 'chip';
+  document.getElementById('authBadge').textContent = state.fbUser? 'Conectado' : 'No conectado';
+}
+
 function renderSide(){
-  renderTabs(); setStatusChip();
-  $('#sideTitle').textContent = ({
-    cuenta:'Cuenta', pasajero:'Pasajero', conductor:'Conductor', perfil:'Perfil', ajustes:'Ajustes'
-  })[currentTab];
-  const body = $('#sideBody');
+  renderTabs();
+  const title = document.getElementById('sideTitle');
+  const body = document.getElementById('sideBody');
+  title.textContent = ({registro:'Registración', pasajero:'Pasajero', conductor:'Conductor', perfil:'Perfil', ajustes:'Ajustes'})[currentTab];
   body.innerHTML='';
 
-  if(currentTab==='cuenta') { body.appendChild(cardCuenta()); return; }
-  if(!state.fbUser){ body.innerHTML = `<div class="card"><b>Inicia sesión</b><p class="help">Para usar esta sección necesitás estar conectado.</p></div>`; return; }
-  if(currentTab==='pasajero') { body.appendChild(cardPasajero()); return; }
-  if(currentTab==='conductor') { body.appendChild(cardConductor()); return; }
-  if(currentTab==='perfil') { body.appendChild(cardPerfil()); return; }
-  if(currentTab==='ajustes') { body.appendChild(cardAjustes()); return; }
+  if(currentTab==='registro') return body.appendChild(cardRegistro());
+  if(!state.fbUser){ body.innerHTML = '<div class="card"><b>Inicia sesión</b><p class="help">Registrate en la pestaña de arriba.</p></div>'; return; }
+  if(currentTab==='pasajero') return body.appendChild(cardPasajero());
+  if(currentTab==='conductor') return body.appendChild(cardConductor());
+  if(currentTab==='perfil') return body.appendChild(cardPerfil());
+  if(currentTab==='ajustes') return body.appendChild(cardAjustes());
 }
 
 // ======= Componentes =======
-function cardCuenta(){
+function cardRegistro(){
   const el = document.createElement('div'); el.className='grid';
-  if(!state.fbUser){
-    el.innerHTML = `
+  el.innerHTML = `
     <div class="card">
-      <h3 style="margin:0 0 .5rem 0">Registración</h3>
+      <h3 style="margin:0 0 .5rem 0">Crear cuenta</h3>
       <div class="grid cols-2">
         <div class="field"><label class="label">Nombre</label><input id="regName" class="input" placeholder="Ana, Mauro…"></div>
         <div class="field"><label class="label">Rol</label>
@@ -295,12 +308,12 @@ function cardCuenta(){
         <div class="field"><label class="label">Contraseña</label><input id="regPass" type="password" class="input" placeholder="mín. 6 caracteres"></div>
       </div>
       <div class="row" style="margin-top:.8rem;gap:.5rem;flex-wrap:wrap">
-        <button class="btn primary" id="btnReg">Crear cuenta</button>
+        <button class="btn primary" id="btnReg">Registrarme</button>
       </div>
       <div id="regErr" class="err"></div>
     </div>
     <div class="card">
-      <h3 style="margin:0 0 .5rem 0">Iniciar sesión</h3>
+      <h3 style="margin:0 0 .5rem 0">Ya tengo cuenta</h3>
       <div class="grid cols-2">
         <div class="field"><label class="label">Email</label><input id="inEmail" type="email" class="input"></div>
         <div class="field"><label class="label">Contraseña</label><input id="inPass" type="password" class="input"></div>
@@ -310,59 +323,26 @@ function cardCuenta(){
       </div>
       <div id="loginErr" class="err"></div>
     </div>`;
-    setTimeout(()=>{
-      $('#btnReg').onclick = async ()=>{
-        const name=$('#regName').value.trim();
-        const role=$('#regRole').value; const email=$('#regEmail').value.trim(); const pass=$('#regPass').value;
-        $('#regErr').textContent='';
-        try{
-          const cred = await createUserWithEmailAndPassword(auth, email, pass);
-          await updateProfile(cred.user, { displayName: name });
-          await setDoc(doc(db,'users',cred.user.uid), {
-            name, role, email, ratingSum:0, ratingCount:0, createdAt: serverTimestamp()
-          });
-        }catch(e){ $('#regErr').textContent = e.message; }
-      };
-      $('#btnLogin').onclick = async ()=>{
-        $('#loginErr').textContent='';
-        try{ await signInWithEmailAndPassword(auth, $('#inEmail').value.trim(), $('#inPass').value); }
-        catch(e){ $('#loginErr').textContent = e.message; }
-      };
-    },0);
-  } else {
-    el.innerHTML = `
-      <div class="card">
-        <div class="row wrap" style="justify-content:space-between">
-          <div>
-            <div class="label">Usuario</div>
-            <div class="chip">${state.profile?.name||state.fbUser.email}</div>
-          </div>
-          <div>
-            <div class="label">Rol</div>
-            <div class="chip">${state.profile?.role||'—'}</div>
-          </div>
-        </div>
-        <div class="row" style="margin-top:.8rem;gap:.5rem;flex-wrap:wrap">
-          <button class="btn" onclick="currentTab='pasajero'; renderSide()">Ir a Pasajero</button>
-          <button class="btn danger" id="btnLogout">Cerrar sesión</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="label">Cambiar rol</div>
-        <div class="row" style="gap:.5rem;flex-wrap:wrap">
-          <select id="roleSel" class="input" style="max-width:220px"><option value="pasajero">Pasajero</option><option value="conductor">Conductor</option></select>
-          <button class="btn" id="btnRole">Guardar</button>
-        </div>
-      </div>`;
-    setTimeout(()=>{
-      $('#btnLogout').onclick = ()=> signOut(auth);
-      if(state.profile) $('#roleSel').value = state.profile.role;
-      $('#btnRole').onclick = async ()=>{
-        const r = $('#roleSel').value;
-        await updateDoc(doc(db,'users',state.fbUser.uid), { role:r });
-      };
-    },0);
-  }
+  setTimeout(()=>{
+    document.getElementById('btnReg').onclick = async ()=>{
+      const name=document.getElementById('regName').value.trim();
+      const role=document.getElementById('regRole').value; const email=document.getElementById('regEmail').value.trim(); const pass=document.getElementById('regPass').value;
+      document.getElementById('regErr').textContent='';
+      try{
+        const cred = await createUserWithEmailAndPassword(auth, email, pass);
+        await updateProfile(cred.user, { displayName: name });
+        await setDoc(doc(db,'users',cred.user.uid), {
+          name, role, email, ratingSum:0, ratingCount:0, createdAt: serverTimestamp()
+        });
+        // onAuthStateChanged moverá a Pasajero automáticamente
+      }catch(e){ document.getElementById('regErr').textContent = e.message; }
+    };
+    document.getElementById('btnLogin').onclick = async ()=>{
+      document.getElementById('loginErr').textContent='';
+      try{ await signInWithEmailAndPassword(auth, document.getElementById('inEmail').value.trim(), document.getElementById('inPass').value); }
+      catch(e){ document.getElementById('loginErr').textContent = e.message; }
+    };
+  },0);
   return el;
 }
 
@@ -378,8 +358,8 @@ function cardPasajero(){
       </div>
     </div>`;
   setTimeout(()=>{
-    $('#btnReq').onclick = solicitarViaje;
-    $('#btnCancelReq').onclick = cancelarSolicitud;
+    document.getElementById('btnReq').onclick = solicitarViaje;
+    document.getElementById('btnCancelReq').onclick = cancelarSolicitud;
   },0);
   return el;
 }
@@ -399,8 +379,8 @@ function cardConductor(){
       </div>
     </div>`;
   setTimeout(()=>{
-    $('#btnStart').onclick = iniciarTrayecto;
-    $('#btnFinish').onclick = finalizarTrayecto;
+    document.getElementById('btnStart').onclick = iniciarTrayecto;
+    document.getElementById('btnFinish').onclick = finalizarTrayecto;
     suscribeListaPendientes();
   },0);
   return el;
@@ -408,6 +388,7 @@ function cardConductor(){
 
 function cardPerfil(){
   const p = state.profile || {ratingSum:0, ratingCount:0, role:'pasajero'};
+  const rol = normalizeRole(p.role);
   const avg = p.ratingCount? (p.ratingSum/p.ratingCount):0;
   const stars = [1,2,3,4,5].map(i=>`<span class="star ${avg>=i? '':'off'}">★</span>`).join('');
   const totalStars = p.ratingSum;
@@ -421,8 +402,16 @@ function cardPerfil(){
         <div>
           <div style="font-weight:600">${p.name||'Usuario'}</div>
           <div class="chip">${state.fbUser?.email||''}</div>
-          <div class="chip">Rol: ${p.role}</div>
+          <div class="chip">Rol actual: ${rol}</div>
         </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label">Cambiar rol</div>
+      <div class="row" style="gap:.5rem;flex-wrap:wrap">
+        <select id="roleSel" class="input" style="max-width:220px"><option value="pasajero">Pasajero</option><option value="conductor">Conductor</option></select>
+        <button class="btn" id="btnRole">Guardar</button>
+        <button class="btn danger" id="btnLogout">Cerrar sesión</button>
       </div>
     </div>
     <div class="card">
@@ -434,6 +423,14 @@ function cardPerfil(){
         <div class="chip trophy">${trofeos||'—'}</div>
       </div>
     </div>`;
+  setTimeout(()=>{
+    document.getElementById('roleSel').value = rol;
+    document.getElementById('btnRole').onclick = async ()=>{
+      const r = document.getElementById('roleSel').value;
+      await updateDoc(doc(db,'users',state.fbUser.uid), { role:r });
+    };
+    document.getElementById('btnLogout').onclick = ()=> signOut(auth);
+  },0);
   return el;
 }
 
@@ -451,10 +448,10 @@ function cardAjustes(){
       <div class="row" style="margin-top:.6rem;gap:.5rem"><button class="btn" id="btnSaveTarifas">Guardar</button></div>
     </div>`;
   setTimeout(()=>{
-    $('#btnSaveTarifas').onclick = ()=>{
-      state.precios.base = Number($('#pBase').value||0);
-      state.precios.porKm = Number($('#pKm').value||0);
-      state.precios.descuento = Number($('#pDesc').value||0);
+    document.getElementById('btnSaveTarifas').onclick = ()=>{
+      state.precios.base = Number(document.getElementById('pBase').value||0);
+      state.precios.porKm = Number(document.getElementById('pKm').value||0);
+      state.precios.descuento = Number(document.getElementById('pDesc').value||0);
       updateInfo();
       alert('Tarifas actualizadas');
     };
@@ -466,7 +463,6 @@ function cardAjustes(){
 function initMap(){
   map = L.map('map', { zoomControl:true }).setView([-34.6037,-58.3816], 12); // CABA por defecto
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(map);
-  // asegurar render correcto si el contenedor cambia tamaño
   setTimeout(()=>{ map.invalidateSize(); }, 250);
   map.on('click', (e)=>{
     if(!state.fbUser){ alert('Inicia sesión para usar el mapa.'); return; }
@@ -510,18 +506,19 @@ function limpiar(){
 }
 function updateInfo(){
   const o = state.origen, d=state.destino; const dist = km(o,d);
-  $('#origenTxt').textContent = o? `${o.lat.toFixed(4)}, ${o.lng.toFixed(4)}` : '—';
-  $('#destinoTxt').textContent = d? `${d.lat.toFixed(4)}, ${d.lng.toFixed(4)}` : '—';
-  $('#kmTxt').textContent = dist.toFixed(2);
-  const bruto = state.precios.base + dist*state.precios.porKm; // simple
+  document.getElementById('origenTxt').textContent = o? `${o.lat.toFixed(4)}, ${o.lng.toFixed(4)}` : '—';
+  document.getElementById('destinoTxt').textContent = d? `${d.lat.toFixed(4)}, ${d.lng.toFixed(4)}` : '—';
+  document.getElementById('kmTxt').textContent = dist.toFixed(2);
+  const bruto = state.precios.base + dist*state.precios.porKm;
   const final = Math.max(0, Math.round(bruto*(1 - state.precios.descuento)));
-  $('#fareTxt').textContent = fmt(final);
+  document.getElementById('fareTxt').textContent = fmt(final);
 }
 
 // ======= Firestore: Solicitudes/ Viaje =======
 async function solicitarViaje(){
   if(!state.fbUser) return alert('Inicia sesión');
-  const prof = state.profile; if(prof?.role!=='pasajero') return alert('Cambiá a rol PASAJERO en Cuenta.');
+  const role = normalizeRole(state.profile?.role);
+  if(role!=='pasajero') return alert('Cambiá a rol PASAJERO en Perfil.');
   if(!state.origen || !state.destino) return alert('Elegí origen y destino');
   const dist = km(state.origen,state.destino);
   const precio = Math.max(0, Math.round((state.precios.base + dist*state.precios.porKm) * (1 - state.precios.descuento)));
@@ -548,9 +545,8 @@ function watchActiveRequest(id){
   activeReqUnsub = onSnapshot(doc(db,'requests',id), (snap)=>{
     if(!snap.exists()) return;
     const r = snap.data();
-    $('#actividad').textContent = `#${id.slice(0,6)} — ${r.status.toUpperCase()} — ${fmt(r.precio)} (${(r.km||0).toFixed(2)} km)`;
+    document.getElementById('actividad').textContent = `#${id.slice(0,6)} — ${r.status.toUpperCase()} — ${fmt(r.precio)} (${(r.km||0).toFixed(2)} km)`;
     if(r.status==='finalizado' || r.status==='cancelado'){
-      // pedir calificación
       setTimeout(async ()=>{
         const stars = Number(prompt('Califica de 1 a 5 estrellas','5'))||5;
         const uRef = doc(db,'users',state.fbUser.uid);
@@ -568,13 +564,13 @@ function watchActiveRequest(id){
 }
 
 function ensureChatListener(reqId){
-  if(chatUnsub) return; // ya escuchando
+  if(chatUnsub) return;
   const msgsRef = collection(db,'requests',reqId,'messages');
   chatUnsub = onSnapshot(query(msgsRef, orderBy('ts','asc'), limit(100)), (qs)=>{
-    const log = $('#chatlog'); log.innerHTML='';
+    const log = document.getElementById('chatlog'); log.innerHTML='';
     qs.forEach(d=>{
       const m=d.data();
-      const who = m.from === (state.profile?.role==='pasajero'?'pax':'drv') ? 'me':'';
+      const who = m.from === (normalizeRole(state.profile?.role)==='pasajero'?'pax':'drv') ? 'me':'';
       log.insertAdjacentHTML('beforeend', `<div class="msg ${who}"><b>${m.from==='pax'?'Pasajero':'Conductor'}:</b> ${m.text}</div>`);
     });
     log.scrollTop = log.scrollHeight;
@@ -582,12 +578,12 @@ function ensureChatListener(reqId){
 }
 
 // enviar chat
-$('#chatSend').addEventListener('click', async ()=>{
+document.getElementById('chatSend').addEventListener('click', async ()=>{
   if(!state.activeRequestId) return alert('Sin viaje activo');
-  const input = $('#chatInput'); let text = (input.value||'').trim(); if(!text) return;
+  const input = document.getElementById('chatInput'); let text = (input.value||'').trim(); if(!text) return;
   const sanitized = sanitizeMsg(text); if(/^\*{3,}$/.test(sanitized)) return alert('Mensaje bloqueado');
   await addDoc(collection(db,'requests',state.activeRequestId,'messages'),{
-    from: state.profile?.role==='pasajero'?'pax':'drv', text: sanitized, ts: serverTimestamp()
+    from: normalizeRole(state.profile?.role)==='pasajero'?'pax':'drv', text: sanitized, ts: serverTimestamp()
   });
   input.value='';
 });
@@ -596,7 +592,7 @@ $('#chatSend').addEventListener('click', async ()=>{
 function suscribeListaPendientes(){
   if(listUnsub) listUnsub();
   listUnsub = onSnapshot(query(collection(db,'requests'), where('status','==','buscando'), orderBy('createdAt','desc'), limit(20)), (qs)=>{
-    const cont = $('#reqList'); if(!cont) return; cont.innerHTML='';
+    const cont = document.getElementById('reqList'); if(!cont) return; cont.innerHTML='';
     qs.forEach(docu=>{
       const r = docu.data(); const id=docu.id;
       const card = document.createElement('div'); card.className='card';
@@ -622,7 +618,7 @@ function suscribeListaPendientes(){
 
 async function aceptarViaje(id){
   if(!state.fbUser) return alert('Inicia sesión');
-  if(state.profile?.role!=='conductor') return alert('Cambiá a rol CONDUCTOR en Cuenta.');
+  if(normalizeRole(state.profile?.role)!=='conductor') return alert('Cambiá a rol CONDUCTOR en Perfil.');
   await updateDoc(doc(db,'requests',id), {
     status:'aceptado',
     conductorId: state.fbUser.uid,
@@ -640,37 +636,42 @@ async function finalizarTrayecto(){
   await updateDoc(doc(db,'requests',state.activeRequestId), { status:'finalizado' });
 }
 
-// ======= Auth =======
+// ======= Auth (con escucha en vivo del perfil) =======
 onAuthStateChanged(auth, async (user)=>{
   state.fbUser = user;
   if(user){
+    if(userUnsub) userUnsub();
     const uref = doc(db,'users',user.uid);
-    const snap = await getDoc(uref);
-    if(!snap.exists()){
-      await setDoc(uref, { name: user.displayName||'', email:user.email||'', role:'pasajero', ratingSum:0, ratingCount:0, createdAt: serverTimestamp() });
-      state.profile = { name:user.displayName||'', email:user.email||'', role:'pasajero', ratingSum:0, ratingCount:0 };
-    }else{
-      state.profile = snap.data();
-    }
+    userUnsub = onSnapshot(uref, async (snap)=>{
+      if(!snap.exists()){
+        await setDoc(uref, { name: user.displayName||'', email:user.email||'', role:'pasajero', ratingSum:0, ratingCount:0, createdAt: serverTimestamp() });
+        state.profile = { name:user.displayName||'', email:user.email||'', role:'pasajero', ratingSum:0, ratingCount:0 };
+      }else{
+        state.profile = snap.data();
+      }
+      renderTabs(); renderSide();
+    });
+    currentTab='pasajero';
   } else {
     state.profile = null; state.activeRequestId=null;
     if(activeReqUnsub){ activeReqUnsub(); activeReqUnsub=null; }
     if(chatUnsub){ chatUnsub(); chatUnsub=null; }
     if(listUnsub){ listUnsub(); listUnsub=null; }
+    if(userUnsub){ userUnsub(); userUnsub=null; }
+    currentTab='registro';
+    renderTabs(); renderSide();
   }
-  renderSide();
 });
 
-// ======= Eventos iniciales =======
+// ======= Bootstrap =======
 function bootstrap(){
   renderTabs();
-  renderSide(); // asegura mostrar registración al entrar
+  renderSide(); // muestra Registración al entrar
   initMap();
-  $('#btnMiUbicacion').onclick = miUbicacionComoOrigen;
-  $('#btnLimpiar').onclick = limpiar;
-  $('#btnSolicitar').onclick = solicitarViaje;
-  // selector Origen/Destino
-  const bO = $('#modeOrigen'), bD = $('#modeDestino');
+  document.getElementById('btnMiUbicacion').onclick = miUbicacionComoOrigen;
+  document.getElementById('btnLimpiar').onclick = limpiar;
+  document.getElementById('btnSolicitar').onclick = solicitarViaje;
+  const bO = document.getElementById('modeOrigen'), bD = document.getElementById('modeDestino');
   bO.onclick = ()=>{ selectMode='origen'; bO.setAttribute('aria-pressed','true'); bD.setAttribute('aria-pressed','false'); };
   bD.onclick = ()=>{ selectMode='destino'; bD.setAttribute('aria-pressed','true'); bO.setAttribute('aria-pressed','false'); };
 }
@@ -678,8 +679,3 @@ bootstrap();
 </script>
 </body>
 </html>
-"""
-path = "/mnt/data/TaxiYa-Firebase-Pestanas.html"
-with open(path, "w", encoding="utf-8") as f:
-    f.write(code)
-path
