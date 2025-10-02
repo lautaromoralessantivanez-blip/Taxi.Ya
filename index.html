@@ -37,6 +37,7 @@ button,input,select{font-family:inherit}
 .input{width:100%;background:#0e1620;border:1px solid var(--line);color:var(--ink);padding:.65rem .75rem;border-radius:12px}
 .btn{display:inline-flex;align-items:center;gap:.5rem;border:1px solid var(--line);background:#12202e;color:var(--ink);padding:.6rem .9rem;border-radius:12px;cursor:pointer;transition:.2s;text-decoration:none}
 .btn.primary{background:var(--accent);color:#111;border-color:#e6b800}
+.btn.ghost{background:transparent}
 .btn:disabled{opacity:.6;cursor:not-allowed}
 .err{color:#fecaca}
 
@@ -66,7 +67,7 @@ button,input,select{font-family:inherit}
 .badge.ok{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.35)}
 .help{color:var(--muted);font-size:.86rem}
 
-/* BARRA DE ESTADO (NO SUPERPUESTA) */
+/* BARRA DE ESTADO */
 .status-bar{
   order: 50; display:none; align-items:center; gap:.6rem;
   background:#0f172a; border:1px solid #243045; padding:.55rem .75rem;
@@ -78,7 +79,7 @@ button,input,select{font-family:inherit}
 #map{ width:100%; height:70vh; min-height:460px }
 .leaflet-container{ background:#0b0f15 }
 
-/* Chat compacto (colapsable) */
+/* Chat compacto */
 .chat-mini{order:98}
 .chat-mini summary{
   cursor:pointer; list-style:none; display:flex; align-items:center; gap:.5rem;
@@ -163,23 +164,25 @@ button,input,select{font-family:inherit}
         <strong id="sideTitle">Panel</strong>
         <span class="badge ok" id="authBadge">Conectado</span>
       </div>
+      <!-- Pasajero: SIN tarjeta de “solicitud” (eliminado) -->
       <div class="panel-body" id="sideBody"></div>
     </aside>
 
     <main class="main">
       <div class="panel-head"><strong id="mainTitle">Mapa</strong></div>
       <div class="panel-body">
-        <!-- Controles -->
+        <!-- Controles principales -->
         <div class="card">
-          <div class="row wrap" style="justify-content:space-between;gap:.75rem">
-            <div class="row" style="gap:.5rem;flex-wrap:wrap">
-              <!-- ====== BUSCADOR DE DIRECCIONES ====== -->
-              <div class="field" style="width:min(520px,100%)">
-                <label class="label">Buscar dirección</label>
-                <input id="addrSearch" class="input" placeholder="Ej: Av. Corrientes 1234, CABA" autocomplete="off">
-                <div id="addrResults" class="ac-results" style="display:none"></div>
-              </div>
+          <div class="grid" style="gap:.9rem">
+            <!-- Buscador -->
+            <div class="field" style="width:min(520px,100%)">
+              <label class="label">Buscar dirección</label>
+              <input id="addrSearch" class="input" placeholder="Ej: Av. Corrientes 1234, CABA" autocomplete="off">
+              <div id="addrResults" class="ac-results" style="display:none"></div>
+            </div>
 
+            <!-- Selector y acciones -->
+            <div class="row wrap" style="justify-content:space-between;gap:.75rem">
               <div class="row" style="gap:.5rem">
                 <div class="label">Seleccionar en mapa:</div>
                 <div class="seg" id="modeSeg" style="display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden">
@@ -187,17 +190,18 @@ button,input,select{font-family:inherit}
                   <button id="modeDestino" aria-pressed="false" style="border:0;background:#0e1620;color:#fff;padding:.45rem .8rem;cursor:pointer">Destino</button>
                 </div>
               </div>
-            </div>
-
-            <div class="row" style="gap:.5rem;flex-wrap:wrap">
-              <button class="btn" id="btnMiUbicacion">Usar mi ubicación</button>
-              <button class="btn" id="btnLimpiar">Limpiar</button>
-              <button class="btn primary" id="btnSolicitar">Solicitar viaje</button>
+              <div class="row" style="gap:.5rem;flex-wrap:wrap;justify-content:flex-start">
+                <button class="btn" id="btnMiUbicacion">Usar mi ubicación</button>
+                <button class="btn" id="btnLimpiar">Limpiar</button>
+                <!-- Cancelar junto a Solicitar (a la izquierda) -->
+                <button class="btn" id="btnCancelReqTop">Cancelar</button>
+                <button class="btn primary" id="btnSolicitar">Solicitar viaje</button>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- BARRA DE ESTADO -->
+        <!-- Barra de estado -->
         <div id="statusBar" class="status-bar">
           <span id="statusText">BUSCANDO CONDUCTOR…</span>
           <span class="chip" id="searchTimer">00:00</span>
@@ -219,7 +223,7 @@ button,input,select{font-family:inherit}
         <!-- Mapa -->
         <div class="map-wrap"><div id="map"></div></div>
 
-        <!-- Chat compacto (solo aceptado o en curso) -->
+        <!-- Chat compacto -->
         <details id="chatMini" class="chat-mini" style="display:none">
           <summary>💬 Chat del viaje (opcional)</summary>
           <div class="chatbox">
@@ -263,25 +267,21 @@ const db = getFirestore(appFB);
 const $ = s => document.querySelector(s);
 
 /* ===== Estado ===== */
-let map, origenMarker, destinoMarker, meMarker, routing, ro=null;
-let driverMarker=null;            // marcador en vivo del conductor
-let activeReqUnsub=null, chatUnsub=null, listUnsub=null, userUnsub=null, timerInt=null, driverUnsub=null;
-let driverWatchId=null;           // watchPosition id (para conductor)
+let map, origenMarker, destinoMarker, meMarker, routing;
+let driverMarker=null;
+let activeReqUnsub=null, chatUnsub=null, listUnsub=null, userUnsub=null, timerInt=null, driverUnsub=null, earningsUnsub=null;
+let driverWatchId=null, followMe=true;
+
 let uiTab = 'pasajero';
 let selectMode = 'origen';
+let driverOnline=false, driverPaused=false, driverSessionStart=null, driverTimer=null, totalEarnings=0;
+
 let state = {
   fbUser: null,
   profile: null,
   pointsLocked:false,
-  // Pricing estilo Uber
   surge: 1.0,
-  pricing: Object.freeze({
-    base: 800,       // $
-    perKm: 350,      // $/km
-    perMin: 120,     // $/min
-    serviceFee: 150, // $ fijo
-    minimum: 1200    // $ mínimo
-  }),
+  pricing: Object.freeze({ base:800, perKm:350, perMin:120, serviceFee:150, minimum:1200 }),
   origen:null, destino:null,
   routeKm:0, routeMin:0,
   activeRequestId:null, activeRequest:null,
@@ -314,51 +314,45 @@ function renderSide(){
   title.textContent = titles[uiTab]||'Panel';
   body.innerHTML='';
 
-  if(uiTab==='pasajero') body.appendChild(cardPasajero());
+  if(uiTab==='pasajero') { /* nada: eliminada tarjeta de solicitud */ }
+
   if(uiTab==='conductor') body.appendChild(cardConductor());
   if(uiTab==='perfil')    body.appendChild(cardPerfil());
 }
-function cardPasajero(){
-  const el = document.createElement('div'); el.className='grid';
-  el.innerHTML = `
-    <div class="card">
-      <div class="label">Solicitud</div>
-      <p id="solicitudTxt" class="help">Elegí origen y destino en el mapa o buscá la dirección, revisá la tarifa y solicitá.</p>
-      <div class="row" style="gap:.5rem;flex-wrap:wrap">
-        <button class="btn primary" id="btnReq">Solicitar viaje</button>
-        <button class="btn" id="btnCancelReq">Cancelar</button>
-      </div>
-      <p class="help" style="margin-top:.4rem">Al solicitar, los puntos quedan <b>bloqueados</b> hasta cancelar.</p>
-    </div>`;
-  setTimeout(()=>{ $('#btnReq').onclick=solicitarViaje; $('#btnCancelReq').onclick=cancelarSolicitud; },0);
-  return el;
-}
+
 function cardConductor(){
   const el = document.createElement('div'); el.className='grid';
   el.innerHTML = `
     <div class="card">
-      <div class="label">Solicitudes pendientes</div>
-      <div id="reqList" class="grid"></div>
-    </div>
-    <div class="card">
-      <div class="label">Acciones del viaje</div>
-      <div class="row" style="gap:.5rem;flex-wrap:wrap">
-        <button class="btn" id="btnStart">Iniciar</button>
-        <button class="btn" id="btnFinish">Finalizar</button>
-        <button class="btn" id="btnShare">Compartir ubicación</button>
-        <button class="btn" id="btnStopShare">Detener ubicación</button>
+      <div class="row wrap" style="justify-content:space-between">
+        <div class="row" style="gap:.5rem">
+          <span class="chip" id="drvStatus">Offline</span>
+          <span class="chip">Conectado: <b id="drvTime">00:00:00</b></span>
+          <span class="chip">Ganancias: <b id="drvEarn">$ 0</b></span>
+        </div>
+        <div class="row" style="gap:.5rem;flex-wrap:wrap">
+          <button class="btn primary" id="btnDrvStart">Iniciar</button>
+          <button class="btn" id="btnDrvPause" disabled>Pausar</button>
+          <button class="btn" id="btnDrvFinish" disabled>Finalizar</button>
+        </div>
       </div>
-      <p class="help">La ubicación se comparte sólo si hay viaje aceptado/en curso.</p>
+      <p class="help" style="margin-top:.4rem">“Iniciar” te pone disponible para recibir viajes. “Pausar” te saca momentáneamente y “Finalizar” cierra la sesión de conductor.</p>
+    </div>
+    <div class="card" id="drvQueueCard" style="display:none">
+      <div class="label">Solicitudes entrantes</div>
+      <div id="reqList" class="grid"></div>
     </div>`;
   setTimeout(()=>{
-    $('#btnStart').onclick=iniciarTrayecto;
-    $('#btnFinish').onclick=finalizarTrayecto;
-    $('#btnShare').onclick=startDriverShare;
-    $('#btnStopShare').onclick=stopDriverShare;
-    suscribeListaPendientes();
+    $('#btnDrvStart').onclick = driverStart;
+    $('#btnDrvPause').onclick = driverPauseToggle;
+    $('#btnDrvFinish').onclick = driverFinish;
+    updateDriverHeader();
+    attachEarningsListener();
+    if(driverOnline && !driverPaused) suscribeListaPendientes(); else unsusbcribePendientes();
   },0);
   return el;
 }
+
 function cardPerfil(){
   const p = state.profile || {ratingSum:0, ratingCount:0};
   const avg = p.ratingCount? (p.ratingSum/p.ratingCount):0;
@@ -389,6 +383,45 @@ function cardPerfil(){
   setTimeout(()=>{ $('#btnLogout').onclick=()=>signOut(auth); },0);
   return el;
 }
+
+/* ===== Driver controls ===== */
+function updateDriverHeader(){
+  $('#drvStatus')?.textContent = driverOnline ? (driverPaused?'Pausado':'Online') : 'Offline';
+  $('#btnDrvStart')?.toggleAttribute('disabled', driverOnline && !driverPaused);
+  $('#btnDrvPause')?.toggleAttribute('disabled', !driverOnline);
+  $('#btnDrvFinish')?.toggleAttribute('disabled', !driverOnline);
+  $('#btnDrvPause')?.textContent = driverPaused ? 'Reanudar' : 'Pausar';
+  $('#drvQueueCard')?.style.setProperty('display', (driverOnline && !driverPaused) ? 'block' : 'none');
+}
+function driverStart(){
+  if(driverOnline && !driverPaused) return;
+  driverOnline = true; driverPaused=false; driverSessionStart = driverSessionStart || Date.now();
+  startDriverShare(); startDriverTimer(); updateDriverHeader();
+  suscribeListaPendientes();
+}
+function driverPauseToggle(){
+  if(!driverOnline) return;
+  driverPaused = !driverPaused;
+  if(driverPaused){ unsusbcribePendientes(); stopDriverShare(); }
+  else { suscribeListaPendientes(); startDriverShare(); }
+  updateDriverHeader();
+}
+function driverFinish(){
+  if(!driverOnline) return;
+  driverOnline=false; driverPaused=false;
+  stopDriverShare(); stopDriverTimer(); updateDriverHeader(); unsusbcribePendientes();
+}
+function startDriverTimer(){
+  if(driverTimer) return;
+  const tick=()=>{ const s=Math.floor((Date.now()-(driverSessionStart||Date.now()))/1000);
+    const hh=String(Math.floor(s/3600)).padStart(2,'0');
+    const mm=String(Math.floor((s%3600)/60)).padStart(2,'0');
+    const ss=String(s%60).padStart(2,'0');
+    $('#drvTime')?.textContent=`${hh}:${mm}:${ss}`;
+  };
+  tick(); driverTimer=setInterval(tick,1000);
+}
+function stopDriverTimer(){ if(driverTimer){ clearInterval(driverTimer); driverTimer=null; } }
 
 /* ===== Mapa + Routing ===== */
 function initMap(){
@@ -431,7 +464,6 @@ function ensureRouting(){
 function setOrigen(p,recalc=false){
   if(origenMarker) map.removeLayer(origenMarker);
   origenMarker=L.marker([p.lat,p.lng],{draggable:!state.pointsLocked}).addTo(map).bindPopup('Origen');
-  origenMarker.on('dragstart',()=>{ if(state.pointsLocked) origenMarker.closePopup(); });
   origenMarker.on('dragend',()=>{ if(state.pointsLocked) return; const ll=origenMarker.getLatLng(); setOrigen({lat:ll.lat,lng:ll.lng},true); });
   state.origen=p; $('#origenTxt').textContent=`${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`;
   if(recalc) recalcRoute();
@@ -439,7 +471,6 @@ function setOrigen(p,recalc=false){
 function setDestino(p,recalc=false){
   if(destinoMarker) map.removeLayer(destinoMarker);
   destinoMarker=L.marker([p.lat,p.lng],{draggable:!state.pointsLocked}).addTo(map).bindPopup('Destino');
-  destinoMarker.on('dragstart',()=>{ if(state.pointsLocked) destinoMarker.closePopup(); });
   destinoMarker.on('dragend',()=>{ if(state.pointsLocked) return; const ll=destinoMarker.getLatLng(); setDestino({lat:ll.lat,lng:ll.lng},true); });
   state.destino=p; $('#destinoTxt').textContent=`${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`;
   if(recalc) recalcRoute();
@@ -470,7 +501,7 @@ function limpiar(){
   $('#actividad').textContent='Toca el mapa para fijar Origen/Destino.';
 }
 
-/* ===== Utilidades + Precio estilo Uber ===== */
+/* ===== Utils + Pricing ===== */
 function fmt(n){ return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n); }
 function km(a,b){ if(!a||!b) return 0; const R=6371;
   const dLat=(b.lat-a.lat)*Math.PI/180, dLon=(b.lng-a.lng)*Math.PI/180;
@@ -491,14 +522,14 @@ function updateFareUI(){
 }
 function updateInfoHaversine(){
   const dist=km(state.origen,state.destino);
-  state.routeKm = dist; // sin duración real
-  state.routeMin = Math.round((dist/25)*60); // heurística 25 km/h si no hay OSRM
+  state.routeKm = dist;
+  state.routeMin = Math.round((dist/25)*60);
   $('#kmTxt').textContent=dist.toFixed(2);
   $('#minTxt').textContent=String(state.routeMin);
   updateFareUI();
 }
 
-/* ===== Autocompletado de direcciones (Nominatim) ===== */
+/* ===== Autocomplete (Nominatim) ===== */
 const addrInput = document.getElementById('addrSearch');
 const addrBox   = document.getElementById('addrResults');
 function debounce(fn, ms=350){ let t=null; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
@@ -533,7 +564,7 @@ function renderAddrResults(list){
   });
 }
 addrInput?.addEventListener('input', debounce(async (e)=>{
-  if(state.pointsLocked) return; // no permitir cambios si activo
+  if(state.pointsLocked) return;
   const q = (e.target.value||'').trim();
   if(q.length<3){ addrBox.style.display='none'; addrBox.innerHTML=''; return; }
   try{ renderAddrResults(await geocodeSearch(q)); }
@@ -584,23 +615,51 @@ async function cancelarSolicitud(){
 }
 function suscribeListaPendientes(){
   if(listUnsub) listUnsub();
-  listUnsub = onSnapshot(query(collection(db,'requests'), where('status','==','buscando'), orderBy('createdAt','desc'), limit(20)), qs=>{
-    const cont=$('#reqList'); if(!cont) return; cont.innerHTML='';
-    qs.forEach(docu=>{
-      const r=docu.data(); const id=docu.id;
-      const card=document.createElement('div'); card.className='card';
-      card.innerHTML=`
-        <div class="row wrap" style="justify-content:space-between">
-          <div><div class="chip">#${id.slice(0,6)}</div><div class="chip">Pasajero: ${r.pasajeroNombre}</div></div>
-          <div><div class="chip">${(r.km||0).toFixed(2)} km</div><div class="chip">${fmt(r.precio||0)}</div></div>
-        </div>
-        <div class="row" style="margin-top:.5rem;gap:.5rem"><button class="btn primary" data-id="${id}">Aceptar</button></div>`;
-      card.querySelector('button').onclick=()=>aceptarViaje(id);
-      cont.appendChild(card);
-    });
-  });
+  listUnsub = onSnapshot(
+    query(collection(db,'requests'), where('status','==','buscando'), orderBy('createdAt','desc'), limit(20)),
+    async (qs)=>{
+      const cont=$('#reqList'); if(!cont) return; cont.innerHTML='';
+      for(const docu of qs.docs){
+        const r=docu.data(); const id=docu.id;
+        // Traer info del pasajero
+        let rating=0, count=0, name=r.pasajeroNombre||'Pasajero', avatarSeed=name;
+        try{
+          const u = await getDoc(doc(db,'users',r.pasajeroId));
+          if(u.exists()){ const d=u.data(); rating = d.ratingCount? (d.ratingSum||0)/d.ratingCount : 0; count=d.ratingCount||0; name=d.name||name; avatarSeed=d.name||r.pasajeroNombre||'P'; }
+        }catch(_){}
+        const stars = [1,2,3,4,5].map(i=>`<span style="color:#fcd34d;opacity:${rating>=i?1:.35}">★</span>`).join('');
+        const card=document.createElement('div'); card.className='card';
+        card.innerHTML=`
+          <div class="row wrap" style="justify-content:space-between;gap:.6rem">
+            <div class="row" style="gap:.6rem">
+              <img src="https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(avatarSeed)}" alt="avatar" width="40" height="40" style="border-radius:8px;border:1px solid var(--line)"/>
+              <div>
+                <div style="font-weight:600">${name}</div>
+                <div style="font-size:.85rem;color:#a9b4c2">${stars} <span class="chip" style="margin-left:.4rem">${count} ops</span></div>
+              </div>
+            </div>
+            <div class="row" style="gap:.5rem">
+              <div class="chip">${(r.km||0).toFixed(2)} km</div>
+              <div class="chip">${r.min||0} min</div>
+              <div class="chip">${fmt(r.precio||0)}</div>
+            </div>
+          </div>
+          <div class="row" style="gap:.4rem;margin-top:.5rem">
+            <div class="chip">Origen: ${r.origen?.lat?.toFixed(4)||'-'}, ${r.origen?.lng?.toFixed(4)||'-'}</div>
+            <div class="chip">Destino: ${r.destino?.lat?.toFixed(4)||'-'}, ${r.destino?.lng?.toFixed(4)||'-'}</div>
+          </div>
+          <div class="row" style="margin-top:.6rem;gap:.5rem">
+            <button class="btn primary" data-id="${id}">Aceptar</button>
+          </div>`;
+        card.querySelector('button').onclick=()=>aceptarViaje(id);
+        cont.appendChild(card);
+      }
+    }
+  );
 }
+function unsusbcribePendientes(){ if(listUnsub){ listUnsub(); listUnsub=null; } }
 async function aceptarViaje(id){
+  if(!driverOnline || driverPaused) return alert('Tenés que estar Online.');
   await updateDoc(doc(db,'requests',id),{ status:'aceptado', conductorId:state.fbUser.uid, conductorNombre: state.profile?.name||state.fbUser.email });
   state.activeRequestId=id; watchActiveRequest(id);
 }
@@ -663,11 +722,7 @@ function startSearchingUI(on){
     timer.textContent='00:00';
   }
 }
-function showChat(show){
-  const d=$('#chatMini');
-  if(!d) return;
-  d.style.display = show ? 'block' : 'none';
-}
+function showChat(show){ const d=$('#chatMini'); if(d) d.style.display = show ? 'block' : 'none'; }
 
 /* ===== Bloqueo puntos ===== */
 function lockPoints(lock){
@@ -677,47 +732,65 @@ function lockPoints(lock){
 }
 
 /* ===== Seguimiento del conductor ===== */
-/* Conductor: publicar ubicación en requests/{id}/driver */
 function startDriverShare(){
-  const id = state.activeRequestId;
-  const r  = state.activeRequest;
-  if(!id || !r || (r.status!=='aceptado' && r.status!=='en_curso')) return alert('Necesitás un viaje aceptado/en curso.');
   if(!navigator.geolocation) return alert('Geolocalización no disponible');
-  if(driverWatchId) return alert('Ya estás compartiendo tu ubicación');
-
+  if(driverWatchId) return;
   driverWatchId = navigator.geolocation.watchPosition(async (pos)=>{
     const p={ lat:pos.coords.latitude, lng:pos.coords.longitude, ts: Date.now() };
-    await setDoc(doc(db,'requests',id,'driver','pos'), p);
-  }, (err)=>{ console.error(err); alert('No se pudo obtener ubicación'); }, {
-    enableHighAccuracy:true, maximumAge:2000, timeout:10000
-  });
+    if(!state.activeRequestId){ /* publicar igual para centrar el mapa del conductor */
+      if(!driverMarker){
+        driverMarker = L.marker([p.lat, p.lng], {icon: L.divIcon({className:'', html:'<div style="background:#111827;border:2px solid #94a3b8;color:#fff;padding:2px 6px;border-radius:6px">🚖</div>'})})
+          .addTo(map).bindPopup('Conductor');
+      }else{ driverMarker.setLatLng([p.lat,p.lng]); }
+      if(followMe) map.setView([p.lat,p.lng], map.getZoom());
+      return;
+    }
+    await setDoc(doc(db,'requests',state.activeRequestId,'driver','pos'), p);
+    // centrar siempre al conductor
+    if(!driverMarker){
+      driverMarker = L.marker([p.lat, p.lng], {icon: L.divIcon({className:'', html:'<div style="background:#111827;border:2px solid #94a3b8;color:#fff;padding:2px 6px;border-radius:6px">🚖</div>'})})
+        .addTo(map).bindPopup('Conductor');
+    }else{ driverMarker.setLatLng([p.lat,p.lng]); }
+    if(followMe) map.setView([p.lat,p.lng], map.getZoom());
+
+    // Si hay viaje: mostrar ruta adecuada
+    const r=state.activeRequest;
+    if(r){
+      if(r.status==='aceptado' && r.origen){
+        const ctl=ensureRouting(); ctl.setWaypoints([L.latLng(p.lat,p.lng), L.latLng(r.origen.lat,r.origen.lng)]);
+      }
+      if(r.status==='en_curso' && r.destino){
+        const ctl=ensureRouting(); ctl.setWaypoints([L.latLng(p.lat,p.lng), L.latLng(r.destino.lat,r.destino.lng)]);
+      }
+    }
+  }, (err)=>{ console.error(err); }, { enableHighAccuracy:true, maximumAge:2000, timeout:10000 });
 }
-function stopDriverShare(){
-  if(driverWatchId){ navigator.geolocation.clearWatch(driverWatchId); driverWatchId=null; }
-}
-/* Pasajero/Conductor: seguir el pin del conductor y dibujar ruta restante */
+function stopDriverShare(){ if(driverWatchId){ navigator.geolocation.clearWatch(driverWatchId); driverWatchId=null; } }
 function startDriverFollower(requestId){
   stopDriverFollower();
   driverUnsub = onSnapshot(doc(db,'requests',requestId,'driver','pos'), (snap)=>{
     if(!snap.exists()) return;
     const p = snap.data();
-    // marcador del conductor
     if(!driverMarker){
       driverMarker = L.marker([p.lat, p.lng], {icon: L.divIcon({className:'', html:'<div style="background:#111827;border:2px solid #94a3b8;color:#fff;padding:2px 6px;border-radius:6px">🚖</div>'})})
         .addTo(map).bindPopup('Conductor');
-    }else{
-      driverMarker.setLatLng([p.lat, p.lng]);
-    }
-    // ruta restante (conductor -> destino)
-    if(state.destino){
-      const r = ensureRouting();
-      r.setWaypoints([L.latLng(p.lat,p.lng), L.latLng(state.destino.lat,state.destino.lng)]);
-    }
+    }else{ driverMarker.setLatLng([p.lat,p.lng]); }
+    if(followMe) map.setView([p.lat,p.lng], map.getZoom());
   });
 }
-function stopDriverFollower(){
-  if(driverUnsub){ driverUnsub(); driverUnsub=null; }
-  if(driverMarker){ map.removeLayer(driverMarker); driverMarker=null; }
+function stopDriverFollower(){ if(driverUnsub){ driverUnsub(); driverUnsub=null; } if(driverMarker){ map.removeLayer(driverMarker); driverMarker=null; } }
+
+/* ===== Ganancias del conductor ===== */
+function attachEarningsListener(){
+  if(earningsUnsub) earningsUnsub();
+  if(!state.fbUser) return;
+  earningsUnsub = onSnapshot(
+    query(collection(db,'requests'), where('conductorId','==', state.fbUser.uid), where('status','==','finalizado')),
+    (qs)=>{
+      let sum=0; qs.forEach(d=>{ sum += Number(d.data().precio||0); });
+      totalEarnings=sum; $('#drvEarn')?.textContent = fmt(sum);
+    }
+  );
 }
 
 /* ===== AUTH ===== */
@@ -738,15 +811,17 @@ onAuthStateChanged(auth, async (user)=>{
   }else{
     $('#app').style.display='none'; $('#gate').style.display='grid';
     state.profile=null; state.activeRequestId=null; state.activeRequest=null; lockPoints(false);
-    startSearchingUI(false); stopDriverFollower(); stopDriverShare();
+    startSearchingUI(false); stopDriverFollower(); stopDriverShare(); stopDriverTimer();
+    driverOnline=false; driverPaused=false; updateDriverHeader();
     if(activeReqUnsub){ activeReqUnsub(); activeReqUnsub=null; }
     if(chatUnsub){ chatUnsub(); chatUnsub=null; }
     if(listUnsub){ listUnsub(); listUnsub=null; }
+    if(earningsUnsub){ earningsUnsub(); earningsUnsub=null; }
     if(userUnsub){ userUnsub(); userUnsub=null; }
   }
 });
 
-/* ===== Gate con validaciones ===== */
+/* ===== Gate ===== */
 function isEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
 $('#btnReg').onclick = async ()=>{
   const name=$('#regName').value.trim();
@@ -781,6 +856,7 @@ function bootstrapButtons(){
   $('#btnMiUbicacion').onclick=miUbicacionComoOrigen;
   $('#btnLimpiar').onclick=limpiar;
   $('#btnSolicitar').onclick=solicitarViaje;
+  $('#btnCancelReqTop').onclick=cancelarSolicitud;
   const bO=$('#modeOrigen'), bD=$('#modeDestino');
   bO.onclick=()=>{ if(state.pointsLocked) return alert('Bloqueado por viaje activo'); selectMode='origen'; bO.setAttribute('aria-pressed','true'); bD.setAttribute('aria-pressed','false'); };
   bD.onclick=()=>{ if(state.pointsLocked) return alert('Bloqueado por viaje activo'); selectMode='destino'; bD.setAttribute('aria-pressed','true'); bO.setAttribute('aria-pressed','false'); };
