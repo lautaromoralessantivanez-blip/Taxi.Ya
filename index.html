@@ -128,7 +128,7 @@ button,input,select{font-family:inherit}
       ¿No tenés cuenta? <span id="showReg" class="link">Crear una</span>
     </p>
 
-    <!-- REGISTRO (colapsado por defecto) -->
+    <!-- REGISTRO -->
     <div id="regCard" class="card" style="display:none;margin-top:.6rem;background:#0d131b">
       <h3 style="margin:0 0 .5rem 0">Crear cuenta</h3>
       <div class="row" style="gap:1rem;align-items:flex-end;flex-wrap:wrap">
@@ -176,14 +176,12 @@ button,input,select{font-family:inherit}
         <!-- Controles PASAJERO -->
         <div class="card" id="controlsCard">
           <div class="grid" style="gap:.9rem">
-            <!-- Buscador -->
             <div class="field" style="width:min(520px,100%)">
               <label class="label">Buscar dirección</label>
               <input id="addrSearch" class="input" placeholder="Ej: Av. Corrientes 1234, CABA" autocomplete="off">
               <div id="addrResults" class="ac-results" style="display:none"></div>
             </div>
 
-            <!-- Selector y acciones -->
             <div class="row wrap" style="justify-content:space-between;gap:.75rem">
               <div class="row" style="gap:.5rem">
                 <div class="label">Seleccionar en mapa:</div>
@@ -257,7 +255,6 @@ window.addEventListener('error', function(e){
 
 <!-- ================= Firebase + App (Módulos) ================= -->
 <script type="module">
-/* ---------------- Firebase ---------------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getAuth, setPersistence, browserLocalPersistence, browserSessionPersistence, inMemoryPersistence,
@@ -274,7 +271,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBu523IOGnIZGfAkdlLdVLcENwLgv5KU9o",
   authDomain: "taxi-ya-3be33.firebaseapp.com",
   projectId: "taxi-ya-3be33",
-  storageBucket: "taxi-ya-3be33.appspot.com",
+  storageBucket: "taxi-ya-3be33.firebasestorage.app",
   messagingSenderId: "31840475169",
   appId: "1:31840475169:web:1485e47b9ebea4a66c6b60",
   measurementId: "G-2RQRP1G2KB"
@@ -284,7 +281,13 @@ const firebaseConfig = {
 const $ = (sel)=>document.querySelector(sel);
 const setText=(el,v)=>{ if(el) el.textContent=v; };
 const fmt=(n)=> new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n);
-function km(a,b){ if(!a||!b) return 0; const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lng-a.lng)*Math.PI/180,la1=a.lat*Math.PI/180,la2=b.lat*Math.PI/180; const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(Math.PI/180*(b.lng-a.lng)/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
+function km(a,b){
+  if(!a||!b) return 0;
+  const R=6371, dLat=(b.lat-a.lat)*Math.PI/180, dLon=(b.lng-a.lng)*Math.PI/180;
+  const la1=a.lat*Math.PI/180, la2=b.lat*Math.PI/180;
+  const h=Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
 const bannedWords=['puta','puto','cagar','mierda','hdp','concha','pija','forro','insulto','boludo'];
 const mapAuthError=(err)=>{ const c=String(err?.code||''); const M={'auth/invalid-email':'Email inválido.','auth/missing-email':'Ingresá tu email.','auth/missing-password':'Ingresá tu contraseña.','auth/weak-password':'La contraseña es muy débil (mínimo 6 caracteres).','auth/email-already-in-use':'Ese email ya está registrado.','auth/user-not-found':'Usuario no encontrado.','auth/wrong-password':'Contraseña incorrecta.','auth/too-many-requests':'Demasiados intentos.','auth/network-request-failed':'Fallo de red.','auth/operation-not-allowed':'Habilitá Email/Password.','auth/unauthorized-domain':'Dominio no autorizado (agregá localhost).'}; return M[c] || err?.message || 'Error desconocido'; };
 async function setupPersistence(){ try{ await setPersistence(auth,browserLocalPersistence);}catch(_){ try{await setPersistence(auth,browserSessionPersistence);}catch(_2){await setPersistence(auth,inMemoryPersistence);} } }
@@ -308,6 +311,7 @@ const state = {
 /* -------- Firebase init -------- */
 try{
   appFB = initializeApp(firebaseConfig);
+  const _analyticsSafe = null; // analytics opcional
   auth = getAuth(appFB);
   db = getFirestore(appFB);
   storage = getStorage(appFB);
@@ -543,8 +547,8 @@ async function sendChat(){
   await addDoc(collection(db,'requests',state.activeRequestId,'messages'),{from:mySide(),text:s,ts:serverTimestamp()});
   if(input) input.value='';
 }
-function showChat(show){ const d=document.getElementById('chatMini'); if(d) d.style.display = show ? 'block' : 'none'; }
-function startSearchingUI(on){
+function showTripChat(show){ const d=document.getElementById('chatMini'); if(d) d.style.display = show ? 'block' : 'none'; }
+function setSearchingUI(on){
   const t=document.getElementById('searchTimer'); if(!t) return;
   if(on){ if(!state.requestCreatedAt) state.requestCreatedAt=Date.now(); if(timerInt) clearInterval(timerInt);
     timerInt=setInterval(function(){ const s=Math.floor((Date.now()-state.requestCreatedAt)/1000); const mm=String(Math.floor(s/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); t.textContent=mm+':'+ss; },500);
@@ -558,12 +562,12 @@ function watchActiveRequest(id){
     const act=$('#actividad'); if(act) act.textContent='#'+id.slice(0,6)+' — '+r.status.toUpperCase()+' — '+fmt(r.precio)+' ('+(r.km||0).toFixed(2)+' km, '+(r.min||0)+' min)';
     const bar=$('#statusBar'), txt=$('#statusText');
     if(bar){ bar.style.display='flex'; }
-    if(r.status==='buscando'){ if(txt) txt.textContent='BUSCANDO CONDUCTOR…'; startSearchingUI(true); showChat(false); stopDriverFollower(); }
-    if(r.status==='aceptado'){ if(txt) txt.textContent='CONDUCTOR ACEPTÓ — EN CAMINO'; startSearchingUI(false); showChat(true); startDriverFollower(id); }
-    if(r.status==='en_curso'){ if(txt) txt.textContent='VIAJE EN CURSO'; startSearchingUI(false); showChat(true); startDriverFollower(id); }
+    if(r.status==='buscando'){ if(txt) txt.textContent='BUSCANDO CONDUCTOR…'; setSearchingUI(true); showTripChat(false); stopDriverFollower(); }
+    if(r.status==='aceptado'){ if(txt) txt.textContent='CONDUCTOR ACEPTÓ — EN CAMINO'; setSearchingUI(false); showTripChat(true); startDriverFollower(id); }
+    if(r.status==='en_curso'){ if(txt) txt.textContent='VIAJE EN CURSO'; setSearchingUI(false); showTripChat(true); startDriverFollower(id); }
     if(r.status==='finalizado' || r.status==='cancelado'){
-      showChat(false); state.activeRequestId=null; state.activeRequest=null; lockPoints(false);
-      startSearchingUI(false); stopDriverFollower(); if(chatUnsub){ chatUnsub(); chatUnsub=null; }
+      showTripChat(false); state.activeRequestId=null; state.activeRequest=null; lockPoints(false);
+      setSearchingUI(false); stopDriverFollower(); if(chatUnsub){ chatUnsub(); chatUnsub=null; }
       alert(r.status==='finalizado'?'¡Viaje finalizado!':'Solicitud cancelada');
     }
     if(r.status!=='finalizado' && r.status!=='cancelado'){ ensureChatListener(id); }
@@ -590,7 +594,7 @@ async function solicitarViaje(){
     origen:state.origen, destino:state.destino, km:distKm, min:state.routeMin||0, precio, surge:state.surge||1.0,
     createdAt:serverTimestamp()
   });
-  state.activeRequestId=ref.id; lockPoints(true); startSearchingUI(true); watchActiveRequest(ref.id);
+  state.activeRequestId=ref.id; lockPoints(true); setSearchingUI(true); watchActiveRequest(ref.id);
 }
 async function cancelarSolicitud(){ if(!state.activeRequestId){ alert('Sin viaje activo'); return; } await updateDoc(doc(db,'requests',state.activeRequestId),{status:'cancelado'}); }
 function subscribePendientes(){
@@ -660,7 +664,7 @@ function startDriverShare(){
     if(followMe) map.setView([p.lat,p.lng],map.getZoom());
     const r=state.activeRequest;
     if(r){
-      if(r.status==='aceptado' && r.origen){ ensureRouting().setWaypoints([L.latLng(p.lat,p.lng),L.latLng(r.origen.lat,r.origen.lng)]); }
+      if(r.status==='aceptado' && r.origen){ ensureRouting().setWaypoints([L.latLng(p.lat,p.lng),L.Latlng(r.origen.lat,r.origen.lng)]); } // fallback si querés guiarte al origen
       if(r.status==='en_curso' && r.destino){ ensureRouting().setWaypoints([L.latLng(p.lat,p.lng),L.latLng(r.destino.lat,r.destino.lng)]); }
     }
   }, function(err){ console.error(err); }, {enableHighAccuracy:true,maximumAge:2000,timeout:10000});
@@ -710,7 +714,7 @@ onAuthStateChanged(auth, async (user)=>{
     $('#app').style.display='none';
     $('#gate').style.display='grid';
     state.profile=null; state.activeRequestId=null; state.activeRequest=null; lockPoints(false);
-    startSearchingUI(false); stopDriverFollower(); stopDriverShare(); stopDriverTimer();
+    setSearchingUI(false); stopDriverFollower(); stopDriverShare(); stopDriverTimer();
     driverOnline=false; driverPaused=false; updateDriverHeader();
     if(activeReqUnsub){ activeReqUnsub(); activeReqUnsub=null; }
     if(chatUnsub){ chatUnsub(); chatUnsub=null; }
@@ -795,7 +799,7 @@ document.addEventListener('change',(e)=>{
   }
 });
 
-/* -------- Boot simple (solo aviso de entorno) -------- */
+/* -------- Boot simple -------- */
 document.addEventListener('DOMContentLoaded', function(){
   const bad=(location.protocol!=='http:' && location.protocol!=='https:');
   const warn=document.getElementById('envWarn'); if(warn) warn.style.display = bad ? 'block':'none';
