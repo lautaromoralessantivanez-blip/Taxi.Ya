@@ -113,6 +113,11 @@ button,input,select{font-family:inherit}
 .container.layout-profile #aside{display:block}
 .container.layout-profile .main{display:none} /* sin mapa en Perfil */
 
+/* === FIX: conductor sin hueco y mapa más arriba === */
+.container.layout-driver #aside .panel-body{min-height:auto;padding-bottom:.5rem;}
+.container.layout-driver #aside{margin-bottom:.75rem;}
+.container.layout-driver .main .panel-body{padding-top:.25rem;}
+
 /* Responsive */
 @media (max-width:680px){
   .tabs{position:fixed;bottom:10px;left:0;right:0;justify-content:center;z-index:40}
@@ -373,7 +378,6 @@ function updateRoleUI(){
     setContainerMode('layout-driver');
     if(controlsCard) controlsCard.style.display='none';
     if(infoCard) infoCard.style.display='none';
-    // overlay visible si el conductor está online
     if(overlay) overlay.style.display = driverOnline ? 'block' : 'none';
   }else{ // perfil
     setContainerMode('layout-profile');
@@ -630,7 +634,6 @@ function watchActiveRequest(id){
       showTripChat(false); state.activeRequestId=null; state.activeRequest=null; lockPoints(false);
       setSearchingUI(false); stopDriverFollower(); if(chatUnsub){ chatUnsub(); chatUnsub=null; }
       alert(r.status==='finalizado'?'¡Viaje finalizado!':'Solicitud cancelada');
-      // volver a lista de pendientes (si conductor online)
       if(driverOnline && !driverPaused){ renderPendingOverlaySkeleton(); }
     }
     if(r.status!=='finalizado' && r.status!=='cancelado'){ ensureChatListener(id); }
@@ -743,7 +746,6 @@ async function aceptarViaje(id){
   if(!driverOnline || driverPaused){ alert('Tenés que estar Online.'); return; }
   await updateDoc(doc(db,'requests',id),{status:'aceptado',conductorId:state.fbUser.uid,conductorNombre:(state.profile && state.profile.name)||state.fbUser.email});
   state.activeRequestId=id; watchActiveRequest(id);
-  // compacta overlay
   const box=$('#reqOverlay'); if(box) box.innerHTML='<div class="req-title">Viaje aceptado</div>'+box.innerHTML;
 }
 async function iniciarTrayecto(){ if(!state.activeRequestId) { alert('Sin viaje activo'); return; } await updateDoc(doc(db,'requests',state.activeRequestId),{status:'en_curso'}); }
