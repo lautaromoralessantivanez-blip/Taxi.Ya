@@ -49,7 +49,7 @@ button,input,select{font-family:inherit}
 .tab{padding:.45rem .75rem;border:1px solid var(--line);border-radius:999px;background:#17202a;color:#fff;opacity:.85;cursor:pointer;transition:.2s}
 .tab[aria-selected="true"]{background:var(--accent);color:#111;opacity:1;border-color:#e6b800}
 
-/* Layout contenedor: se cambia por JS según rol */
+/* Layout contenedor (se ajusta por JS según rol) */
 .container{display:grid;grid-template-columns:360px 1fr;gap:1rem;padding:1rem;max-width:1300px;margin:0 auto}
 .aside,.main{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .panel-head{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--line);background:var(--card)}
@@ -107,6 +107,7 @@ button,input,select{font-family:inherit}
       <span class="chip" style="margin-left:.5rem;background:#121a24;border:1px solid var(--line);padding:.2rem .5rem;border-radius:999px;color:#a9b4c2">Inicio de sesión</span>
     </div>
 
+    <!-- AVISO ENTORNO -->
     <div id="envWarn" class="err" style="display:none;margin-bottom:.75rem">
       ⚠️ Abrí el sitio con <b>http://localhost</b> (no <code>file://</code>).
     </div>
@@ -127,7 +128,7 @@ button,input,select{font-family:inherit}
       ¿No tenés cuenta? <span id="showReg" class="link">Crear una</span>
     </p>
 
-    <!-- REGISTRO -->
+    <!-- REGISTRO (colapsado por defecto) -->
     <div id="regCard" class="card" style="display:none;margin-top:.6rem;background:#0d131b">
       <h3 style="margin:0 0 .5rem 0">Crear cuenta</h3>
       <div class="row" style="gap:1rem;align-items:flex-end;flex-wrap:wrap">
@@ -175,12 +176,14 @@ button,input,select{font-family:inherit}
         <!-- Controles PASAJERO -->
         <div class="card" id="controlsCard">
           <div class="grid" style="gap:.9rem">
+            <!-- Buscador -->
             <div class="field" style="width:min(520px,100%)">
               <label class="label">Buscar dirección</label>
               <input id="addrSearch" class="input" placeholder="Ej: Av. Corrientes 1234, CABA" autocomplete="off">
               <div id="addrResults" class="ac-results" style="display:none"></div>
             </div>
 
+            <!-- Selector y acciones -->
             <div class="row wrap" style="justify-content:space-between;gap:.75rem">
               <div class="row" style="gap:.5rem">
                 <div class="label">Seleccionar en mapa:</div>
@@ -221,7 +224,7 @@ button,input,select{font-family:inherit}
         <!-- Mapa -->
         <div class="map-wrap"><div id="map"></div></div>
 
-        <!-- Chat -->
+        <!-- Chat compacto -->
         <details id="chatMini" class="chat-mini" style="display:none">
           <summary>💬 Chat del viaje (opcional)</summary>
           <div class="chatbox">
@@ -254,6 +257,7 @@ window.addEventListener('error', function(e){
 
 <!-- ================= Firebase + App (Módulos) ================= -->
 <script type="module">
+/* ---------------- Firebase ---------------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getAuth, setPersistence, browserLocalPersistence, browserSessionPersistence, inMemoryPersistence,
@@ -280,7 +284,7 @@ const firebaseConfig = {
 const $ = (sel)=>document.querySelector(sel);
 const setText=(el,v)=>{ if(el) el.textContent=v; };
 const fmt=(n)=> new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n);
-function km(a,b){ if(!a||!b) return 0; const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lng-a.lng)*Math.PI/180,la1=a.lat*Math.PI/180,la2=b.lat*Math.PI/180; const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
+function km(a,b){ if(!a||!b) return 0; const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lng-a.lng)*Math.PI/180,la1=a.lat*Math.PI/180,la2=b.lat*Math.PI/180; const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(Math.PI/180*(b.lng-a.lng)/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
 const bannedWords=['puta','puto','cagar','mierda','hdp','concha','pija','forro','insulto','boludo'];
 const mapAuthError=(err)=>{ const c=String(err?.code||''); const M={'auth/invalid-email':'Email inválido.','auth/missing-email':'Ingresá tu email.','auth/missing-password':'Ingresá tu contraseña.','auth/weak-password':'La contraseña es muy débil (mínimo 6 caracteres).','auth/email-already-in-use':'Ese email ya está registrado.','auth/user-not-found':'Usuario no encontrado.','auth/wrong-password':'Contraseña incorrecta.','auth/too-many-requests':'Demasiados intentos.','auth/network-request-failed':'Fallo de red.','auth/operation-not-allowed':'Habilitá Email/Password.','auth/unauthorized-domain':'Dominio no autorizado (agregá localhost).'}; return M[c] || err?.message || 'Error desconocido'; };
 async function setupPersistence(){ try{ await setPersistence(auth,browserLocalPersistence);}catch(_){ try{await setPersistence(auth,browserSessionPersistence);}catch(_2){await setPersistence(auth,inMemoryPersistence);} } }
@@ -318,7 +322,6 @@ function updateRoleUI(){
   const statusBar=$('#statusBar'), chatMini=$('#chatMini');
 
   if(uiTab==='pasajero'){
-    // Ocultar aside y expandir mapa
     if(aside) aside.style.display='none';
     if(container) container.style.gridTemplateColumns='1fr';
     if(controlsCard) controlsCard.style.display='block';
@@ -356,8 +359,7 @@ function renderTabs(){
   const sc=$('#statusChip'); if(sc) sc.textContent=state.fbUser ? ((state.profile && state.profile.name) || 'online') : 'offline';
 }
 function onTabChange(){
-  // cortar listeners de la cola si dejamos Conductor
-  if(uiTab!=='conductor') unsubscribePendientes();
+  if(uiTab!=='conductor') unsubscribePendientes(); // salir de cola
   renderSide();
   updateRoleUI();
 }
@@ -451,7 +453,7 @@ function initMap(){
   const pb=document.querySelector('.main .panel-body');
   if(window.ResizeObserver){ new ResizeObserver(()=>{ if(map) map.invalidateSize(); }).observe(pb); }
   map.on('click', function(e){
-    if(state.pointsLocked){ alert('Los puntos están bloqueados hasta cancelar la solicitud.'); return; }
+    if(state.pointsLocked || uiTab!=='pasajero'){ return; }
     const p={lat:e.latlng.lat,lng:e.latlng.lng};
     if(selectMode==='origen'){ setOrigen(p,true); } else { setDestino(p,true); }
   });
@@ -481,7 +483,7 @@ function recalcRoute(){ if(!(state.origen&&state.destino)){ updateInfoHaversine(
 function miUbicacionComoOrigen(){
   if(!navigator.geolocation){ alert('Geolocalización no disponible'); return; }
   navigator.geolocation.getCurrentPosition(function(pos){
-    if(state.pointsLocked){ alert('Bloqueado por viaje activo'); return; }
+    if(state.pointsLocked || uiTab!=='pasajero'){ return; }
     const p={lat:pos.coords.latitude,lng:pos.coords.longitude};
     if(meMarker) map.removeLayer(meMarker);
     meMarker=L.circleMarker([p.lat,p.lng],{radius:7,color:'#34d399'}).addTo(map).bindPopup('Mi ubicación');
@@ -493,8 +495,7 @@ function limpiar(){
   if(origenMarker) map.removeLayer(origenMarker); origenMarker=null; state.origen=null;
   if(destinoMarker) map.removeLayer(destinoMarker); destinoMarker=null; state.destino=null;
   if(routing){ routing.setWaypoints([]); } state.routeKm=0; state.routeMin=0;
-  setText($('#origenTxt'),'—'); setText($('#destinoTxt'),'—');
-  setText($('#kmTxt'),'0.00'); setText($('#minTxt'),'0'); setText($('#fareTxt'), fmt(0));
+  setText($('#origenTxt'),'—'); setText($('#destinoTxt'),'—'); setText($('#kmTxt'),'0.00'); setText($('#minTxt'),'0'); setText($('#fareTxt'), fmt(0));
   const a=$('#actividad'); if(a) a.textContent='Tocá el mapa para fijar Origen/Destino.';
 }
 function calcFare(distKm,durMin){ const p=state.pricing; const bruto=p.base+(distKm*p.perKm)+(durMin*p.perMin)+p.serviceFee; const surged=bruto*(state.surge||1.0); return Math.max(p.minimum,Math.round(surged)); }
@@ -532,7 +533,7 @@ if(addrInput){
 }
 document.addEventListener('click', function(e){ if(addrBox && addrBox.style.display!=='none' && !addrBox.contains(e.target) && e.target!==addrInput){ addrBox.style.display='none'; }});
 
-/* -------- Chat -------- */
+/* -------- Chat + Request watch -------- */
 function sanitizeMsg(t){ let x=(t||'').trim(); for(const w of bannedWords){ x=x.replace(new RegExp('\\b'+w+'\\b','gi'),'***'); } return x; }
 function mySide(){ const r=state.activeRequest; if(!r||!state.fbUser) return 'pax'; if(r.pasajeroId===state.fbUser.uid) return 'pax'; if(r.conductorId===state.fbUser.uid) return 'drv'; return 'pax'; }
 async function sendChat(){
@@ -541,6 +542,41 @@ async function sendChat(){
   const s=sanitizeMsg(text); if(/^\*{3,}$/.test(s)) { alert('Mensaje bloqueado'); return; }
   await addDoc(collection(db,'requests',state.activeRequestId,'messages'),{from:mySide(),text:s,ts:serverTimestamp()});
   if(input) input.value='';
+}
+function showChat(show){ const d=document.getElementById('chatMini'); if(d) d.style.display = show ? 'block' : 'none'; }
+function startSearchingUI(on){
+  const t=document.getElementById('searchTimer'); if(!t) return;
+  if(on){ if(!state.requestCreatedAt) state.requestCreatedAt=Date.now(); if(timerInt) clearInterval(timerInt);
+    timerInt=setInterval(function(){ const s=Math.floor((Date.now()-state.requestCreatedAt)/1000); const mm=String(Math.floor(s/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); t.textContent=mm+':'+ss; },500);
+  }else{ if(timerInt) clearInterval(timerInt); timerInt=null; state.requestCreatedAt=null; t.textContent='00:00'; }
+}
+function watchActiveRequest(id){
+  if(activeReqUnsub) activeReqUnsub();
+  activeReqUnsub=onSnapshot(doc(db,'requests',id), function(snap){
+    if(!snap.exists()) return;
+    const r=snap.data(); state.activeRequest={id:snap.id, ...r};
+    const act=$('#actividad'); if(act) act.textContent='#'+id.slice(0,6)+' — '+r.status.toUpperCase()+' — '+fmt(r.precio)+' ('+(r.km||0).toFixed(2)+' km, '+(r.min||0)+' min)';
+    const bar=$('#statusBar'), txt=$('#statusText');
+    if(bar){ bar.style.display='flex'; }
+    if(r.status==='buscando'){ if(txt) txt.textContent='BUSCANDO CONDUCTOR…'; startSearchingUI(true); showChat(false); stopDriverFollower(); }
+    if(r.status==='aceptado'){ if(txt) txt.textContent='CONDUCTOR ACEPTÓ — EN CAMINO'; startSearchingUI(false); showChat(true); startDriverFollower(id); }
+    if(r.status==='en_curso'){ if(txt) txt.textContent='VIAJE EN CURSO'; startSearchingUI(false); showChat(true); startDriverFollower(id); }
+    if(r.status==='finalizado' || r.status==='cancelado'){
+      showChat(false); state.activeRequestId=null; state.activeRequest=null; lockPoints(false);
+      startSearchingUI(false); stopDriverFollower(); if(chatUnsub){ chatUnsub(); chatUnsub=null; }
+      alert(r.status==='finalizado'?'¡Viaje finalizado!':'Solicitud cancelada');
+    }
+    if(r.status!=='finalizado' && r.status!=='cancelado'){ ensureChatListener(id); }
+  });
+}
+function ensureChatListener(reqId){
+  if(chatUnsub) return;
+  chatUnsub=onSnapshot(query(collection(db,'requests',reqId,'messages'),orderBy('ts','asc'),limit(100)), function(qs){
+    const log=$('#chatlog'); if(!log) return; log.innerHTML='';
+    const mine=mySide();
+    qs.forEach(function(d){ const m=d.data(); const who=(m.from===mine)?'me':''; log.insertAdjacentHTML('beforeend','<div class="msg '+who+'"><b>'+(m.from==='pax'?'Pasajero':'Conductor')+':</b> '+m.text+'</div>'); });
+    log.scrollTop=log.scrollHeight;
+  });
 }
 
 /* -------- Firestore: Solicitudes -------- */
@@ -596,43 +632,6 @@ function unsubscribePendientes(){ if(listUnsub){ listUnsub(); listUnsub=null; } 
 async function aceptarViaje(id){ if(!driverOnline || driverPaused){ alert('Tenés que estar Online.'); return; } await updateDoc(doc(db,'requests',id),{status:'aceptado',conductorId:state.fbUser.uid,conductorNombre:(state.profile && state.profile.name)||state.fbUser.email}); state.activeRequestId=id; watchActiveRequest(id); }
 async function iniciarTrayecto(){ if(!state.activeRequestId) { alert('Sin viaje activo'); return; } await updateDoc(doc(db,'requests',state.activeRequestId),{status:'en_curso'}); }
 async function finalizarTrayecto(){ if(!state.activeRequestId) { alert('Sin viaje activo'); return; } await updateDoc(doc(db,'requests',state.activeRequestId),{status:'finalizado'}); }
-
-/* -------- Watch + chat + tracking -------- */
-function watchActiveRequest(id){
-  if(activeReqUnsub) activeReqUnsub();
-  activeReqUnsub=onSnapshot(doc(db,'requests',id), function(snap){
-    if(!snap.exists()) return;
-    const r=snap.data(); state.activeRequest={id:snap.id, ...r};
-    const act=$('#actividad'); if(act) act.textContent='#'+id.slice(0,6)+' — '+r.status.toUpperCase()+' — '+fmt(r.precio)+' ('+(r.km||0).toFixed(2)+' km, '+(r.min||0)+' min)';
-    const bar=$('#statusBar'), txt=$('#statusText');
-    if(bar){ bar.style.display='flex'; }
-    if(r.status==='buscando'){ if(txt) txt.textContent='BUSCANDO CONDUCTOR…'; startSearchingUI(true); showChat(false); stopDriverFollower(); }
-    if(r.status==='aceptado'){ if(txt) txt.textContent='CONDUCTOR ACEPTÓ — EN CAMINO'; startSearchingUI(false); showChat(true); startDriverFollower(id); }
-    if(r.status==='en_curso'){ if(txt) txt.textContent='VIAJE EN CURSO'; startSearchingUI(false); showChat(true); startDriverFollower(id); }
-    if(r.status==='finalizado' || r.status==='cancelado'){
-      showChat(false); state.activeRequestId=null; state.activeRequest=null; lockPoints(false);
-      startSearchingUI(false); stopDriverFollower(); if(chatUnsub){ chatUnsub(); chatUnsub=null; }
-      alert(r.status==='finalizado'?'¡Viaje finalizado!':'Solicitud cancelada');
-    }
-    if(r.status!=='finalizado' && r.status!=='cancelado'){ ensureChatListener(id); }
-  });
-}
-function ensureChatListener(reqId){
-  if(chatUnsub) return;
-  chatUnsub=onSnapshot(query(collection(db,'requests',reqId,'messages'),orderBy('ts','asc'),limit(100)), function(qs){
-    const log=$('#chatlog'); if(!log) return; log.innerHTML='';
-    const mine=mySide();
-    qs.forEach(function(d){ const m=d.data(); const who=(m.from===mine)?'me':''; log.insertAdjacentHTML('beforeend','<div class="msg '+who+'"><b>'+(m.from==='pax'?'Pasajero':'Conductor')+':</b> '+m.text+'</div>'); });
-    log.scrollTop=log.scrollHeight;
-  });
-}
-function startSearchingUI(on){
-  const t=$('#searchTimer'); if(!t) return;
-  if(on){ if(!state.requestCreatedAt) state.requestCreatedAt=Date.now(); if(timerInt) clearInterval(timerInt);
-    timerInt=setInterval(function(){ const s=Math.floor((Date.now()-state.requestCreatedAt)/1000); const mm=String(Math.floor(s/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); t.textContent=mm+':'+ss; },500);
-  }else{ if(timerInt) clearInterval(timerInt); timerInt=null; state.requestCreatedAt=null; t.textContent='00:00'; }
-}
-function showChat(show){ const d=$('#chatMini'); if(d) d.style.display = show ? 'block' : 'none'; }
 
 /* -------- Bloqueo de puntos -------- */
 function lockPoints(lock){
@@ -721,7 +720,7 @@ onAuthStateChanged(auth, async (user)=>{
   }
 });
 
-/* -------- Eventos de login/registro -------- */
+/* -------- Eventos de UI -------- */
 function clearRegForm(){ const f=$('#regPhoto'); if(f) f.value=''; const p=$('#regPreview'); if(p) p.src=''; ['regName','regEmail','regPass','regPass2'].forEach(id=>{ const el=$('#'+id); if(el) el.value=''; }); setText($('#regErr'),''); }
 document.addEventListener('click', async (e)=>{
   const id = e.target?.id || '';
@@ -758,7 +757,7 @@ document.addEventListener('click', async (e)=>{
     return;
   }
 
-  // Controles mapa (solo útiles en Pasajero, pero si tocan en otro tab no hacen nada visual)
+  // Controles PASAJERO
   if(id==='btnMiUbicacion'){ if(uiTab!=='pasajero') return; miUbicacionComoOrigen(); return; }
   if(id==='btnLimpiar'){ if(uiTab!=='pasajero') return; limpiar(); return; }
   if(id==='btnSolicitar'){ if(uiTab!=='pasajero') return; solicitarViaje(); return; }
@@ -796,16 +795,7 @@ document.addEventListener('change',(e)=>{
   }
 });
 
-/* -------- Search timer helpers -------- */
-function showChat(show){ const d=document.getElementById('chatMini'); if(d) d.style.display = show ? 'block' : 'none'; }
-function startSearchingUI(on){
-  const t=document.getElementById('searchTimer'); if(!t) return;
-  if(on){ if(!state.requestCreatedAt) state.requestCreatedAt=Date.now(); if(timerInt) clearInterval(timerInt);
-    timerInt=setInterval(function(){ const s=Math.floor((Date.now()-state.requestCreatedAt)/1000); const mm=String(Math.floor(s/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); t.textContent=mm+':'+ss; },500);
-  }else{ if(timerInt) clearInterval(timerInt); timerInt=null; state.requestCreatedAt=null; t.textContent='00:00'; }
-}
-
-/* -------- Boot -------- */
+/* -------- Boot simple (solo aviso de entorno) -------- */
 document.addEventListener('DOMContentLoaded', function(){
   const bad=(location.protocol!=='http:' && location.protocol!=='https:');
   const warn=document.getElementById('envWarn'); if(warn) warn.style.display = bad ? 'block':'none';
