@@ -33,7 +33,7 @@ button,input,select{font-family:inherit}
 .grid{display:grid;gap:.75rem}
 .field{display:grid;gap:.35rem}
 .label{font-size:.9rem;color:var(--muted)}
-.input{width:100%;background:#0e1620;border:1px solid var(--line);color:var(--ink);padding:.65rem .75rem;border-radius:12px}
+.input, select.input{width:100%;background:#0e1620;border:1px solid var(--line);color:var(--ink);padding:.65rem .75rem;border-radius:12px}
 .btn{display:inline-flex;align-items:center;gap:.5rem;border:1px solid var(--line);background:#12202e;color:var(--ink);padding:.6rem .9rem;border-radius:12px;cursor:pointer;transition:.2s;text-decoration:none}
 .btn.primary{background:var(--accent);color:#111;border-color:#e6b800}
 .link{color:#a7c7ff;cursor:pointer;text-decoration:underline}
@@ -49,7 +49,7 @@ button,input,select{font-family:inherit}
 .tab{padding:.45rem .75rem;border:1px solid var(--line);border-radius:999px;background:#17202a;color:#fff;opacity:.85;cursor:pointer;transition:.2s}
 .tab[aria-selected="true"]{background:var(--accent);color:#111;opacity:1;border-color:#e6b800}
 
-/* ===== Layout contenedor por rol (clases dinámicas) ===== */
+/* ===== Layouts por rol ===== */
 .container{display:grid;gap:1rem;padding:1rem;max-width:1300px;margin:0 auto}
 .aside,.main{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .panel-head{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--line);background:var(--card)}
@@ -62,13 +62,27 @@ button,input,select{font-family:inherit}
 .badge.ok{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.35)}
 .help{color:var(--muted);font-size:.86rem}
 
-/* Estados y mapa */
+/* Estado */
 .status-bar{order:50;display:none;align-items:center;gap:.6rem;background:#0f172a;border:1px solid #243045;padding:.55rem .75rem;border-radius:10px;font-weight:600}
+
+/* Mapa */
 .map-wrap{order:99;position:relative}
 #map{width:100%;height:70vh;min-height:460px}
 .leaflet-container{background:#0b0f15}
 
-/* Chat */
+/* Overlay de solicitudes en el mapa (Conductor) */
+.req-overlay{position:absolute;right:14px;top:14px;width:min(380px,92vw);max-height:60vh;overflow:auto;background:#0e1620;border:1px solid var(--line);border-radius:14px;padding:.75rem;box-shadow:0 6px 24px rgba(0,0,0,.35);display:none}
+.req-title{font-weight:700;margin:.25rem 0 .5rem 0}
+.req-item{display:grid;grid-template-columns:48px 1fr auto;gap:.6rem;align-items:center;border:1px solid var(--line);background:#0d131b;border-radius:12px;padding:.6rem;margin:.5rem 0}
+.req-item .avatar{width:48px;height:48px;border-radius:10px;border:1px solid var(--line);object-fit:cover}
+.req-item .meta{font-size:.85rem;color:#a9b4c2}
+.req-actions{display:flex;gap:.4rem}
+.req-pay{font-size:.78rem;border:1px dashed #334155;padding:.15rem .4rem;border-radius:8px;color:#a9b4c2}
+.req-compact{display:grid;gap:.5rem}
+.req-compact .head{display:flex;align-items:center;gap:.6rem}
+.req-compact .head img{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);object-fit:cover}
+
+/* Chat compacto */
 .chat-mini{order:98}
 .chat-mini summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:.5rem;background:#0f172a;border:1px solid #243045;padding:.55rem .75rem;border-radius:10px;font-weight:600}
 .chat-mini .chatbox{display:grid;grid-template-rows:1fr auto;height:180px;background:#0d131b;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:.6rem}
@@ -114,7 +128,7 @@ button,input,select{font-family:inherit}
   <div class="gate-card">
     <div class="gate-title">
       <span class="dot"></span><b>Taxi Ya</b>
-      <span class="chip" style="margin-left:.5rem;background:#121a24;border:1px solid var(--line);padding:.2rem .5rem;border-radius:999px;color:#a9b4c2">Inicio de sesión</span>
+      <span class="chip" style="margin-left:.5rem;background:#121a24;border:1px solid var(--line);padding:.2rem .5rem;border-radius:999px;color:#a7b4c2">Inicio de sesión</span>
     </div>
 
     <div id="envWarn" class="err" style="display:none;margin-bottom:.75rem">
@@ -199,7 +213,15 @@ button,input,select{font-family:inherit}
                   <button id="modeDestino" type="button" aria-pressed="false" style="border:0;background:#0e1620;color:#fff;padding:.45rem .8rem;cursor:pointer">Destino</button>
                 </div>
               </div>
+
               <div class="row" style="gap:.5rem;flex-wrap:wrap;justify-content:flex-start">
+                <div class="field">
+                  <label class="label">Método de pago</label>
+                  <select id="payMethod" class="input" style="min-width:160px">
+                    <option value="efectivo" selected>Efectivo</option>
+                    <option value="mp">Mercado Pago</option>
+                  </select>
+                </div>
                 <button class="btn" id="btnMiUbicacion" type="button">Usar mi ubicación</button>
                 <button class="btn" id="btnLimpiar" type="button">Limpiar</button>
                 <button class="btn" id="btnCancelReqTop" type="button">Cancelar</button>
@@ -229,7 +251,11 @@ button,input,select{font-family:inherit}
         </div>
 
         <!-- Mapa -->
-        <div class="map-wrap"><div id="map"></div></div>
+        <div class="map-wrap">
+          <div id="map"></div>
+          <!-- Overlay de solicitudes para CONDUCTOR -->
+          <div id="reqOverlay" class="req-overlay"></div>
+        </div>
 
         <!-- Chat compacto -->
         <details id="chatMini" class="chat-mini" style="display:none">
@@ -320,7 +346,6 @@ const state = {
 /* -------- Firebase init -------- */
 try{
   appFB = initializeApp(firebaseConfig);
-  const _analyticsSafe = null;
   auth = getAuth(appFB);
   db = getFirestore(appFB);
   storage = getStorage(appFB);
@@ -337,20 +362,26 @@ function setContainerMode(mode){
 function updateRoleUI(){
   const controlsCard=$('#controlsCard'), infoCard=$('#infoCard');
   const statusBar=$('#statusBar'), chatMini=$('#chatMini');
+  const overlay=$('#reqOverlay');
 
   if(uiTab==='pasajero'){
     setContainerMode('layout-passenger');
     if(controlsCard) controlsCard.style.display='block';
     if(infoCard) infoCard.style.display='block';
+    if(overlay) overlay.style.display='none';
   }else if(uiTab==='conductor'){
     setContainerMode('layout-driver');
     if(controlsCard) controlsCard.style.display='none';
     if(infoCard) infoCard.style.display='none';
+    // overlay visible si el conductor está online
+    if(overlay) overlay.style.display = driverOnline ? 'block' : 'none';
   }else{ // perfil
     setContainerMode('layout-profile');
     if(controlsCard) controlsCard.style.display='none';
     if(infoCard) infoCard.style.display='none';
-    if(!state.activeRequestId){ if(statusBar) statusBar.style.display='none'; if(chatMini) chatMini.style.display='none'; }
+    if(statusBar) statusBar.style.display='none';
+    if(chatMini) chatMini.style.display='none';
+    if(overlay) overlay.style.display='none';
   }
   setTimeout(()=>{ if(map) map.invalidateSize(); },120);
 }
@@ -402,16 +433,14 @@ function cardConductor(){
         '<button class="btn" id="btnDrvFinish" type="button" disabled>Finalizar</button>',
       '</div>',
     '</div>',
-    '<p class="help" style="margin-top:.4rem">“Iniciar” te pone disponible; “Pausar” te saca de la cola; “Finalizar” cierra la sesión.</p>',
-  '</div>',
-  '<div class="card" id="drvQueueCard" style="display:none">',
-    '<div class="label">Solicitudes entrantes</div>',
-    '<div id="reqList" class="grid"></div>',
-  '</div>'].join('');
+    '<p class="help" style="margin-top:.4rem">“Iniciar” te pone disponible; “Pausar” te saca de la cola; “Finalizar” cierra la sesión. Las solicitudes aparecen sobre el mapa.</p>',
+  '</div>'
+  ].join('');
   setTimeout(function(){
     updateDriverHeader();
     attachEarningsListener();
     if(driverOnline && !driverPaused) subscribePendientes(); else unsubscribePendientes();
+    updateRoleUI();
   },0);
   return el;
 }
@@ -425,7 +454,6 @@ function cardPerfil(){
   const el=document.createElement('div'); el.className='grid';
 
   el.innerHTML=[
-    // Cuenta
     '<section class="card">',
       '<h3 style="margin:.1rem 0 1rem 0">Cuenta</h3>',
       '<div class="row wrap" style="gap:.75rem;align-items:flex-start">',
@@ -436,16 +464,12 @@ function cardPerfil(){
         '</div>',
       '</div>',
     '</section>',
-
-    // Sesión
     '<section class="card">',
       '<h3 style="margin:.1rem 0 1rem 0">Sesión</h3>',
       '<div class="row" style="gap:.5rem;flex-wrap:wrap">',
         '<button class="btn" id="btnLogout" type="button">Cerrar sesión</button>',
       '</div>',
     '</section>',
-
-    // Preferencias (solo presentación)
     '<section class="card">',
       '<h3 style="margin:.1rem 0 1rem 0">Preferencias</h3>',
       '<div class="row wrap" style="gap:.5rem">',
@@ -453,10 +477,8 @@ function cardPerfil(){
         '<span class="chip">Idioma: ES</span>',
         '<span class="chip">Notificaciones: On</span>',
       '</div>',
-      '<p class="help" style="margin-top:.35rem">Estas preferencias son de ejemplo visual. Podés persistirlas en Firestore más adelante.</p>',
+      '<p class="help" style="margin-top:.35rem">Ejemplo visual. Podés persistirlo en Firestore después.</p>',
     '</section>',
-
-    // Calificación
     '<section class="card">',
       '<h3 style="margin:.1rem 0 1rem 0">Calificación</h3>',
       '<div class="row" style="gap:.35rem">',stars,'</div>',
@@ -478,11 +500,10 @@ function updateDriverHeader(){
   if(bStart){ bStart.disabled = (driverOnline && !driverPaused); }
   if(bPause){ bPause.disabled = !driverOnline; bPause.textContent = driverPaused?'Reanudar':'Pausar'; }
   if(bFin){ bFin.disabled = !driverOnline; }
-  const qc=$('#drvQueueCard'); if(qc){ qc.style.display = (driverOnline && !driverPaused)?'block':'none'; }
 }
-function driverStart(){ if(driverOnline && !driverPaused) return; driverOnline=true; driverPaused=false; if(!driverSessionStart) driverSessionStart=Date.now(); startDriverShare(); startDriverTimer(); updateDriverHeader(); subscribePendientes(); }
-function driverPauseToggle(){ if(!driverOnline) return; driverPaused=!driverPaused; if(driverPaused){ unsubscribePendientes(); stopDriverShare(); } else { subscribePendientes(); startDriverShare(); } updateDriverHeader(); }
-function driverFinish(){ if(!driverOnline) return; driverOnline=false; driverPaused=false; stopDriverShare(); stopDriverTimer(); updateDriverHeader(); unsubscribePendientes(); }
+function driverStart(){ if(driverOnline && !driverPaused) return; driverOnline=true; driverPaused=false; if(!driverSessionStart) driverSessionStart=Date.now(); startDriverShare(); startDriverTimer(); updateDriverHeader(); subscribePendientes(); updateRoleUI(); }
+function driverPauseToggle(){ if(!driverOnline) return; driverPaused=!driverPaused; if(driverPaused){ unsubscribePendientes(); stopDriverShare(); } else { subscribePendientes(); startDriverShare(); } updateDriverHeader(); updateRoleUI(); }
+function driverFinish(){ if(!driverOnline) return; driverOnline=false; driverPaused=false; stopDriverShare(); stopDriverTimer(); updateDriverHeader(); unsubscribePendientes(); updateRoleUI(); }
 function startDriverTimer(){ if(driverTimer) return; function tick(){ const s=Math.floor((Date.now()- (driverSessionStart||Date.now()))/1000); const hh=String(Math.floor(s/3600)).padStart(2,'0'); const mm=String(Math.floor((s%3600)/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); const el=$('#drvTime'); if(el) el.textContent=hh+':'+mm+':'+ss; } tick(); driverTimer=setInterval(tick,1000); }
 function stopDriverTimer(){ if(driverTimer){ clearInterval(driverTimer); driverTimer=null; } }
 
@@ -600,13 +621,17 @@ function watchActiveRequest(id){
     const act=$('#actividad'); if(act) act.textContent='#'+id.slice(0,6)+' — '+r.status.toUpperCase()+' — '+fmt(r.precio)+' ('+(r.km||0).toFixed(2)+' km, '+(r.min||0)+' min)';
     const bar=$('#statusBar'), txt=$('#statusText');
     if(bar){ bar.style.display='flex'; }
+    const overlay=$('#reqOverlay');
+
     if(r.status==='buscando'){ if(txt) txt.textContent='BUSCANDO CONDUCTOR…'; setSearchingUI(true); showTripChat(false); stopDriverFollower(); }
-    if(r.status==='aceptado'){ if(txt) txt.textContent='CONDUCTOR ACEPTÓ — EN CAMINO'; setSearchingUI(false); showTripChat(true); startDriverFollower(id); }
-    if(r.status==='en_curso'){ if(txt) txt.textContent='VIAJE EN CURSO'; setSearchingUI(false); showTripChat(true); startDriverFollower(id); }
+    if(r.status==='aceptado'){ if(txt) txt.textContent='CONDUCTOR ACEPTÓ — EN CAMINO'; setSearchingUI(false); showTripChat(true); startDriverFollower(id); if(overlay) overlay.innerHTML = renderActiveOverlayHtml(r); }
+    if(r.status==='en_curso'){ if(txt) txt.textContent='VIAJE EN CURSO'; setSearchingUI(false); showTripChat(true); startDriverFollower(id); if(overlay) overlay.innerHTML = renderActiveOverlayHtml(r); }
     if(r.status==='finalizado' || r.status==='cancelado'){
       showTripChat(false); state.activeRequestId=null; state.activeRequest=null; lockPoints(false);
       setSearchingUI(false); stopDriverFollower(); if(chatUnsub){ chatUnsub(); chatUnsub=null; }
       alert(r.status==='finalizado'?'¡Viaje finalizado!':'Solicitud cancelada');
+      // volver a lista de pendientes (si conductor online)
+      if(driverOnline && !driverPaused){ renderPendingOverlaySkeleton(); }
     }
     if(r.status!=='finalizado' && r.status!=='cancelado'){ ensureChatListener(id); }
   });
@@ -625,55 +650,110 @@ function ensureChatListener(reqId){
 async function solicitarViaje(){
   if(!(state.origen&&state.destino)){ alert('Elegí origen y destino'); return; }
   const distKm=state.routeKm||km(state.origen,state.destino), precio=calcFare(distKm,state.routeMin||0);
+  const pago = (document.getElementById('payMethod')?.value)||'efectivo';
   const ref=await addDoc(collection(db,'requests'),{
     status:'buscando', pasajeroId:state.fbUser.uid,
     pasajeroNombre:(state.profile && state.profile.name) || state.fbUser.email,
     pasajeroFoto:(state.profile && state.profile.photoURL) || '',
     origen:state.origen, destino:state.destino, km:distKm, min:state.routeMin||0, precio, surge:state.surge||1.0,
-    createdAt:serverTimestamp()
+    pago, createdAt:serverTimestamp()
   });
   state.activeRequestId=ref.id; lockPoints(true); setSearchingUI(true); watchActiveRequest(ref.id);
 }
 async function cancelarSolicitud(){ if(!state.activeRequestId){ alert('Sin viaje activo'); return; } await updateDoc(doc(db,'requests',state.activeRequestId),{status:'cancelado'}); }
+
+/* ===== Overlay de solicitudes (CONDUCTOR) ===== */
+function renderPendingOverlaySkeleton(){
+  const box=$('#reqOverlay'); if(!box) return;
+  box.style.display = (uiTab==='conductor' && driverOnline)?'block':'none';
+  box.innerHTML='<div class="req-title">Solicitudes entrantes</div><div id="reqListO"></div>';
+}
+function renderPendingItemHtml({id,avatar,name,stars,count,kmv,minv,precio,pago,origen,destino}){
+  return `
+    <div class="req-item" data-id="${id}">
+      <img class="avatar" src="${avatar}" alt="avatar"/>
+      <div>
+        <div style="font-weight:600">${name}</div>
+        <div class="meta">${stars} <span class="chip" style="margin-left:.35rem">${count} ops</span></div>
+        <div class="meta" style="margin-top:.25rem">${kmv.toFixed(2)} km • ${minv} min • <b>${fmt(precio)}</b></div>
+        <div class="req-pay">Pago: ${pago==='mp'?'Mercado Pago':'Efectivo'}</div>
+      </div>
+      <div class="req-actions">
+        <button class="btn primary" data-acc="${id}" type="button">Aceptar</button>
+      </div>
+      <div style="grid-column:1/-1;margin-top:.35rem" class="meta">
+        <span class="chip">Ori: ${origen.lat.toFixed(4)}, ${origen.lng.toFixed(4)}</span>
+        <span class="chip">Des: ${destino.lat.toFixed(4)}, ${destino.lng.toFixed(4)}</span>
+      </div>
+    </div>`;
+}
+function renderActiveOverlayHtml(r){
+  const name=r.pasajeroNombre||'Pasajero';
+  const avatar = r.pasajeroFoto || ('https://api.dicebear.com/9.x/initials/svg?seed='+encodeURIComponent(name));
+  const pagoTxt = r.pago==='mp'?'Mercado Pago':'Efectivo';
+  const btn = (r.status==='aceptado') ? 
+      `<button class="btn primary" id="btnStartTrip" type="button">Empezar viaje</button>` :
+      `<button class="btn primary" id="btnFinishTrip" type="button">Terminar viaje</button>`;
+  return `
+    <div class="req-compact">
+      <div class="head">
+        <img src="${avatar}" alt="avatar"/><div>
+          <div style="font-weight:700">${name}</div>
+          <div class="meta">${(r.km||0).toFixed(2)} km • ${r.min||0} min • <b>${fmt(r.precio||0)}</b></div>
+          <div class="req-pay">Pago: ${pagoTxt}</div>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="chip">Ori: ${(r.origen?.lat||0).toFixed(4)}, ${(r.origen?.lng||0).toFixed(4)}</span>
+        <span class="chip">Des: ${(r.destino?.lat||0).toFixed(4)}, ${(r.destino?.lng||0).toFixed(4)}</span>
+      </div>
+      <div class="row" style="justify-content:flex-end">${btn}</div>
+    </div>`;
+}
+
+/* Subcripción a pendientes: pinta en overlay sobre el mapa */
 function subscribePendientes(){
+  renderPendingOverlaySkeleton();
   if(listUnsub) listUnsub();
-  listUnsub=onSnapshot(query(collection(db,'requests'),where('status','==','buscando'),orderBy('createdAt','desc'),limit(20)), async function(qs){
-    const cont=$('#reqList'); if(!cont) return; cont.innerHTML='';
+  const qRef=query(collection(db,'requests'),where('status','==','buscando'),orderBy('createdAt','desc'),limit(20));
+  listUnsub=onSnapshot(qRef, async function(qs){
+    const cont=$('#reqListO'); if(!cont) return; cont.innerHTML='';
     for(const docu of qs.docs){
       const r=docu.data(); const id=docu.id;
       let rating=0,count=0,name=r.pasajeroNombre||'Pasajero',avatar=r.pasajeroFoto||'';
       try{ const u=await getDoc(doc(db,'users',r.pasajeroId)); if(u.exists()){ const d=u.data(); rating=d.ratingCount?(d.ratingSum||0)/d.ratingCount:0; count=d.ratingCount||0; name=d.name||name; avatar=d.photoURL||avatar; } }catch(_){}
       let stars=''; for(let i=1;i<=5;i++) stars+='<span style="color:#fcd34d;opacity:'+(rating>=i?1:.35)+'">★</span>';
       const avatarSrc = avatar || ('https://api.dicebear.com/9.x/initials/svg?seed='+encodeURIComponent(name));
-      const card=document.createElement('div'); card.className='card';
-      card.innerHTML=[
-        '<div class="row wrap" style="justify-content:space-between;gap:.6rem">',
-          '<div class="row" style="gap:.6rem">',
-            '<img src="',avatarSrc,'" alt="avatar" width="40" height="40" style="border-radius:8px;border:1px solid var(--line);object-fit:cover"/>',
-            '<div><div style="font-weight:600">',name,'</div>',
-            '<div style="font-size:.85rem;color:#a9b4c2">',stars,' <span class="chip" style="margin-left:.4rem">',count,' ops</span></div></div>',
-          '</div>',
-          '<div class="row" style="gap:.5rem">',
-            '<div class="chip">',(r.km||0).toFixed(2),' km</div>',
-            '<div class="chip">',r.min||0,' min</div>',
-            '<div class="chip">',fmt(r.precio||0),'</div>',
-          '</div>',
-        '</div>',
-        '<div class="row" style="gap:.4rem;margin-top:.5rem">',
-          '<div class="chip">Origen: ', (r.origen?.lat?.toFixed? r.origen.lat.toFixed(4):'-'), ', ', (r.origen?.lng?.toFixed? r.origen.lng.toFixed(4):'-'), '</div>',
-          '<div class="chip">Destino: ', (r.destino?.lat?.toFixed? r.destino.lat.toFixed(4):'-'), ', ', (r.destino?.lng?.toFixed? r.destino.lng.toFixed(4):'-'), '</div>',
-        '</div>',
-        '<div class="row" style="margin-top:.6rem;gap:.5rem"><button class="btn primary" data-id="',id,'" type="button">Aceptar</button></div>'
-      ].join('');
-      card.querySelector('button').addEventListener('click', function(){ aceptarViaje(id); });
-      cont.appendChild(card);
+      cont.insertAdjacentHTML('beforeend', renderPendingItemHtml({
+        id, avatar:avatarSrc, name, stars, count,
+        kmv:r.km||0, minv:r.min||0, precio:r.precio||0, pago:r.pago||'efectivo',
+        origen:r.origen, destino:r.destino
+      }));
     }
+    // Attach accept handlers
+    cont.querySelectorAll('button[data-acc]').forEach(btn=>{
+      btn.addEventListener('click', ()=> aceptarViaje(btn.getAttribute('data-acc')));
+    });
   });
 }
-function unsubscribePendientes(){ if(listUnsub){ listUnsub(); listUnsub=null; } }
-async function aceptarViaje(id){ if(!driverOnline || driverPaused){ alert('Tenés que estar Online.'); return; } await updateDoc(doc(db,'requests',id),{status:'aceptado',conductorId:state.fbUser.uid,conductorNombre:(state.profile && state.profile.name)||state.fbUser.email}); state.activeRequestId=id; watchActiveRequest(id); }
+function unsubscribePendientes(){ if(listUnsub){ listUnsub(); listUnsub=null; } const cont=$('#reqListO'); if(cont) cont.innerHTML=''; }
+
+/* Aceptar / iniciar / finalizar */
+async function aceptarViaje(id){ 
+  if(!driverOnline || driverPaused){ alert('Tenés que estar Online.'); return; }
+  await updateDoc(doc(db,'requests',id),{status:'aceptado',conductorId:state.fbUser.uid,conductorNombre:(state.profile && state.profile.name)||state.fbUser.email});
+  state.activeRequestId=id; watchActiveRequest(id);
+  // compacta overlay
+  const box=$('#reqOverlay'); if(box) box.innerHTML='<div class="req-title">Viaje aceptado</div>'+box.innerHTML;
+}
 async function iniciarTrayecto(){ if(!state.activeRequestId) { alert('Sin viaje activo'); return; } await updateDoc(doc(db,'requests',state.activeRequestId),{status:'en_curso'}); }
 async function finalizarTrayecto(){ if(!state.activeRequestId) { alert('Sin viaje activo'); return; } await updateDoc(doc(db,'requests',state.activeRequestId),{status:'finalizado'}); }
+
+/* Botones del overlay activo */
+document.addEventListener('click',(e)=>{
+  if(e.target && e.target.id==='btnStartTrip'){ iniciarTrayecto(); }
+  if(e.target && e.target.id==='btnFinishTrip'){ finalizarTrayecto(); }
+});
 
 /* -------- Bloqueo de puntos -------- */
 function lockPoints(lock){
@@ -791,7 +871,7 @@ document.addEventListener('click', async (e)=>{
       await setupPersistence();
       const cred=await createUserWithEmailAndPassword(auth,email,pass);
       let photoURL='';
-      if(file){ try{ const path='avatars/'+cred.user.uid+'.jpg'; await uploadBytes(sRef(storage,path),file); photoURL=await getDownloadURL(sRef(storage,path)); }catch(upErr){ console.warn('Upload avatar falló (sigue sin foto):', upErr); } }
+      if(file){ try{ const path='avatars/'+cred.user.uid+'.jpg'; await uploadBytes(sRef(storage,path),file); photoURL=await getDownloadURL(sRef(storage,path)); }catch(upErr){ console.warn('Upload avatar falló:', upErr); } }
       try{ await updateProfile(cred.user,{displayName:name,photoURL:photoURL||null}); }catch(_){}
       await setDoc(doc(db,'users',cred.user.uid),{name,email,photoURL:photoURL||'',ratingSum:0,ratingCount:0,createdAt:serverTimestamp()});
       $('#regCard').style.display='none'; clearRegForm();
