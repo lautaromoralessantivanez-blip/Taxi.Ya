@@ -114,7 +114,7 @@ button,input,select{font-family:inherit}
     <!-- LOGIN -->
     <div class="card" style="background:#0d131b">
       <div class="grid">
-        <div class="field"><label class="label">Email (Gmail)</label><input id="inEmail" type="email" class="input" placeholder="tu@gmail.com" autocomplete="email"></div>
+        <div class="field"><label class="label">Email</label><input id="inEmail" type="email" class="input" placeholder="tu@email.com" autocomplete="email"></div>
         <div class="field"><label class="label">Contraseña</label><input id="inPass" type="password" class="input" placeholder="••••••••" autocomplete="current-password"></div>
         <div class="row" style="gap:.6rem">
           <button class="btn primary" id="btnLogin" type="button">Entrar</button>
@@ -134,13 +134,13 @@ button,input,select{font-family:inherit}
       <div class="row" style="gap:1rem;align-items:flex-end;flex-wrap:wrap">
         <div class="field" style="align-items:center">
           <img id="regPreview" class="preview" src="" alt="foto"/>
-          <label class="label" style="margin-top:.35rem">Foto de perfil</label>
+          <label class="label" style="margin-top:.35rem">Foto de perfil (opcional)</label>
           <input id="regPhoto" type="file" accept="image/*" class="input" style="padding:.45rem"/>
         </div>
         <div class="field" style="flex:1"><label class="label">Nombre</label><input id="regName" class="input" placeholder="Ana, Mauro…"></div>
       </div>
       <div class="grid">
-        <div class="field"><label class="label">Email (Gmail)</label><input id="regEmail" type="email" class="input" placeholder="tu@gmail.com" autocomplete="email"></div>
+        <div class="field"><label class="label">Email</label><input id="regEmail" type="email" class="input" placeholder="tu@email.com" autocomplete="email"></div>
         <div class="field"><label class="label">Contraseña</label><input id="regPass" type="password" class="input" placeholder="mín. 6 caracteres" autocomplete="new-password"></div>
         <div class="field"><label class="label">Repetir contraseña</label><input id="regPass2" type="password" class="input" placeholder="repite la contraseña" autocomplete="new-password"></div>
       </div>
@@ -218,7 +218,7 @@ button,input,select{font-family:inherit}
             <div><div class="label">Tarifa estimada</div><div id="fareTxt" class="chip">$ 0</div></div>
             <div><div class="label">Surge</div><div id="surgeTxt" class="chip">x1.0</div></div>
           </div>
-          <p class="help" id="actividad">Toca el mapa para fijar Origen/Destino.</p>
+          <p class="help" id="actividad">Tocá el mapa para fijar Origen/Destino.</p>
         </div>
 
         <!-- Mapa -->
@@ -230,7 +230,7 @@ button,input,select{font-family:inherit}
           <div class="chatbox">
             <div id="chatlog" class="chatlog"></div>
             <div class="chatinput" style="display:flex;gap:.5rem;padding:.6rem;border-top:1px solid var(--line)">
-              <input id="chatInput" class="input" placeholder="Escribe un mensaje respetuoso…"/>
+              <input id="chatInput" class="input" placeholder="Escribí un mensaje respetuoso…"/>
               <button class="btn" id="chatSend" type="button">Enviar</button>
             </div>
           </div>
@@ -260,7 +260,6 @@ window.addEventListener('error', function(e){
 <script type="module">
 /* ---------------- Firebase ---------------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 import {
   getAuth, setPersistence, browserLocalPersistence, browserSessionPersistence, inMemoryPersistence,
   onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile
@@ -271,25 +270,45 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
-/* -------- Config -------- */
+/* -------- Config (ajusté storageBucket al formato appspot.com) -------- */
 const firebaseConfig = {
   apiKey: "AIzaSyBu523IOGnIZGfAkdlLdVLcENwLgv5KU9o",
   authDomain: "taxi-ya-3be33.firebaseapp.com",
   projectId: "taxi-ya-3be33",
-  storageBucket: "taxi-ya-3be33.firebasestorage.app",
+  storageBucket: "taxi-ya-3be33.appspot.com",
   messagingSenderId: "31840475169",
   appId: "1:31840475169:web:1485e47b9ebea4a66c6b60",
   measurementId: "G-2RQRP1G2KB"
 };
 
 /* -------- Helpers -------- */
-function $(sel){ return document.querySelector(sel); }
-function setText(el, v){ if(el) el.textContent = v; }
-function fmt(n){ return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n); }
+const $ = (sel)=>document.querySelector(sel);
+const setText = (el,v)=>{ if(el) el.textContent=v; };
+const fmt = (n)=> new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n);
 function km(a,b){ if(!a||!b) return 0; const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lng-a.lng)*Math.PI/180,la1=a.lat*Math.PI/180,la2=b.lat*Math.PI/180; const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
-function calcFare(distKm,durMin){ const p=state.pricing; const bruto=p.base+(distKm*p.perKm)+(durMin*p.perMin)+p.serviceFee; const surged=bruto*(state.surge||1.0); return Math.max(p.minimum,Math.round(surged)); }
-function mapAuthError(err){ const c=(err&&err.code)?String(err.code):''; const M={'auth/invalid-email':'Email inválido.','auth/missing-email':'Ingresá tu email.','auth/missing-password':'Ingresá tu contraseña.','auth/weak-password':'La contraseña es muy débil (mínimo 6 caracteres).','auth/email-already-in-use':'Ese email ya está registrado.','auth/user-not-found':'Usuario no encontrado.','auth/wrong-password':'Contraseña incorrecta.','auth/too-many-requests':'Demasiados intentos. Probá más tarde.','auth/network-request-failed':'Fallo de red. Revisá tu conexión.','auth/operation-not-allowed':'Habilitá Email/Password en Firebase Console.','auth/unauthorized-domain':'Dominio no autorizado (agregá localhost).','auth/internal-error':'Error interno. Intentá de nuevo.'}; return M[c] || (err && err.message) || 'Error desconocido'; }
-async function setupPersistence(){ try{ await setPersistence(auth,browserLocalPersistence);}catch(_){ try{await setPersistence(auth,browserSessionPersistence);}catch(_2){await setPersistence(auth,inMemoryPersistence);} } }
+const mapAuthError = (err)=>{
+  const c=(err&&err.code)?String(err.code):'';
+  const M={
+    'auth/invalid-email':'Email inválido.',
+    'auth/missing-email':'Ingresá tu email.',
+    'auth/missing-password':'Ingresá tu contraseña.',
+    'auth/weak-password':'La contraseña es muy débil (mínimo 6 caracteres).',
+    'auth/email-already-in-use':'Ese email ya está registrado.',
+    'auth/user-not-found':'Usuario no encontrado.',
+    'auth/wrong-password':'Contraseña incorrecta.',
+    'auth/too-many-requests':'Demasiados intentos. Probá más tarde.',
+    'auth/network-request-failed':'Fallo de red. Revisá tu conexión.',
+    'auth/operation-not-allowed':'Habilitá Email/Password en Firebase Console.',
+    'auth/unauthorized-domain':'Dominio no autorizado (agregá localhost).',
+    'auth/internal-error':'Error interno. Intentá de nuevo.'
+  };
+  return M[c] || (err && err.message) || 'Error desconocido';
+};
+async function setupPersistence(){
+  try{ await setPersistence(auth,browserLocalPersistence); }
+  catch(_){ try{ await setPersistence(auth,browserSessionPersistence); }
+  catch(_2){ await setPersistence(auth,inMemoryPersistence); } }
+}
 
 /* -------- Estado global -------- */
 let appFB, auth, db, storage;
@@ -311,7 +330,6 @@ const state = {
 /* -------- Firebase init -------- */
 try{
   appFB = initializeApp(firebaseConfig);
-  try{ getAnalytics(appFB); }catch(e){}
   auth = getAuth(appFB);
   db = getFirestore(appFB);
   storage = getStorage(appFB);
@@ -319,57 +337,86 @@ try{
   const fatal=$('#fatal'); if(fatal){ fatal.style.display='block'; fatal.textContent='No se pudo inicializar Firebase: '+(e.message||e); }
 }
 
-/* -------- Delegación de eventos -------- */
+/* =================== UI / Eventos =================== */
+function clearRegForm(){
+  const f=$('#regPhoto'); if(f) f.value='';
+  const p=$('#regPreview'); if(p) p.src='';
+  ['regName','regEmail','regPass','regPass2'].forEach(id=>{ const el=$('#'+id); if(el) el.value=''; });
+  setText($('#regErr'),'');
+}
 document.addEventListener('click', async (e)=>{
-  const id = e.target && e.target.id ? e.target.id : '';
+  const id = e.target?.id || '';
 
-  if(id==='showReg'){ const c=$('#regCard'); if(c) c.style.display='block'; return; }
-  if(id==='btnCancelReg'){ const c=$('#regCard'); if(c) c.style.display='none'; return; }
+  // Toggle registro
+  if(id==='showReg'){ $('#regCard').style.display='block'; return; }
+  if(id==='btnCancelReg'){ $('#regCard').style.display='none'; clearRegForm(); return; }
 
+  // Login
   if(id==='btnLogin'){
     setText($('#loginErr'),'');
-    const email=($('#inEmail')||{}).value||''; const pass=($('#inPass')||{}).value||'';
+    const email=$('#inEmail')?.value?.trim()||'';
+    const pass=$('#inPass')?.value||'';
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ setText($('#loginErr'),'Email inválido'); return; }
     if(!pass){ setText($('#loginErr'),'Ingresá tu contraseña'); return; }
-    const btn=e.target; btn.disabled=true; btn.textContent='Entrando…';
-    try{ await setupPersistence(); await signInWithEmailAndPassword(auth,email.trim(),pass); }
-    catch(err){ setText($('#loginErr'), mapAuthError(err)); btn.disabled=false; btn.textContent='Entrar'; }
+    e.target.disabled=true; e.target.textContent='Entrando…';
+    try{ await setupPersistence(); await signInWithEmailAndPassword(auth,email,pass); }
+    catch(err){ setText($('#loginErr'), mapAuthError(err)); e.target.disabled=false; e.target.textContent='Entrar'; }
     return;
   }
 
+  // Registro
   if(id==='btnReg'){
     setText($('#regErr'),'');
-    const name=($('#regName')||{}).value||'', email=($('#regEmail')||{}).value||'';
-    const pass=($('#regPass')||{}).value||'', pass2=($('#regPass2')||{}).value||'';
-    const file=(($('#regPhoto')||{}).files||[])[0]||null;
-    if(!name.trim()){ setText($('#regErr'),'Ingresá tu nombre'); return; }
+    const name=$('#regName')?.value?.trim()||'';
+    const email=$('#regEmail')?.value?.trim()||'';
+    const pass=$('#regPass')?.value||'';
+    const pass2=$('#regPass2')?.value||'';
+    const file=$('#regPhoto')?.files?.[0]||null;
+
+    if(!name){ setText($('#regErr'),'Ingresá tu nombre'); return; }
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ setText($('#regErr'),'Email inválido'); return; }
     if(pass.length<6){ setText($('#regErr'),'La contraseña debe tener al menos 6 caracteres'); return; }
     if(pass!==pass2){ setText($('#regErr'),'Las contraseñas no coinciden'); return; }
+
     const btn=e.target; btn.disabled=true; btn.textContent='Creando…';
     try{
       await setupPersistence();
-      const cred=await createUserWithEmailAndPassword(auth,email.trim(),pass);
+      const cred=await createUserWithEmailAndPassword(auth,email,pass);
+
+      // Foto opcional: si falla Storage por reglas, seguimos sin foto
       let photoURL='';
       if(file){
-        const path='avatars/'+cred.user.uid+'.jpg';
-        await uploadBytes(sRef(storage,path),file);
-        photoURL=await getDownloadURL(sRef(storage,path));
+        try{
+          const path='avatars/'+cred.user.uid+'.jpg';
+          await uploadBytes(sRef(storage,path),file);
+          photoURL=await getDownloadURL(sRef(storage,path));
+        }catch(upErr){
+          console.warn('Upload avatar falló (continúo sin foto):', upErr);
+        }
       }
-      await updateProfile(cred.user,{displayName:name.trim(),photoURL:photoURL||null});
-      await setDoc(doc(db,'users',cred.user.uid),{name:name.trim(),email:email.trim(),photoURL:photoURL||'',ratingSum:0,ratingCount:0,createdAt:serverTimestamp()});
-      const c=$('#regCard'); if(c) c.style.display='none';
-    }catch(err){ setText($('#regErr'), mapAuthError(err)); btn.disabled=false; btn.textContent='Crear cuenta'; }
+
+      try{ await updateProfile(cred.user,{displayName:name,photoURL:photoURL||null}); }catch(_){}
+      await setDoc(doc(db,'users',cred.user.uid),{
+        name, email, photoURL:photoURL||'',
+        ratingSum:0, ratingCount:0, createdAt:serverTimestamp()
+      });
+
+      $('#regCard').style.display='none';
+      clearRegForm();
+    }catch(err){
+      setText($('#regErr'), mapAuthError(err));
+      btn.disabled=false; btn.textContent='Crear cuenta';
+    }
     return;
   }
 
-  // Controles mapa
+  // Mapa / viaje
   if(id==='btnMiUbicacion'){ miUbicacionComoOrigen(); return; }
   if(id==='btnLimpiar'){ limpiar(); return; }
   if(id==='btnSolicitar'){ solicitarViaje(); return; }
   if(id==='btnCancelReqTop'){ cancelarSolicitud(); return; }
-  if(id==='modeOrigen'){ if(state.pointsLocked){ alert('Bloqueado por viaje activo'); return; } selectMode='origen'; document.getElementById('modeOrigen').setAttribute('aria-pressed','true'); document.getElementById('modeDestino').setAttribute('aria-pressed','false'); return; }
-  if(id==='modeDestino'){ if(state.pointsLocked){ alert('Bloqueado por viaje activo'); return; } selectMode='destino'; document.getElementById('modeDestino').setAttribute('aria-pressed','true'); document.getElementById('modeOrigen').setAttribute('aria-pressed','false'); return; }
+  if(id==='modeOrigen'){ if(state.pointsLocked){ alert('Bloqueado por viaje activo'); return; } selectMode='origen'; $('#modeOrigen').setAttribute('aria-pressed','true'); $('#modeDestino').setAttribute('aria-pressed','false'); return; }
+  if(id==='modeDestino'){ if(state.pointsLocked){ alert('Bloqueado por viaje activo'); return; } selectMode='destino'; $('#modeDestino').setAttribute('aria-pressed','true'); $('#modeOrigen').setAttribute('aria-pressed','false'); return; }
 
   // Conductor
   if(id==='btnDrvStart'){ driverStart(); return; }
@@ -380,6 +427,18 @@ document.addEventListener('click', async (e)=>{
   if(id==='chatSend'){ sendChat(); return; }
 });
 
+// Enter para login/registro
+['inEmail','inPass','regName','regEmail','regPass','regPass2'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el){ el.addEventListener('keydown', (ev)=>{
+    if(ev.key==='Enter'){
+      if(id.startsWith('reg')) document.getElementById('btnReg').click();
+      else document.getElementById('btnLogin').click();
+    }
+  });}
+});
+
+// Preview foto
 document.addEventListener('change',(e)=>{
   if(e.target && e.target.id==='regPhoto'){
     const f=e.target.files && e.target.files[0]; const prev=$('#regPreview');
@@ -405,7 +464,7 @@ onAuthStateChanged(auth, async (user)=>{
       document.getElementById('gate').style.display='none';
       document.getElementById('app').style.display='grid';
       if(!map) initMap();
-      setTimeout(function(){ if(map) map.invalidateSize(); },200);
+      setTimeout(()=>{ if(map) map.invalidateSize(); },200);
       renderTabs(); renderSide();
     });
   }else{
@@ -430,19 +489,17 @@ function tabsForState(){
 function renderTabs(){
   const nav=document.getElementById('tabs'); if(!nav) return; nav.innerHTML='';
   const tabs=tabsForState();
-  for(var i=0;i<tabs.length;i++){
-    (function(t){
-      const b=document.createElement('button');
-      b.className='tab';
-      b.textContent=t.label;
-      b.setAttribute('aria-selected', uiTab===t.id ? 'true':'false');
-      b.onclick=function(){ uiTab=t.id; onTabChange(); };
-      nav.appendChild(b);
-    })(tabs[i]);
+  for(const t of tabs){
+    const b=document.createElement('button');
+    b.className='tab';
+    b.textContent=t.label;
+    b.setAttribute('aria-selected', uiTab===t.id ? 'true':'false');
+    b.onclick=function(){ uiTab=t.id; onTabChange(); };
+    nav.appendChild(b);
   }
   const sc=document.getElementById('statusChip'); if(sc) sc.textContent=state.fbUser ? ((state.profile && state.profile.name) || 'online') : 'offline';
 }
-function onTabChange(){ renderSide(); setTimeout(function(){ if(map) map.invalidateSize(); },120); }
+function onTabChange(){ renderSide(); setTimeout(()=>{ if(map) map.invalidateSize(); },120); }
 function renderSide(){
   const body=document.getElementById('sideBody'); const title=document.getElementById('sideTitle');
   title.textContent = (uiTab==='conductor'?'Conductor':(uiTab==='perfil'?'Perfil':'Pasajero'));
@@ -482,7 +539,7 @@ function cardConductor(){
 function cardPerfil(){
   const p=state.profile||{ratingSum:0,ratingCount:0};
   const avg=p.ratingCount?(p.ratingSum/p.ratingCount):0;
-  var stars=''; for(var i=1;i<=5;i++) stars+= '<span style="color:#fcd34d;opacity:'+(avg>=i?1:.35)+'">★</span>';
+  let stars=''; for(let i=1;i<=5;i++) stars+= '<span style="color:#fcd34d;opacity:'+(avg>=i?1:.35)+'">★</span>';
   const avatar = (p.photoURL && p.photoURL.length)? p.photoURL : ('https://api.dicebear.com/9.x/initials/svg?seed=' + encodeURIComponent(p.name|| (state.fbUser?state.fbUser.email:'U')));
   const el=document.createElement('div'); el.className='grid';
   el.innerHTML=[
@@ -511,7 +568,7 @@ function cardPerfil(){
   return el;
 }
 
-/* -------- Conductor: estado/header -------- */
+/* -------- Conductor: estado -------- */
 function updateDriverHeader(){
   const st=document.getElementById('drvStatus'); if(st) st.textContent = driverOnline ? (driverPaused?'Pausado':'Online') : 'Offline';
   const bStart=document.getElementById('btnDrvStart'), bPause=document.getElementById('btnDrvPause'), bFin=document.getElementById('btnDrvFinish');
@@ -534,10 +591,10 @@ function stopDriverTimer(){ if(driverTimer){ clearInterval(driverTimer); driverT
 function initMap(){
   map=L.map('map',{zoomControl:true,preferCanvas:true}).setView([-34.6037,-58.3816],12);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
-  setTimeout(function(){ if(map) map.invalidateSize(); },200);
-  window.addEventListener('resize', function(){ if(map) map.invalidateSize(); });
-  var pb=document.querySelector('.main .panel-body');
-  if(window.ResizeObserver){ new ResizeObserver(function(){ if(map) map.invalidateSize(); }).observe(pb); }
+  setTimeout(()=>{ if(map) map.invalidateSize(); },200);
+  window.addEventListener('resize', ()=>{ if(map) map.invalidateSize(); });
+  const pb=document.querySelector('.main .panel-body');
+  if(window.ResizeObserver){ new ResizeObserver(()=>{ if(map) map.invalidateSize(); }).observe(pb); }
   map.on('click', function(e){
     if(state.pointsLocked){ alert('Los puntos están bloqueados hasta cancelar la solicitud.'); return; }
     const p={lat:e.latlng.lat,lng:e.latlng.lng};
@@ -555,14 +612,16 @@ function ensureRouting(){
     const r=e.routes && e.routes[0]; if(!r) return;
     const kmv=(r.summary.totalDistance||0)/1000; const minv=Math.round((r.summary.totalTime||0)/60);
     state.routeKm=kmv; state.routeMin=minv;
-    const k=document.getElementById('kmTxt'), m=document.getElementById('minTxt'); if(k) k.textContent=kmv.toFixed(2); if(m) m.textContent=String(minv); updateFareUI();
+    setText(document.getElementById('kmTxt'), kmv.toFixed(2));
+    setText(document.getElementById('minTxt'), String(minv));
+    updateFareUI();
     try{ map.fitBounds(r.bounds,{padding:[30,30]}); }catch(_){}
     const act=document.getElementById('actividad'); if(act) act.textContent='Ruta: '+kmv.toFixed(2)+' km • ~'+minv+' min';
   }).on('routingerror',function(){ updateInfoHaversine(); }).addTo(map);
   return routing;
 }
-function setOrigen(p,recalc){ if(origenMarker) map.removeLayer(origenMarker); origenMarker=L.marker([p.lat,p.lng],{draggable:!state.pointsLocked}).addTo(map).bindPopup('Origen'); origenMarker.on('dragend',function(){ if(state.pointsLocked) return; const ll=origenMarker.getLatLng(); setOrigen({lat:ll.lat,lng:ll.lng},true); }); state.origen=p; const t=document.getElementById('origenTxt'); if(t) t.textContent=p.lat.toFixed(4)+', '+p.lng.toFixed(4); if(recalc) recalcRoute(); }
-function setDestino(p,recalc){ if(destinoMarker) map.removeLayer(destinoMarker); destinoMarker=L.marker([p.lat,p.lng],{draggable:!state.pointsLocked}).addTo(map).bindPopup('Destino'); destinoMarker.on('dragend',function(){ if(state.pointsLocked) return; const ll=destinoMarker.getLatLng(); setDestino({lat:ll.lat,lng:ll.lng},true); }); state.destino=p; const t=document.getElementById('destinoTxt'); if(t) t.textContent=p.lat.toFixed(4)+', '+p.lng.toFixed(4); if(recalc) recalcRoute(); }
+function setOrigen(p,recalc){ if(origenMarker) map.removeLayer(origenMarker); origenMarker=L.marker([p.lat,p.lng],{draggable:!state.pointsLocked}).addTo(map).bindPopup('Origen'); origenMarker.on('dragend',function(){ if(state.pointsLocked) return; const ll=origenMarker.getLatLng(); setOrigen({lat:ll.lat,lng:ll.lng},true); }); state.origen=p; setText(document.getElementById('origenTxt'), p.lat.toFixed(4)+', '+p.lng.toFixed(4)); if(recalc) recalcRoute(); }
+function setDestino(p,recalc){ if(destinoMarker) map.removeLayer(destinoMarker); destinoMarker=L.marker([p.lat,p.lng],{draggable:!state.pointsLocked}).addTo(map).bindPopup('Destino'); destinoMarker.on('dragend',function(){ if(state.pointsLocked) return; const ll=destinoMarker.getLatLng(); setDestino({lat:ll.lat,lng:ll.lng},true); }); state.destino=p; setText(document.getElementById('destinoTxt'), p.lat.toFixed(4)+', '+p.lng.toFixed(4)); if(recalc) recalcRoute(); }
 function recalcRoute(){ if(!(state.origen&&state.destino)){ updateInfoHaversine(); return; } ensureRouting().setWaypoints([L.latLng(state.origen.lat,state.origen.lng),L.latLng(state.destino.lat,state.destino.lng)]); }
 function miUbicacionComoOrigen(){
   if(!navigator.geolocation){ alert('Geolocalización no disponible'); return; }
@@ -579,33 +638,37 @@ function limpiar(){
   if(origenMarker) map.removeLayer(origenMarker); origenMarker=null; state.origen=null;
   if(destinoMarker) map.removeLayer(destinoMarker); destinoMarker=null; state.destino=null;
   if(routing){ routing.setWaypoints([]); } state.routeKm=0; state.routeMin=0;
-  const o=document.getElementById('origenTxt'), d=document.getElementById('destinoTxt'), k=document.getElementById('kmTxt'), m=document.getElementById('minTxt'), f=document.getElementById('fareTxt'); if(o)o.textContent='—'; if(d)d.textContent='—'; if(k)k.textContent='0.00'; if(m)m.textContent='0'; if(f)f.textContent=fmt(0);
-  const a=document.getElementById('actividad'); if(a) a.textContent='Toca el mapa para fijar Origen/Destino.';
+  setText(document.getElementById('origenTxt'),'—');
+  setText(document.getElementById('destinoTxt'),'—');
+  setText(document.getElementById('kmTxt'),'0.00');
+  setText(document.getElementById('minTxt'),'0');
+  setText(document.getElementById('fareTxt'), fmt(0));
+  const a=document.getElementById('actividad'); if(a) a.textContent='Tocá el mapa para fijar Origen/Destino.';
 }
-function updateFareUI(){ const ft=document.getElementById('fareTxt'); if(ft) ft.textContent=fmt(calcFare(state.routeKm||0,state.routeMin||0)); const s=document.getElementById('surgeTxt'); if(s) s.textContent='x'+(state.surge||1).toFixed(1); }
-function updateInfoHaversine(){ const d=km(state.origen,state.destino); state.routeKm=d; state.routeMin=Math.round((d/25)*60); const k=document.getElementById('kmTxt'), m=document.getElementById('minTxt'); if(k) k.textContent=d.toFixed(2); if(m) m.textContent=String(state.routeMin); updateFareUI(); }
+function calcFare(distKm,durMin){ const p=state.pricing; const bruto=p.base+(distKm*p.perKm)+(durMin*p.perMin)+p.serviceFee; const surged=bruto*(state.surge||1.0); return Math.max(p.minimum,Math.round(surged)); }
+function updateFareUI(){ setText(document.getElementById('fareTxt'), fmt(calcFare(state.routeKm||0,state.routeMin||0))); setText(document.getElementById('surgeTxt'),'x'+(state.surge||1).toFixed(1)); }
+function updateInfoHaversine(){ const d=km(state.origen,state.destino); state.routeKm=d; state.routeMin=Math.round((d/25)*60); setText(document.getElementById('kmTxt'), d.toFixed(2)); setText(document.getElementById('minTxt'), String(state.routeMin)); updateFareUI(); }
 
 /* -------- Autocomplete -------- */
 const addrInput=document.getElementById('addrSearch'), addrBox=document.getElementById('addrResults');
-function debounce(fn,ms){ var t=null; return function(){ var a=arguments; clearTimeout(t); t=setTimeout(function(){ fn.apply(null,a); }, ms||350); }; }
+function debounce(fn,ms){ let t=null; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(null,a),ms||350); }; }
 async function geocodeSearch(q){ const url='https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&q='+encodeURIComponent(q); const r=await fetch(url,{headers:{'Accept-Language':'es-AR,es;q=0.9'}}); return r.ok? r.json() : []; }
 function renderAddrResults(list){
   if(!(list && list.length)){ addrBox.style.display='none'; addrBox.innerHTML=''; return; }
-  var html='<div>';
-  for(var i=0;i<list.length;i++){
-    const it=list[i]; const parts=it.display_name.split(','); const t=parts.slice(0,2).join(', '); const s=parts.slice(2).join(', ').trim();
-    html+='<div class="ac-item" data-lat="'+it.lat+'" data-lon="'+it.lon+'" data-name="'+encodeURIComponent(it.display_name)+'"><div class="ac-title">'+t+'</div><div class="ac-sub">'+s+'</div></div>';
+  let html='<div>';
+  for(const it of list){
+    const parts=it.display_name.split(','), t=parts.slice(0,2).join(', '), s=parts.slice(2).join(', ').trim();
+    html+=`<div class="ac-item" data-lat="${it.lat}" data-lon="${it.lon}" data-name="${encodeURIComponent(it.display_name)}"><div class="ac-title">${t}</div><div class="ac-sub">${s}</div></div>`;
   }
   html+='</div>'; addrBox.innerHTML=html; addrBox.style.display='block';
-  var items=addrBox.querySelectorAll('.ac-item');
-  for(var j=0;j<items.length;j++){
-    items[j].addEventListener('click', function(){
+  addrBox.querySelectorAll('.ac-item').forEach(node=>{
+    node.addEventListener('click', function(){
       const lat=parseFloat(this.getAttribute('data-lat')), lon=parseFloat(this.getAttribute('data-lon')), name=decodeURIComponent(this.getAttribute('data-name'));
       addrInput.value=name; addrBox.style.display='none'; const p={lat:lat,lng:lon};
       if(selectMode==='origen'){ setOrigen(p,true); } else { setDestino(p,true); }
       map.setView([lat,lon],15);
     });
-  }
+  });
 }
 if(addrInput){
   addrInput.addEventListener('input', debounce(async function(e){
@@ -618,7 +681,7 @@ if(addrInput){
 document.addEventListener('click', function(e){ if(addrBox && addrBox.style.display!=='none' && !addrBox.contains(e.target) && e.target!==addrInput){ addrBox.style.display='none'; }});
 
 /* -------- Chat -------- */
-function sanitizeMsg(t){ var x=(t||'').trim(); for(var i=0;i<bannedWords.length;i++){ var w=bannedWords[i]; x=x.replace(new RegExp('\\b'+w+'\\b','gi'),'***'); } return x; }
+function sanitizeMsg(t){ let x=(t||'').trim(); for(const w of bannedWords){ x=x.replace(new RegExp('\\b'+w+'\\b','gi'),'***'); } return x; }
 function mySide(){ const r=state.activeRequest; if(!r||!state.fbUser) return 'pax'; if(r.pasajeroId===state.fbUser.uid) return 'pax'; if(r.conductorId===state.fbUser.uid) return 'drv'; return 'pax'; }
 async function sendChat(){
   if(!state.activeRequestId) { alert('Sin viaje activo'); return; }
@@ -650,7 +713,7 @@ function subscribePendientes(){
       const r=docu.data(); const id=docu.id;
       let rating=0,count=0,name=r.pasajeroNombre||'Pasajero',avatar=r.pasajeroFoto||'';
       try{ const u=await getDoc(doc(db,'users',r.pasajeroId)); if(u.exists()){ const d=u.data(); rating=d.ratingCount?(d.ratingSum||0)/d.ratingCount:0; count=d.ratingCount||0; name=d.name||name; avatar=d.photoURL||avatar; } }catch(_){}
-      var stars=''; for(var i=1;i<=5;i++) stars+='<span style="color:#fcd34d;opacity:'+(rating>=i?1:.35)+'">★</span>';
+      let stars=''; for(let i=1;i<=5;i++) stars+='<span style="color:#fcd34d;opacity:'+(rating>=i?1:.35)+'">★</span>';
       const avatarSrc = avatar || ('https://api.dicebear.com/9.x/initials/svg?seed='+encodeURIComponent(name));
       const card=document.createElement('div'); card.className='card';
       card.innerHTML=[
@@ -667,8 +730,8 @@ function subscribePendientes(){
           '</div>',
         '</div>',
         '<div class="row" style="gap:.4rem;margin-top:.5rem">',
-          '<div class="chip">Origen: ', (r.origen&&r.origen.lat?r.origen.lat.toFixed(4):'-'), ', ', (r.origen&&r.origen.lng?r.origen.lng.toFixed(4):'-'), '</div>',
-          '<div class="chip">Destino: ', (r.destino&&r.destino.lat?r.destino.lat.toFixed(4):'-'), ', ', (r.destino&&r.destino.lng?r.destino.lng.toFixed(4):'-'), '</div>',
+          '<div class="chip">Origen: ', (r.origen?.lat?.toFixed? r.origen.lat.toFixed(4):'-'), ', ', (r.origen?.lng?.toFixed? r.origen.lng.toFixed(4):'-'), '</div>',
+          '<div class="chip">Destino: ', (r.destino?.lat?.toFixed? r.destino.lat.toFixed(4):'-'), ', ', (r.destino?.lng?.toFixed? r.destino.lng.toFixed(4):'-'), '</div>',
         '</div>',
         '<div class="row" style="margin-top:.6rem;gap:.5rem"><button class="btn primary" data-id="',id,'" type="button">Aceptar</button></div>'
       ].join('');
@@ -723,8 +786,8 @@ function showChat(show){ const d=document.getElementById('chatMini'); if(d) d.st
 function lockPoints(lock){
   state.pointsLocked=lock;
   try{
-    if(origenMarker && origenMarker.dragging) (lock? origenMarker.dragging.disable() : origenMarker.dragging.enable());
-    if(destinoMarker && destinoMarker.dragging) (lock? destinoMarker.dragging.disable() : destinoMarker.dragging.enable());
+    if(origenMarker?.dragging) (lock? origenMarker.dragging.disable() : origenMarker.dragging.enable());
+    if(destinoMarker?.dragging) (lock? destinoMarker.dragging.disable() : destinoMarker.dragging.enable());
   }catch(_){}
 }
 
@@ -768,23 +831,20 @@ function attachEarningsListener(){
   if(earningsUnsub) earningsUnsub();
   if(!state.fbUser) return;
   earningsUnsub=onSnapshot(query(collection(db,'requests'),where('conductorId','==',state.fbUser.uid),where('status','==','finalizado')), function(qs){
-    var sum=0; qs.forEach(function(d){ sum += Number(d.data().precio||0); });
+    let sum=0; qs.forEach(function(d){ sum += Number(d.data().precio||0); });
     const e=document.getElementById('drvEarn'); if(e) e.textContent=fmt(sum);
   });
-}
-
-/* -------- Search timer -------- */
-function startSearchingUI(on){
-  const t=document.getElementById('searchTimer'); if(!t) return;
-  if(on){ if(!state.requestCreatedAt) state.requestCreatedAt=Date.now(); if(timerInt) clearInterval(timerInt);
-    timerInt=setInterval(function(){ const s=Math.floor((Date.now()-state.requestCreatedAt)/1000); const mm=String(Math.floor(s/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); t.textContent=mm+':'+ss; },500);
-  }else{ if(timerInt) clearInterval(timerInt); timerInt=null; state.requestCreatedAt=null; t.textContent='00:00'; }
 }
 
 /* -------- Boot helpers -------- */
 document.addEventListener('DOMContentLoaded', function(){
   const bad=(location.protocol!=='http:' && location.protocol!=='https:');
   const warn=document.getElementById('envWarn'); if(warn) warn.style.display = bad ? 'block':'none';
+});
+
+// Cerrar sesión desde Perfil
+document.addEventListener('click', (ev)=>{
+  if(ev.target && ev.target.id==='btnLogout'){ signOut(auth); }
 });
 </script>
 </body>
