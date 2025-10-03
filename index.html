@@ -26,7 +26,7 @@ body{margin:0;background:linear-gradient(180deg,#0b0f15,#0b0f15 60%,#0a0f19);col
 button,input,select{font-family:inherit}
 
 /* ===== AUTH GATE ===== */
-#gate{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(1200px 800px at 50% -10%,#13202e 0%, #0b0f15 60%, #0a0f19 100%);z-index:100}
+#gate{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(1200px 800px at 50% -10%,#13202e 0%, #0b0f15 60%, #0a0f19 100%);z-index:100;pointer-events:auto}
 .gate-card{width:min(720px,92vw);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1rem}
 .gate-title{display:flex;align-items:center;gap:.6rem;margin:.25rem 0 1rem}
 .gate-title .dot{width:.9rem;height:.9rem;border-radius:999px;background:var(--accent);box-shadow:0 0 16px rgba(255,211,77,.7)}
@@ -82,6 +82,11 @@ button,input,select{font-family:inherit}
 .req-compact .head{display:flex;align-items:center;gap:.6rem}
 .req-compact .head img{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);object-fit:cover}
 
+/* Trofeos / medallas */
+.medals{display:flex;gap:.5rem;flex-wrap:wrap}
+.medal{display:flex;align-items:center;gap:.4rem;background:#111827;border:1px solid #233044;padding:.35rem .55rem;border-radius:10px;font-size:.85rem}
+.medal i{filter:drop-shadow(0 1px 0 rgba(0,0,0,.35))}
+
 /* Chat compacto */
 .chat-mini{order:98}
 .chat-mini summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:.5rem;background:#0f172a;border:1px solid #243045;padding:.55rem .75rem;border-radius:10px;font-weight:600}
@@ -109,8 +114,8 @@ button,input,select{font-family:inherit}
 .container.layout-driver #aside{display:block; order:1}
 .container.layout-driver .main{display:block; order:2} /* mapa abajo */
 
-.container.layout-profile{grid-template-columns:1fr}
-.container.layout-profile #aside{display:block}
+.container.layout-profile{grid-template-columns:1fr; place-items:center}
+.container.layout-profile #aside{display:block; max-width:860px; width:100%; margin:0 auto}
 .container.layout-profile .main{display:none} /* sin mapa en Perfil */
 
 /* === FIX: conductor sin hueco y mapa más arriba === */
@@ -143,8 +148,8 @@ button,input,select{font-family:inherit}
     <!-- LOGIN -->
     <div class="card" style="background:#0d131b">
       <div class="grid">
-        <div class="field"><label class="label">Email</label><input id="inEmail" type="email" class="input" placeholder="tu@email.com" autocomplete="email"></div>
-        <div class="field"><label class="label">Contraseña</label><input id="inPass" type="password" class="input" placeholder="••••••••" autocomplete="current-password"></div>
+        <div class="field"><label class="label">Email</label><input id="inEmail" type="email" class="input" placeholder="tu@email.com" autocomplete="email" required></div>
+        <div class="field"><label class="label">Contraseña</label><input id="inPass" type="password" class="input" placeholder="••••••••" autocomplete="current-password" required></div>
         <div class="row" style="gap:.6rem">
           <button class="btn primary" id="btnLogin" type="button">Entrar</button>
         </div>
@@ -165,12 +170,12 @@ button,input,select{font-family:inherit}
           <label class="label" style="margin-top:.35rem">Foto de perfil (opcional)</label>
           <input id="regPhoto" type="file" accept="image/*" class="input" style="padding:.45rem"/>
         </div>
-        <div class="field" style="flex:1"><label class="label">Nombre</label><input id="regName" class="input" placeholder="Ana, Mauro…"></div>
+        <div class="field" style="flex:1"><label class="label">Nombre</label><input id="regName" class="input" placeholder="Ana, Mauro…" required></div>
       </div>
       <div class="grid">
-        <div class="field"><label class="label">Email</label><input id="regEmail" type="email" class="input" placeholder="tu@email.com" autocomplete="email"></div>
-        <div class="field"><label class="label">Contraseña</label><input id="regPass" type="password" class="input" placeholder="mín. 6 caracteres" autocomplete="new-password"></div>
-        <div class="field"><label class="label">Repetir contraseña</label><input id="regPass2" type="password" class="input" placeholder="repite la contraseña" autocomplete="new-password"></div>
+        <div class="field"><label class="label">Email</label><input id="regEmail" type="email" class="input" placeholder="tu@email.com" autocomplete="email" required></div>
+        <div class="field"><label class="label">Contraseña</label><input id="regPass" type="password" class="input" placeholder="mín. 6 caracteres" autocomplete="new-password" required></div>
+        <div class="field"><label class="label">Repetir contraseña</label><input id="regPass2" type="password" class="input" placeholder="repite la contraseña" autocomplete="new-password" required></div>
       </div>
       <div class="row" style="margin-top:.6rem;gap:.6rem">
         <button class="btn" id="btnCancelReg" type="button">Cancelar</button>
@@ -186,12 +191,12 @@ button,input,select{font-family:inherit}
 
 <!-- ==================== APP ==================== -->
 <div class="app" id="app" style="display:none">
-  <header class="header">
+  <header class="header" aria-hidden="true" id="appHeader">
     <div class="brand"><span class="dot"></span><b>Taxi Ya</b><span class="chip" id="statusChip">offline</span></div>
     <nav class="tabs" id="tabs"></nav>
   </header>
 
-  <div class="container layout-passenger" id="container">
+  <div class="container layout-passenger" id="container" aria-hidden="true">
     <aside class="aside" id="aside">
       <div class="panel-head"><strong id="sideTitle">Panel</strong><span class="badge ok" id="authBadge">Conectado</span></div>
       <div class="panel-body" id="sideBody"></div>
@@ -298,11 +303,12 @@ window.addEventListener('error', function(e){
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getAuth, setPersistence, browserLocalPersistence, browserSessionPersistence, inMemoryPersistence,
-  onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile
+  onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
+  updateProfile, sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore, doc, setDoc, getDoc, updateDoc, addDoc, collection,
-  serverTimestamp, onSnapshot, query, where, orderBy, limit
+  serverTimestamp, onSnapshot, query, where, /*orderBy,*/ limit
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
@@ -335,7 +341,7 @@ async function setupPersistence(){ try{ await setPersistence(auth,browserLocalPe
 /* -------- Estado global -------- */
 let appFB, auth, db, storage;
 let map, origenMarker, destinoMarker, meMarker, routing, driverMarker;
-let activeReqUnsub=null, chatUnsub=null, listUnsub=null, userUnsub=null, timerInt=null, driverUnsub=null, earningsUnsub=null;
+let activeReqUnsub=null, chatUnsub=null, listUnsub=null, userUnsub=null, timerInt=null, driverUnsub=null, earningsUnsub=null, paxCountUnsub=null, drvCountUnsub=null;
 let driverWatchId=null, followMe=true;
 let uiTab='pasajero', selectMode='origen';
 let driverOnline=false, driverPaused=false, driverSessionStart=null, driverTimer=null;
@@ -449,7 +455,7 @@ function cardConductor(){
   return el;
 }
 
-/* -------- Side: Perfil (subsecciones) -------- */
+/* -------- Side: Perfil (subsecciones + trofeos) -------- */
 function cardPerfil(){
   const p=state.profile||{ratingSum:0,ratingCount:0};
   const avg=p.ratingCount?(p.ratingSum/p.ratingCount):0;
@@ -469,31 +475,45 @@ function cardPerfil(){
       '</div>',
     '</section>',
     '<section class="card">',
+      '<h3 style="margin:.1rem 0 1rem 0">Seguridad</h3>',
+      '<div class="row wrap" style="gap:.5rem">',
+        '<span class="chip">Email verificado: ', (state.fbUser?.emailVerified?'Sí':'No') ,'</span>',
+        '<button class="btn" id="btnChangePass" type="button">Cambiar contraseña</button>',
+      '</div>',
+      '<p class="help" style="margin-top:.35rem">Por seguridad, la contraseña no se muestra. Te enviamos un correo para cambiarla.</p>',
+    '</section>',
+    '<section class="card">',
+      '<h3 style="margin:.1rem 0 1rem 0">Medallas</h3>',
+      '<div class="medals">',
+        '<div class="medal"><i>🏁</i> Novato</div>',
+        '<div class="medal" id="m5star"><i>🏆</i> 5★</div>',
+        '<div class="medal" id="m100"><i>🎖️</i> 100 viajes</div>',
+      '</div>',
+    '</section>',
+    '<section class="card">',
+      '<h3 style="margin:.1rem 0 1rem 0">Actividad</h3>',
+      '<div class="row" style="gap:.5rem;flex-wrap:wrap">',
+        '<span class="chip">Como pasajero: <b id="paxTrips">–</b></span>',
+        '<span class="chip">Como conductor: <b id="drvTrips">–</b></span>',
+        '<span class="chip">Calificación: ',stars,'</span>',
+      '</div>',
+    '</section>',
+    '<section class="card">',
       '<h3 style="margin:.1rem 0 1rem 0">Sesión</h3>',
       '<div class="row" style="gap:.5rem;flex-wrap:wrap">',
         '<button class="btn" id="btnLogout" type="button">Cerrar sesión</button>',
       '</div>',
-    '</section>',
-    '<section class="card">',
-      '<h3 style="margin:.1rem 0 1rem 0">Preferencias</h3>',
-      '<div class="row wrap" style="gap:.5rem">',
-        '<span class="chip">Tema: Oscuro</span>',
-        '<span class="chip">Idioma: ES</span>',
-        '<span class="chip">Notificaciones: On</span>',
-      '</div>',
-      '<p class="help" style="margin-top:.35rem">Ejemplo visual. Podés persistirlo en Firestore después.</p>',
-    '</section>',
-    '<section class="card">',
-      '<h3 style="margin:.1rem 0 1rem 0">Calificación</h3>',
-      '<div class="row" style="gap:.35rem">',stars,'</div>',
-      '<div class="row" style="gap:.5rem;margin-top:.4rem">',
-        '<div class="chip">',(p.ratingCount||0),' opiniones</div>',
-        '<div class="chip">',avg.toFixed(2),' / 5.00</div>',
-      '</div>',
     '</section>'
   ].join('');
 
-  setTimeout(()=>{ const b=$('#btnLogout'); if(b){ b.addEventListener('click', ()=>signOut(auth)); } },0);
+  setTimeout(()=>{
+    const b=$('#btnLogout'); if(b){ b.addEventListener('click', ()=>signOut(auth)); }
+    const cp=$('#btnChangePass'); if(cp){ cp.addEventListener('click', async ()=>{
+      try{ await sendPasswordResetEmail(auth, state.fbUser.email); alert('Te enviamos un correo para cambiar la contraseña.'); }
+      catch(err){ alert('No se pudo enviar el correo: '+(err.message||err)); }
+    });}
+    watchActivityCounts(); // contadores
+  },0);
   return el;
 }
 
@@ -641,7 +661,7 @@ function watchActiveRequest(id){
 }
 function ensureChatListener(reqId){
   if(chatUnsub) return;
-  chatUnsub=onSnapshot(query(collection(db,'requests',reqId,'messages'),orderBy('ts','asc'),limit(100)), function(qs){
+  chatUnsub=onSnapshot(query(collection(db,'requests',reqId,'messages')), function(qs){
     const log=$('#chatlog'); if(!log) return; log.innerHTML='';
     const mine=mySide();
     qs.forEach(function(d){ const m=d.data(); const who=(m.from===mine)?'me':''; log.insertAdjacentHTML('beforeend','<div class="msg '+who+'"><b>'+(m.from==='pax'?'Pasajero':'Conductor')+':</b> '+m.text+'</div>'); });
@@ -694,7 +714,7 @@ function renderActiveOverlayHtml(r){
   const name=r.pasajeroNombre||'Pasajero';
   const avatar = r.pasajeroFoto || ('https://api.dicebear.com/9.x/initials/svg?seed='+encodeURIComponent(name));
   const pagoTxt = r.pago==='mp'?'Mercado Pago':'Efectivo';
-  const btn = (r.status==='aceptado') ? 
+  const btn = (r.status==='aceptado') ?
       `<button class="btn primary" id="btnStartTrip" type="button">Empezar viaje</button>` :
       `<button class="btn primary" id="btnFinishTrip" type="button">Terminar viaje</button>`;
   return `
@@ -714,13 +734,14 @@ function renderActiveOverlayHtml(r){
     </div>`;
 }
 
-/* Subcripción a pendientes: pinta en overlay sobre el mapa */
+/* Subcripción a pendientes: SIN orderBy (evita exigir índices) */
 function subscribePendientes(){
   renderPendingOverlaySkeleton();
   if(listUnsub) listUnsub();
-  const qRef=query(collection(db,'requests'),where('status','==','buscando'),orderBy('createdAt','desc'),limit(20));
+  const qRef=query(collection(db,'requests'),where('status','==','buscando'),limit(50));
   listUnsub=onSnapshot(qRef, async function(qs){
     const cont=$('#reqListO'); if(!cont) return; cont.innerHTML='';
+    if(qs.empty){ cont.innerHTML='<div class="help">No hay solicitudes por ahora.</div>'; return; }
     for(const docu of qs.docs){
       const r=docu.data(); const id=docu.id;
       let rating=0,count=0,name=r.pasajeroNombre||'Pasajero',avatar=r.pasajeroFoto||'';
@@ -733,16 +754,17 @@ function subscribePendientes(){
         origen:r.origen, destino:r.destino
       }));
     }
-    // Attach accept handlers
     cont.querySelectorAll('button[data-acc]').forEach(btn=>{
       btn.addEventListener('click', ()=> aceptarViaje(btn.getAttribute('data-acc')));
     });
+  }, function(err){
+    const cont=$('#reqListO'); if(cont) cont.innerHTML='<div class="help">No se pudo cargar la cola ('+(err.message||err)+')</div>';
   });
 }
 function unsubscribePendientes(){ if(listUnsub){ listUnsub(); listUnsub=null; } const cont=$('#reqListO'); if(cont) cont.innerHTML=''; }
 
 /* Aceptar / iniciar / finalizar */
-async function aceptarViaje(id){ 
+async function aceptarViaje(id){
   if(!driverOnline || driverPaused){ alert('Tenés que estar Online.'); return; }
   await updateDoc(doc(db,'requests',id),{status:'aceptado',conductorId:state.fbUser.uid,conductorNombre:(state.profile && state.profile.name)||state.fbUser.email});
   state.activeRequestId=id; watchActiveRequest(id);
@@ -801,19 +823,33 @@ function startDriverFollower(requestId){
 }
 function stopDriverFollower(){ if(driverUnsub){ driverUnsub(); driverUnsub=null; } if(driverMarker){ map.removeLayer(driverMarker); driverMarker=null; } }
 
-/* -------- Ganancias -------- */
+/* -------- Ganancias y contadores -------- */
 function attachEarningsListener(){
   if(earningsUnsub) earningsUnsub();
   if(!state.fbUser) return;
   earningsUnsub=onSnapshot(query(collection(db,'requests'),where('conductorId','==',state.fbUser.uid),where('status','==','finalizado')), function(qs){
     let sum=0; qs.forEach(function(d){ sum += Number(d.data().precio||0); });
     const e=$('#drvEarn'); if(e) e.textContent=fmt(sum);
-  });
+  },()=>{ const e=$('#drvEarn'); if(e) e.textContent='—'; });
+}
+function watchActivityCounts(){
+  if(paxCountUnsub) paxCountUnsub(); if(drvCountUnsub) drvCountUnsub();
+  if(!state.fbUser) return;
+  paxCountUnsub=onSnapshot(query(collection(db,'requests'),where('pasajeroId','==',state.fbUser.uid),where('status','==','finalizado')), qs=>{
+    const el=$('#paxTrips'); if(el) el.textContent=String(qs.size||0);
+  },()=>{ const el=$('#paxTrips'); if(el) el.textContent='—'; });
+  drvCountUnsub=onSnapshot(query(collection(db,'requests'),where('conductorId','==',state.fbUser.uid),where('status','==','finalizado')), qs=>{
+    const el=$('#drvTrips'); if(el) el.textContent=String(qs.size||0);
+  },()=>{ const el=$('#drvTrips'); if(el) el.textContent='—'; });
 }
 
-/* -------- Auth state -------- */
+/* -------- Auth state (acceso estrictamente con login) -------- */
 onAuthStateChanged(auth, async (user)=>{
   state.fbUser=user||null;
+  const appRoot=document.getElementById('app');
+  const appHeader=document.getElementById('appHeader');
+  const container=document.getElementById('container');
+
   if(user){
     if(userUnsub) userUnsub();
     const uref=doc(db,'users',user.uid);
@@ -824,15 +860,22 @@ onAuthStateChanged(auth, async (user)=>{
       }else{
         state.profile=snap.data();
       }
-      $('#gate').style.display='none';
-      $('#app').style.display='grid';
+      document.getElementById('gate').style.display='none';
+      appRoot.style.display='grid';
+      appHeader.removeAttribute('aria-hidden');
+      container.removeAttribute('aria-hidden');
+
       if(!map) initMap();
       setTimeout(()=>{ if(map) map.invalidateSize(); },200);
       renderTabs(); renderSide(); updateRoleUI();
     });
   }else{
-    $('#app').style.display='none';
-    $('#gate').style.display='grid';
+    // Bloquea totalmente la app si no está logueado
+    appRoot.style.display='none';
+    appHeader.setAttribute('aria-hidden','true');
+    container.setAttribute('aria-hidden','true');
+    document.getElementById('gate').style.display='grid';
+
     state.profile=null; state.activeRequestId=null; state.activeRequest=null; lockPoints(false);
     setSearchingUI(false); stopDriverFollower(); stopDriverShare(); stopDriverTimer();
     driverOnline=false; driverPaused=false; updateDriverHeader();
@@ -840,6 +883,8 @@ onAuthStateChanged(auth, async (user)=>{
     if(chatUnsub){ chatUnsub(); chatUnsub=null; }
     if(listUnsub){ listUnsub(); listUnsub=null; }
     if(earningsUnsub){ earningsUnsub(); earningsUnsub=null; }
+    if(paxCountUnsub){ paxCountUnsub(); paxCountUnsub=null; }
+    if(drvCountUnsub){ drvCountUnsub(); drvCountUnsub=null; }
     if(userUnsub){ userUnsub(); userUnsub=null; }
   }
 });
@@ -921,6 +966,9 @@ document.addEventListener('change',(e)=>{
 
 /* -------- Boot simple -------- */
 document.addEventListener('DOMContentLoaded', function(){
+  // Fuerza el gate por si el navegador restaura la UI antes del onAuthStateChanged
+  document.getElementById('app').style.display='none';
+  document.getElementById('gate').style.display='grid';
   const bad=(location.protocol!=='http:' && location.protocol!=='https:');
   const warn=document.getElementById('envWarn'); if(warn) warn.style.display = bad ? 'block':'none';
 });
