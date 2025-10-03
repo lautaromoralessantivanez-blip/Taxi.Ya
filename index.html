@@ -49,8 +49,8 @@ button,input,select{font-family:inherit}
 .tab{padding:.45rem .75rem;border:1px solid var(--line);border-radius:999px;background:#17202a;color:#fff;opacity:.85;cursor:pointer;transition:.2s}
 .tab[aria-selected="true"]{background:var(--accent);color:#111;opacity:1;border-color:#e6b800}
 
-/* Layout contenedor (se ajusta por JS según rol) */
-.container{display:grid;grid-template-columns:360px 1fr;gap:1rem;padding:1rem;max-width:1300px;margin:0 auto}
+/* ===== Layout contenedor por rol (clases dinámicas) ===== */
+.container{display:grid;gap:1rem;padding:1rem;max-width:1300px;margin:0 auto}
 .aside,.main{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .panel-head{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--line);background:var(--card)}
 .panel-body{padding:1rem;display:flex;flex-direction:column;gap:.75rem;min-height:calc(100vh - 140px)}
@@ -62,15 +62,13 @@ button,input,select{font-family:inherit}
 .badge.ok{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.35)}
 .help{color:var(--muted);font-size:.86rem}
 
-/* Estado */
+/* Estados y mapa */
 .status-bar{order:50;display:none;align-items:center;gap:.6rem;background:#0f172a;border:1px solid #243045;padding:.55rem .75rem;border-radius:10px;font-weight:600}
-
-/* Mapa siempre abajo */
 .map-wrap{order:99;position:relative}
 #map{width:100%;height:70vh;min-height:460px}
 .leaflet-container{background:#0b0f15}
 
-/* Chat compacto */
+/* Chat */
 .chat-mini{order:98}
 .chat-mini summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:.5rem;background:#0f172a;border:1px solid #243045;padding:.55rem .75rem;border-radius:10px;font-weight:600}
 .chat-mini .chatbox{display:grid;grid-template-rows:1fr auto;height:180px;background:#0d131b;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:.6rem}
@@ -88,8 +86,20 @@ button,input,select{font-family:inherit}
 .ac-title{font-weight:600}
 .ac-sub{font-size:.85rem;color:#a9b4c2}
 
+/* ===== Variantes por rol ===== */
+.container.layout-passenger{grid-template-columns:1fr}
+.container.layout-passenger #aside{display:none}
+.container.layout-passenger .main{display:block}
+
+.container.layout-driver{grid-template-columns:1fr}
+.container.layout-driver #aside{display:block; order:1}
+.container.layout-driver .main{display:block; order:2} /* mapa abajo */
+
+.container.layout-profile{grid-template-columns:1fr}
+.container.layout-profile #aside{display:block}
+.container.layout-profile .main{display:none} /* sin mapa en Perfil */
+
 /* Responsive */
-@media (max-width:1080px){.container{grid-template-columns:1fr}.aside{order:2}.main{order:1}}
 @media (max-width:680px){
   .tabs{position:fixed;bottom:10px;left:0;right:0;justify-content:center;z-index:40}
   .tab{background:#131c28;border-color:#223043}
@@ -99,7 +109,7 @@ button,input,select{font-family:inherit}
 </head>
 <body>
 
-<!-- =========== AUTH: Login primero, registro debajo =========== -->
+<!-- =========== AUTH =========== -->
 <div id="gate" aria-hidden="false">
   <div class="gate-card">
     <div class="gate-title">
@@ -107,7 +117,6 @@ button,input,select{font-family:inherit}
       <span class="chip" style="margin-left:.5rem;background:#121a24;border:1px solid var(--line);padding:.2rem .5rem;border-radius:999px;color:#a9b4c2">Inicio de sesión</span>
     </div>
 
-    <!-- AVISO ENTORNO -->
     <div id="envWarn" class="err" style="display:none;margin-bottom:.75rem">
       ⚠️ Abrí el sitio con <b>http://localhost</b> (no <code>file://</code>).
     </div>
@@ -163,7 +172,7 @@ button,input,select{font-family:inherit}
     <nav class="tabs" id="tabs"></nav>
   </header>
 
-  <div class="container" id="container">
+  <div class="container layout-passenger" id="container">
     <aside class="aside" id="aside">
       <div class="panel-head"><strong id="sideTitle">Panel</strong><span class="badge ok" id="authBadge">Conectado</span></div>
       <div class="panel-body" id="sideBody"></div>
@@ -311,7 +320,7 @@ const state = {
 /* -------- Firebase init -------- */
 try{
   appFB = initializeApp(firebaseConfig);
-  const _analyticsSafe = null; // analytics opcional
+  const _analyticsSafe = null;
   auth = getAuth(appFB);
   db = getFirestore(appFB);
   storage = getStorage(appFB);
@@ -320,24 +329,25 @@ try{
 }
 
 /* =================== UI por ROL =================== */
+function setContainerMode(mode){
+  const c=$('#container');
+  c.classList.remove('layout-passenger','layout-driver','layout-profile');
+  c.classList.add(mode);
+}
 function updateRoleUI(){
-  const container=$('#container'), aside=$('#aside');
   const controlsCard=$('#controlsCard'), infoCard=$('#infoCard');
   const statusBar=$('#statusBar'), chatMini=$('#chatMini');
 
   if(uiTab==='pasajero'){
-    if(aside) aside.style.display='none';
-    if(container) container.style.gridTemplateColumns='1fr';
+    setContainerMode('layout-passenger');
     if(controlsCard) controlsCard.style.display='block';
     if(infoCard) infoCard.style.display='block';
   }else if(uiTab==='conductor'){
-    if(aside) aside.style.display='block';
-    if(container) container.style.gridTemplateColumns='360px 1fr';
+    setContainerMode('layout-driver');
     if(controlsCard) controlsCard.style.display='none';
     if(infoCard) infoCard.style.display='none';
   }else{ // perfil
-    if(aside) aside.style.display='block';
-    if(container) container.style.gridTemplateColumns='360px 1fr';
+    setContainerMode('layout-profile');
     if(controlsCard) controlsCard.style.display='none';
     if(infoCard) infoCard.style.display='none';
     if(!state.activeRequestId){ if(statusBar) statusBar.style.display='none'; if(chatMini) chatMini.style.display='none'; }
@@ -363,7 +373,7 @@ function renderTabs(){
   const sc=$('#statusChip'); if(sc) sc.textContent=state.fbUser ? ((state.profile && state.profile.name) || 'online') : 'offline';
 }
 function onTabChange(){
-  if(uiTab!=='conductor') unsubscribePendientes(); // salir de cola
+  if(uiTab!=='conductor') unsubscribePendientes();
   renderSide();
   updateRoleUI();
 }
@@ -406,29 +416,57 @@ function cardConductor(){
   return el;
 }
 
-/* -------- Side: Perfil -------- */
+/* -------- Side: Perfil (subsecciones) -------- */
 function cardPerfil(){
   const p=state.profile||{ratingSum:0,ratingCount:0};
   const avg=p.ratingCount?(p.ratingSum/p.ratingCount):0;
   let stars=''; for(let i=1;i<=5;i++) stars+= '<span style="color:#fcd34d;opacity:'+(avg>=i?1:.35)+'">★</span>';
   const avatar = (p.photoURL && p.photoURL.length)? p.photoURL : ('https://api.dicebear.com/9.x/initials/svg?seed=' + encodeURIComponent(p.name|| (state.fbUser?state.fbUser.email:'U')));
   const el=document.createElement('div'); el.className='grid';
+
   el.innerHTML=[
-  '<div class="card">',
-    '<div class="row wrap" style="gap:.75rem;align-items:flex-start">',
-      '<img loading="lazy" src="',avatar,'" alt="avatar" width="64" height="64" style="border-radius:12px;border:1px solid var(--line);object-fit:cover"/>',
-      '<div><div style="font-weight:600">', (p.name||'Usuario') ,'</div><div class="chip">', (state.fbUser?state.fbUser.email:'') ,'</div></div>',
-    '</div>',
-  '</div>',
-  '<div class="card">',
-    '<div class="label">Sesión</div>',
-    '<div class="row" style="gap:.5rem;flex-wrap:wrap"><button class="btn" id="btnLogout" type="button">Cerrar sesión</button></div>',
-  '</div>',
-  '<div class="card">',
-    '<div class="label">Calificación</div>',
-    '<div class="row" style="gap:.35rem">',stars,'</div>',
-    '<div class="row" style="gap:.5rem;margin-top:.4rem"><div class="chip">',(p.ratingCount||0),' opiniones</div><div class="chip">',avg.toFixed(2),' / 5.00</div></div>',
-  '</div>'].join('');
+    // Cuenta
+    '<section class="card">',
+      '<h3 style="margin:.1rem 0 1rem 0">Cuenta</h3>',
+      '<div class="row wrap" style="gap:.75rem;align-items:flex-start">',
+        '<img loading="lazy" src="',avatar,'" alt="avatar" width="64" height="64" style="border-radius:12px;border:1px solid var(--line);object-fit:cover"/>',
+        '<div>',
+          '<div style="font-weight:600">', (p.name||'Usuario') ,'</div>',
+          '<div class="chip">', (state.fbUser?state.fbUser.email:'') ,'</div>',
+        '</div>',
+      '</div>',
+    '</section>',
+
+    // Sesión
+    '<section class="card">',
+      '<h3 style="margin:.1rem 0 1rem 0">Sesión</h3>',
+      '<div class="row" style="gap:.5rem;flex-wrap:wrap">',
+        '<button class="btn" id="btnLogout" type="button">Cerrar sesión</button>',
+      '</div>',
+    '</section>',
+
+    // Preferencias (solo presentación)
+    '<section class="card">',
+      '<h3 style="margin:.1rem 0 1rem 0">Preferencias</h3>',
+      '<div class="row wrap" style="gap:.5rem">',
+        '<span class="chip">Tema: Oscuro</span>',
+        '<span class="chip">Idioma: ES</span>',
+        '<span class="chip">Notificaciones: On</span>',
+      '</div>',
+      '<p class="help" style="margin-top:.35rem">Estas preferencias son de ejemplo visual. Podés persistirlas en Firestore más adelante.</p>',
+    '</section>',
+
+    // Calificación
+    '<section class="card">',
+      '<h3 style="margin:.1rem 0 1rem 0">Calificación</h3>',
+      '<div class="row" style="gap:.35rem">',stars,'</div>',
+      '<div class="row" style="gap:.5rem;margin-top:.4rem">',
+        '<div class="chip">',(p.ratingCount||0),' opiniones</div>',
+        '<div class="chip">',avg.toFixed(2),' / 5.00</div>',
+      '</div>',
+    '</section>'
+  ].join('');
+
   setTimeout(()=>{ const b=$('#btnLogout'); if(b){ b.addEventListener('click', ()=>signOut(auth)); } },0);
   return el;
 }
@@ -664,7 +702,7 @@ function startDriverShare(){
     if(followMe) map.setView([p.lat,p.lng],map.getZoom());
     const r=state.activeRequest;
     if(r){
-      if(r.status==='aceptado' && r.origen){ ensureRouting().setWaypoints([L.latLng(p.lat,p.lng),L.Latlng(r.origen.lat,r.origen.lng)]); } // fallback si querés guiarte al origen
+      if(r.status==='aceptado' && r.origen){ ensureRouting().setWaypoints([L.latLng(p.lat,p.lng),L.latLng(r.origen.lat,r.origen.lng)]); }
       if(r.status==='en_curso' && r.destino){ ensureRouting().setWaypoints([L.latLng(p.lat,p.lng),L.latLng(r.destino.lat,r.destino.lng)]); }
     }
   }, function(err){ console.error(err); }, {enableHighAccuracy:true,maximumAge:2000,timeout:10000});
@@ -761,7 +799,7 @@ document.addEventListener('click', async (e)=>{
     return;
   }
 
-  // Controles PASAJERO
+  /* Pasajero */
   if(id==='btnMiUbicacion'){ if(uiTab!=='pasajero') return; miUbicacionComoOrigen(); return; }
   if(id==='btnLimpiar'){ if(uiTab!=='pasajero') return; limpiar(); return; }
   if(id==='btnSolicitar'){ if(uiTab!=='pasajero') return; solicitarViaje(); return; }
@@ -769,16 +807,16 @@ document.addEventListener('click', async (e)=>{
   if(id==='modeOrigen'){ if(uiTab!=='pasajero') return; if(state.pointsLocked){ alert('Bloqueado por viaje activo'); return; } selectMode='origen'; $('#modeOrigen').setAttribute('aria-pressed','true'); $('#modeDestino').setAttribute('aria-pressed','false'); return; }
   if(id==='modeDestino'){ if(uiTab!=='pasajero') return; if(state.pointsLocked){ alert('Bloqueado por viaje activo'); return; } selectMode='destino'; $('#modeDestino').setAttribute('aria-pressed','true'); $('#modeOrigen').setAttribute('aria-pressed','false'); return; }
 
-  // Conductor
+  /* Conductor */
   if(id==='btnDrvStart'){ if(uiTab!=='conductor') return; driverStart(); return; }
   if(id==='btnDrvPause'){ if(uiTab!=='conductor') return; driverPauseToggle(); return; }
   if(id==='btnDrvFinish'){ if(uiTab!=='conductor') return; driverFinish(); return; }
 
-  // Chat
+  /* Chat */
   if(id==='chatSend'){ sendChat(); return; }
 });
 
-// Enter para login/registro
+/* Enter para login/registro */
 ['inEmail','inPass','regName','regEmail','regPass','regPass2'].forEach(id=>{
   const el=document.getElementById(id);
   if(el){ el.addEventListener('keydown', (ev)=>{
@@ -789,7 +827,7 @@ document.addEventListener('click', async (e)=>{
   });}
 });
 
-// Preview foto
+/* Preview foto */
 document.addEventListener('change',(e)=>{
   if(e.target && e.target.id==='regPhoto'){
     const f=e.target.files && e.target.files[0]; const prev=$('#regPreview');
