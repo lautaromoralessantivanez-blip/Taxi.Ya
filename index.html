@@ -113,6 +113,46 @@ button,input,select{font-family:inherit}
 .container.layout-driver .main{display:block; order:1}
 .container.layout-driver .dock{display:block; order:2}
 
+/* === Overlay de búsqueda === */
+.search-overlay{
+  display:none;
+  place-items:center;
+  gap:1rem;
+  padding:1.25rem;
+  background:#0d131b;
+  border:1px solid var(--line);
+  border-radius:14px;
+}
+.search-title{font-weight:800;font-size:1.05rem}
+.radar{
+  position:relative;
+  width:180px;height:180px;border-radius:999px;
+  display:grid;place-items:center;
+  background:radial-gradient( circle at center, rgba(147,197,253,.08) 0%, rgba(147,197,253,.02) 60%, transparent 70%);
+  border:1px solid #223043;
+  overflow:hidden;
+}
+.pulse{position:absolute;inset:0;border-radius:999px;border:2px solid rgba(147,197,253,.25);opacity:.8}
+.p1{animation:pulse 2.2s linear infinite}
+.p2{animation:pulse 2.2s linear 0.6s infinite}
+.p3{animation:pulse 2.2s linear 1.2s infinite}
+@keyframes pulse{
+  0%{transform:scale(.3);opacity:.8}
+  70%{transform:scale(1);opacity:0}
+  100%{transform:scale(1.1);opacity:0}
+}
+.car{
+  position:relative; z-index:2;
+  font-size:40px; line-height:1; 
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.45));
+}
+.wait{
+  font-weight:600; 
+  display:flex; gap:.5rem; align-items:center; justify-content:center;
+}
+.search-actions{display:flex;justify-content:center}
+.search-actions .btn{min-width:160px}
+
 /* Responsive */
 @media (max-width:980px){
   .container.layout-driver{grid-template-columns:1fr}
@@ -225,6 +265,22 @@ button,input,select{font-family:inherit}
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Overlay Buscando -->
+        <div id="searchOverlay" class="search-overlay">
+          <div class="search-title">Buscando auto…</div>
+          <div class="radar">
+            <div class="pulse p1"></div>
+            <div class="pulse p2"></div>
+            <div class="pulse p3"></div>
+            <div class="car">🚖</div>
+          </div>
+          <div class="wait">Espera: <span id="ovTimer">00:00</span></div>
+          <div class="search-actions">
+            <button class="btn" id="btnCancelReqOverlay" type="button">Cancelar</button>
+          </div>
+          <div class="help">Avisando a conductores cercanos. No cierres la pestaña.</div>
         </div>
 
         <!-- Info PASAJERO -->
@@ -358,10 +414,10 @@ let activeReqUnsub=null, chatUnsub=null, listUnsub=null, userUnsub=null, timerIn
 let driverWatchId=null;
 let uiTab='pasajero', selectMode='origen';
 let driverOnline=false, driverPaused=false;
-let driverSessionStart=null;     // timestamp inicio o reanudación
-let driverAccumMs=0;            // ms acumulados (se suma en pausa)
-let driverTimer=null;           // setInterval del reloj
-let driverEarnings=0;           // suma de viajes finalizados en la sesión
+let driverSessionStart=null;
+let driverAccumMs=0;
+let driverTimer=null;
+let driverEarnings=0;
 let myLastPos=null;
 
 const state = {
@@ -458,10 +514,9 @@ function resetDriverSession(){
   updateDriverTimerUI();
 }
 function subscribeEarnings(){
-  // suma de viajes FINALIZADOS del conductor desde el inicio de la sesión (filtro client-side por createdAt)
   if(earningsUnsub) earningsUnsub();
   const qRef=query(
-    collection(db,'requests'),
+    collection(db,'viajes'),
     where('conductorId','==',state.fbUser.uid),
     where('status','==','finalizado'),
     orderBy('createdAt','desc'),
@@ -474,7 +529,6 @@ function subscribeEarnings(){
       const r=d.data();
       const ts=r.createdAt?.toDate?.() || r.createdAt || null;
       if(!ts) return;
-      // considerar finalizados DESDE que apretaste iniciar, y también posteriores a reanudaciones (seguimos usando el inicio de esta sesión; si querés segmentar por pausas, se complica)
       if(ts >= since) sum += Number(r.precio||0);
     });
     driverEarnings = sum;
@@ -491,14 +545,12 @@ function requestGeoPermission(){
 function driverStart(){
   if(driverOnline && !driverPaused) return;
   if(!driverOnline){
-    // inicio de sesión de conducción NUEVA
     resetDriverSession();
     driverOnline=true; driverPaused=false;
     driverSessionStart=Date.now();
     startDriverTimer();
     subscribeEarnings();
   }else{
-    // reanudar
     driverPaused=false;
     driverSessionStart=Date.now();
     startDriverTimer();
@@ -509,7 +561,6 @@ function driverStart(){
 }
 function driverPauseToggle(){
   if(!driverOnline) return;
-  // acumular tiempo y pausar
   if(!driverPaused){
     driverAccumMs += (Date.now()-driverSessionStart);
     driverSessionStart=null;
@@ -518,7 +569,6 @@ function driverPauseToggle(){
     unsubscribePendientes();
     stopDriverTimer();
   }else{
-    // reanudar
     driverPaused=false;
     driverSessionStart=Date.now();
     startDriverShare();
@@ -529,7 +579,6 @@ function driverPauseToggle(){
 }
 function driverFinish(){
   if(!driverOnline) return;
-  // sumar último tramo si estaba corriendo
   if(!driverPaused && driverSessionStart){
     driverAccumMs += (Date.now()-driverSessionStart);
   }
@@ -627,26 +676,51 @@ if(addrInput){
 }
 document.addEventListener('click', function(e){ if(addrBox && addrBox.style.display!=='none' && !addrBox.contains(e.target) && e.target!==addrInput){ addrBox.style.display='none'; }});
 
-/* -------- Chat + Request watch -------- */
+/* -------- Chat + Viaje activo -------- */
 function sanitizeMsg(t){ let x=(t||'').trim(); for(const w of bannedWords){ x=x.replace(new RegExp('\\b'+w+'\\b','gi'),'***'); } return x; }
 function mySide(){ const r=state.activeRequest; if(!r||!state.fbUser) return 'pax'; if(r.pasajeroId===state.fbUser.uid) return 'pax'; if(r.conductorId===state.fbUser.uid) return 'drv'; return 'pax'; }
 async function sendChat(){
   if(!state.activeRequestId) { alert('Sin viaje activo'); return; }
   const input=$('#chatInput'); const text=(input && input.value)||''; if(!text.trim()) return;
   const s=sanitizeMsg(text); if(/^\*{3,}$/.test(s)) { alert('Mensaje bloqueado'); return; }
-  await addDoc(collection(db,'requests',state.activeRequestId,'messages'),{from:mySide(),text:s,ts:serverTimestamp()});
+  await addDoc(collection(db,'viajes',state.activeRequestId,'mensajes'),{from:mySide(),text:s,ts:serverTimestamp()});
   if(input) input.value='';
 }
 function showTripChat(show){ const d=document.getElementById('chatMini'); if(d) d.style.display = show ? 'block' : 'none'; }
-function setSearchingUI(on){
-  const t=document.getElementById('searchTimer'); if(!t) return;
-  if(on){ if(!state.requestCreatedAt) state.requestCreatedAt=Date.now(); if(timerInt) clearInterval(timerInt);
-    timerInt=setInterval(function(){ const s=Math.floor((Date.now()-state.requestCreatedAt)/1000); const mm=String(Math.floor(s/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); t.textContent=mm+':'+ss; },500);
-  }else{ if(timerInt) clearInterval(timerInt); timerInt=null; state.requestCreatedAt=null; t.textContent='00:00'; }
+
+/* === overlay helpers === */
+function showSearchUI(show){
+  const cc=document.getElementById('controlsCard');
+  const ov=document.getElementById('searchOverlay');
+  if(cc) cc.style.display = show ? 'none' : 'block';
+  if(ov) ov.style.display = show ? 'grid' : 'none';
 }
+function setSearchingUI(on){
+  const t=document.getElementById('searchTimer');
+  const t2=document.getElementById('ovTimer');
+  if(on){
+    if(!state.requestCreatedAt) state.requestCreatedAt=Date.now();
+    if(timerInt) clearInterval(timerInt);
+    timerInt=setInterval(function(){
+      const s=Math.floor((Date.now()-state.requestCreatedAt)/1000);
+      const mm=String(Math.floor(s/60)).padStart(2,'0');
+      const ss=String(s%60).padStart(2,'0');
+      if(t) t.textContent=mm+':'+ss;
+      if(t2) t2.textContent=mm+':'+ss;
+    },500);
+    showSearchUI(true);
+  }else{
+    if(timerInt) clearInterval(timerInt);
+    timerInt=null; state.requestCreatedAt=null;
+    if(t) t.textContent='00:00';
+    if(t2) t2.textContent='00:00';
+    showSearchUI(false);
+  }
+}
+
 function watchActiveRequest(id){
   if(activeReqUnsub) activeReqUnsub();
-  activeReqUnsub=onSnapshot(doc(db,'requests',id), function(snap){
+  activeReqUnsub=onSnapshot(doc(db,'viajes',id), function(snap){
     if(!snap.exists()) return;
     const r=snap.data(); state.activeRequest={id:snap.id, ...r};
     const act=$('#actividad'); if(act) act.textContent='#'+id.slice(0,6)+' — '+r.status.toUpperCase()+' — '+fmt(r.precio)+' ('+(r.km||0).toFixed(2)+' km, '+(r.min||0)+' min)';
@@ -667,7 +741,7 @@ function watchActiveRequest(id){
 }
 function ensureChatListener(reqId){
   if(chatUnsub) return;
-  chatUnsub=onSnapshot(query(collection(db,'requests',reqId,'messages'),orderBy('ts','asc'),limit(100)), function(qs){
+  chatUnsub=onSnapshot(query(collection(db,'viajes',reqId,'mensajes'),orderBy('ts','asc'),limit(100)), function(qs){
     const log=$('#chatlog'); if(!log) return; log.innerHTML='';
     const mine=mySide();
     qs.forEach(function(d){ const m=d.data(); const who=(m.from===mine)?'me':''; log.insertAdjacentHTML('beforeend','<div class="msg '+who+'"><b>'+(m.from==='pax'?'Pasajero':'Conductor')+':</b> '+m.text+'</div>'); });
@@ -675,12 +749,12 @@ function ensureChatListener(reqId){
   });
 }
 
-/* -------- Firestore: Solicitudes -------- */
+/* -------- Firestore: Solicitudes / Viajes -------- */
 async function solicitarViaje(){
   if(!(state.origen&&state.destino)){ alert('Elegí origen y destino'); return; }
   const distKm=state.routeKm||km(state.origen,state.destino), precio=calcFare(distKm,state.routeMin||0);
   const pago = (document.getElementById('payMethod')?.value)||'efectivo';
-  const ref=await addDoc(collection(db,'requests'),{
+  const ref=await addDoc(collection(db,'viajes'),{
     status:'buscando', pasajeroId:state.fbUser.uid,
     pasajeroNombre:(state.profile && state.profile.name) || state.fbUser.email,
     pasajeroFoto:(state.profile && state.profile.photoURL) || '',
@@ -689,7 +763,10 @@ async function solicitarViaje(){
   });
   state.activeRequestId=ref.id; lockPoints(true); setSearchingUI(true); watchActiveRequest(ref.id);
 }
-async function cancelarSolicitud(){ if(!state.activeRequestId){ alert('Sin viaje activo'); return; } await updateDoc(doc(db,'requests',state.activeRequestId),{status:'cancelado'}); }
+async function cancelarSolicitud(){
+  if(!state.activeRequestId){ setSearchingUI(false); return; }
+  await updateDoc(doc(db,'viajes',state.activeRequestId),{status:'cancelado'});
+}
 
 /* ===== Dock de solicitudes (CONDUCTOR) ===== */
 function renderPendingDockSkeleton(){
@@ -714,12 +791,12 @@ function pendingItemHtml({id,avatar,name,stars,count,kmv,minv,precio,pago,origen
     </div>`;
 }
 let notifAudio=null;
-function playPing(){ try{ if(!notifAudio){ notifAudio=new Audio('data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA...'); } notifAudio.currentTime=0; notifAudio.play().catch(()=>{}); }catch(_){ } }
+function playPing(){ try{ if(!notifAudio){ notifAudio=new Audio('data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA'); } notifAudio.currentTime=0; notifAudio.play().catch(()=>{}); }catch(_){ } }
 
 function subscribePendientes(){
   renderPendingDockSkeleton();
   if(listUnsub) listUnsub();
-  const qRef=query(collection(db,'requests'),where('status','==','buscando'),orderBy('createdAt','desc'),limit(30));
+  const qRef=query(collection(db,'viajes'),where('status','==','buscando'),orderBy('createdAt','desc'),limit(30));
   listUnsub=onSnapshot(qRef, async function(qs){
     const cont=$('#reqListDock'); if(!cont) return; cont.innerHTML='';
     const near=[]
@@ -775,11 +852,11 @@ function clearPreview(){
 /* Aceptar / iniciar / finalizar viaje */
 async function aceptarViaje(id){
   if(!driverOnline || driverPaused){ alert('Tenés que estar Iniciado.'); return; }
-  await updateDoc(doc(db,'requests',id),{status:'aceptado',conductorId:state.fbUser.uid,conductorNombre:(state.profile && state.profile.name)||state.fbUser.email});
+  await updateDoc(doc(db,'viajes',id),{status:'aceptado',conductorId:state.fbUser.uid,conductorNombre:(state.profile && state.profile.name)||state.fbUser.email});
   state.activeRequestId=id; watchActiveRequest(id);
 }
-async function iniciarTrayecto(){ if(!state.activeRequestId) { alert('Sin viaje activo'); return; } await updateDoc(doc(db,'requests',state.activeRequestId),{status:'en_curso'}); }
-async function finalizarTrayecto(){ if(!state.activeRequestId) { alert('Sin viaje activo'); return; } await updateDoc(doc(db,'requests',state.activeRequestId),{status:'finalizado'}); }
+async function iniciarTrayecto(){ if(!state.activeRequestId) { alert('Sin viaje activo'); return; } await updateDoc(doc(db,'viajes',state.activeRequestId),{status:'en_curso'}); }
+async function finalizarTrayecto(){ if(!state.activeRequestId) { alert('Sin viaje activo'); return; } await updateDoc(doc(db,'viajes',state.activeRequestId),{status:'finalizado'}); }
 document.addEventListener('click',(e)=>{ if(e.target && e.target.id==='btnStartTrip'){ iniciarTrayecto(); } if(e.target && e.target.id==='btnFinishTrip'){ finalizarTrayecto(); }});
 
 /* -------- Bloqueo de puntos -------- */
@@ -797,7 +874,6 @@ function startDriverShare(){
   if(driverWatchId) return;
   driverWatchId=navigator.geolocation.watchPosition(async function(pos){
     myLastPos = { lat: pos.coords.latitude, lng: pos.coords.longitude, ts: Date.now() };
-    // marker
     if(!driverMarker){
       driverMarker = L.marker([myLastPos.lat,myLastPos.lng],{
         icon:L.divIcon({className:'',html:'<div style="background:#111827;border:2px solid #94a3b8;color:#fff;padding:2px 6px;border-radius:6px">🚖</div>'})
@@ -805,18 +881,17 @@ function startDriverShare(){
     } else {
       driverMarker.setLatLng([myLastPos.lat,myLastPos.lng]);
     }
-    // seguir SIEMPRE cuando está iniciado
     try{ if(driverOnline){ map.setView([myLastPos.lat,myLastPos.lng], Math.max(map.getZoom(), 14), {animate:false}); } }catch(_){}
-    // publicar posición si hay viaje activo
+
     if(state.activeRequestId){
-      await setDoc(doc(db,'requests',state.activeRequestId,'driver','pos'), myLastPos);
+      await setDoc(doc(db,'viajes',state.activeRequestId,'conductor','pos'), myLastPos);
       const r=state.activeRequest;
       if(r){
         const dOri=r.origen?km(myLastPos,r.origen):999;
         const dDes=r.destino?km(myLastPos,r.destino):999;
         try{
-          if(r.status==='aceptado' && dOri<=0.2) await updateDoc(doc(db,'requests',state.activeRequestId),{status:'en_curso'});
-          if(r.status==='en_curso' && dDes<=0.2) await updateDoc(doc(db,'requests',state.activeRequestId),{status:'finalizado'});
+          if(r.status==='aceptado' && dOri<=0.2) await updateDoc(doc(db,'viajes',state.activeRequestId),{status:'en_curso'});
+          if(r.status==='en_curso' && dDes<=0.2) await updateDoc(doc(db,'viajes',state.activeRequestId),{status:'finalizado'});
         }catch(_){}
       }
     }
@@ -826,10 +901,10 @@ function stopDriverShare(){
   if(driverWatchId){ navigator.geolocation.clearWatch(driverWatchId); driverWatchId=null; }
 }
 
-/* -------- Seguimiento pasajero -------- */
+/* -------- Seguimiento para pasajero -------- */
 function startDriverFollower(requestId){
   stopDriverFollower();
-  driverUnsub = onSnapshot(doc(db,'requests',requestId,'driver','pos'), snap=>{
+  driverUnsub = onSnapshot(doc(db,'viajes',requestId,'conductor','pos'), snap=>{
     if(!snap.exists()) return;
     const p=snap.data();
     if(!driverMarker){
@@ -893,19 +968,27 @@ async function doRegister(){
       }
     }
 
-    try{ await withTimeout(updateProfile(cred.user,{displayName:name,photoURL}), 15000, 'Actualización de perfil'); }catch(_){}
+        try{
+      // Actualiza el perfil de Auth con nombre y foto (si hubo)
+      await withTimeout(updateProfile(cred.user,{displayName:name,photoURL}), 15000, 'Actualización de perfil');
 
-    try{
+      // Crea/actualiza documento del usuario
       await withTimeout(setDoc(doc(db,'users',cred.user.uid),{
-        name,email,photoURL,ratingSum:0,ratingCount:0,createdAt:serverTimestamp()
+        name,
+        email,
+        photoURL,
+        ratingSum:0,
+        ratingCount:0,
+        createdAt:serverTimestamp()
       }), 15000, 'Creación de perfil');
+
+      // Cierra el formulario de registro
+      document.getElementById('regCard').style.display='none';
+      clearRegForm();
     }catch(docErr){
-      console.warn('setDoc falló:', docErr);
+      console.warn('Error guardando perfil:', docErr);
       setText($('#regErr'),'Se creó tu cuenta, pero no se pudo guardar el perfil. Probá recargar.');
     }
-
-    $('#regCard').style.display='none';
-    clearRegForm();
   }catch(err){
     setText($('#regErr'), mapAuthError(err));
   }finally{
@@ -921,16 +1004,26 @@ onAuthStateChanged(auth, async (user)=>{
     const ref=doc(db,'users',user.uid);
     userUnsub=onSnapshot(ref, async (snap)=>{
       if(!snap.exists()){
-        try{ await setDoc(ref,{name:user.displayName||'',email:user.email||'',photoURL:user.photoURL||'',ratingSum:0,ratingCount:0,createdAt:serverTimestamp()}); }catch(_){}
+        try{
+          await setDoc(ref,{
+            name:user.displayName||'',
+            email:user.email||'',
+            photoURL:user.photoURL||'',
+            ratingSum:0,
+            ratingCount:0,
+            createdAt:serverTimestamp()
+          });
+        }catch(_){}
       }
       state.profile=snap.data()||{};
-      // Registro obligatorio: si no hay nombre, mantener gate visible
+      // Si falta el nombre, quedate en el gate para completar
       if(!(state.profile.name && state.profile.name.trim())){
         document.getElementById('gate').style.display='grid';
         document.getElementById('regCard').style.display='block';
         document.getElementById('app').style.display='none';
         return;
       }
+      // Mostrar app
       document.getElementById('gate').style.display='none';
       document.getElementById('app').style.display='grid';
       if(!map) initMap();
@@ -938,6 +1031,7 @@ onAuthStateChanged(auth, async (user)=>{
       renderTabs(); updateRoleUI();
     });
   } else {
+    // Sesión cerrada
     document.getElementById('app').style.display='none';
     document.getElementById('gate').style.display='grid';
     stopDriverShare(); stopDriverFollower();
@@ -946,13 +1040,17 @@ onAuthStateChanged(auth, async (user)=>{
   }
 });
 
-/* -------- UI -------- */
+/* -------- UI util -------- */
 function clearRegForm(){
-  ['regName','regEmail','regPass','regPass2'].forEach(id=>{ const el=$('#'+id); if(el) el.value=''; });
-  const ph=$('#regPhoto'); if(ph) ph.value='';
-  const pv=$('#regPreview'); if(pv) pv.src='';
+  ['regName','regEmail','regPass','regPass2'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value='';
+  });
+  const ph=document.getElementById('regPhoto'); if(ph) ph.value='';
+  const pv=document.getElementById('regPreview'); if(pv) pv.src='';
 }
-// preview de foto
+
+// Preview de foto
 const phInput=document.getElementById('regPhoto');
 if(phInput){
   phInput.addEventListener('change', e=>{
@@ -964,12 +1062,12 @@ if(phInput){
   });
 }
 
-/* ✅ Handler único de pestañas */
+/* ✅ Cambio de pestañas */
 function handleTabChange(){
   if(uiTab==='conductor'){
     requestGeoPermission();
-    driverStart(); // entra Iniciado de una
-  } else {
+    driverStart(); // entra iniciado
+  }else{
     if(driverOnline) driverFinish();
   }
   if(uiTab!=='conductor') unsubscribePendientes();
@@ -979,17 +1077,30 @@ function handleTabChange(){
 /* -------- Eventos -------- */
 document.addEventListener('click', e=>{
   const id=e.target?.id;
+
+  // Auth
   if(id==='btnLogin') doLogin();
   if(id==='btnReg') doRegister();
   if(id==='btnShowReg') document.getElementById('regCard').style.display='block';
   if(id==='btnCancelReg'){ document.getElementById('regCard').style.display='none'; clearRegForm(); }
 
+  // Pasajero
   if(id==='btnMiUbicacion') miUbicacionComoOrigen();
   if(id==='btnLimpiar') limpiar();
   if(id==='btnSolicitar') solicitarViaje();
   if(id==='btnCancelReqTop') cancelarSolicitud();
-  if(id==='modeOrigen'){ selectMode='origen'; document.getElementById('modeOrigen').setAttribute('aria-pressed','true'); document.getElementById('modeDestino').setAttribute('aria-pressed','false'); }
-  if(id==='modeDestino'){ selectMode='destino'; document.getElementById('modeDestino').setAttribute('aria-pressed','true'); document.getElementById('modeOrigen').setAttribute('aria-pressed','false'); }
+  if(id==='btnCancelReqOverlay') cancelarSolicitud(); // botón del overlay
+
+  if(id==='modeOrigen'){
+    selectMode='origen';
+    document.getElementById('modeOrigen').setAttribute('aria-pressed','true');
+    document.getElementById('modeDestino').setAttribute('aria-pressed','false');
+  }
+  if(id==='modeDestino'){
+    selectMode='destino';
+    document.getElementById('modeDestino').setAttribute('aria-pressed','true');
+    document.getElementById('modeOrigen').setAttribute('aria-pressed','false');
+  }
 
   // Conductor
   if(id==='btnDrvStart') driverStart();
@@ -1001,13 +1112,15 @@ document.addEventListener('click', e=>{
     }
   }
 
+  // Chat
   if(id==='chatSend') sendChat();
 });
 
 /* -------- Boot simple -------- */
 document.addEventListener('DOMContentLoaded', ()=>{
   const bad=(location.protocol!=='http:' && location.protocol!=='https:');
-  document.getElementById('envWarn').style.display = bad ? 'block' : 'none';
+  const warn=document.getElementById('envWarn');
+  if(warn) warn.style.display = bad ? 'block' : 'none';
 });
 </script>
 </body>
