@@ -25,17 +25,39 @@ html,body{height:100%}
 body{margin:0;background:linear-gradient(180deg,#0b0f15,#0b0f15 60%,#0a0f19);color:var(--ink);font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial}
 button,input,select{font-family:inherit}
 
-/* ===== AUTH GATE ===== */
-#gate{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(1200px 800px at 50% -10%,#13202e 0%, #0b0f15 60%, #0a0f19 100%);z-index:100;pointer-events:auto}
-.gate-card{width:min(720px,92vw);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1rem}
+/* ===== AUTH GATE (mobile-first, con scroll) ===== */
+#gate{
+  position:fixed; inset:0;
+  display:grid; place-items:start center;
+  background:radial-gradient(1200px 800px at 50% -10%,#13202e 0%, #0b0f15 60%, #0a0f19 100%);
+  z-index:100;
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:16px; min-height:100svh;
+}
+.gate-card{
+  width:min(720px,100%);
+  background:var(--panel); border:1px solid var(--line); border-radius:16px;
+  padding:1rem; margin:12px 0 24px 0;
+}
 .gate-title{display:flex;align-items:center;gap:.6rem;margin:.25rem 0 1rem}
 .gate-title .dot{width:.9rem;height:.9rem;border-radius:999px;background:var(--accent);box-shadow:0 0 16px rgba(255,211,77,.7)}
 .grid{display:grid;gap:.75rem}
 .field{display:grid;gap:.35rem}
 .label{font-size:.9rem;color:var(--muted)}
-.input, select.input{width:100%;background:#0e1620;border:1px solid var(--line);color:var(--ink);padding:.65rem .75rem;border-radius:12px}
-.btn{display:inline-flex;align-items:center;gap:.5rem;border:1px solid var(--line);background:#12202e;color:var(--ink);padding:.6rem .9rem;border-radius:12px;cursor:pointer;transition:.2s;text-decoration:none}
+.input, select.input{
+  width:100%; background:#0e1620; border:1px solid var(--line); color:var(--ink);
+  padding:.65rem .75rem; border-radius:12px;
+  /* anti-zoom iOS */
+  font-size:16px; line-height:1.2;
+}
+.btn{
+  display:inline-flex; align-items:center; gap:.5rem;
+  border:1px solid var(--line); background:#12202e; color:var(--ink);
+  padding:.65rem 1rem; border-radius:12px; cursor:pointer; transition:.2s; text-decoration:none;
+  font-size:16px;  /* anti-zoom iOS */
+}
 .btn.primary{background:var(--accent);color:#111;border-color:#e6b800}
+.btn[disabled]{opacity:.6;cursor:not-allowed}
 .link{color:#a7c7ff;cursor:pointer;text-decoration:underline}
 .err{color:#fecaca}
 .preview{width:72px;height:72px;border-radius:50%;border:1px solid var(--line);object-fit:cover;background:#0d131b}
@@ -70,8 +92,14 @@ button,input,select{font-family:inherit}
 #map{width:100%;height:70vh;min-height:460px}
 .leaflet-container{background:#0b0f15}
 
-/* Overlay de solicitudes en el mapa (Conductor) */
-.req-overlay{position:absolute;right:14px;top:14px;width:min(380px,92vw);max-height:60vh;overflow:auto;background:#0e1620;border:1px solid var(--line);border-radius:14px;padding:.75rem;box-shadow:0 6px 24px rgba(0,0,0,.35);display:none}
+/* ===== Overlay de solicitudes (Conductor) ===== */
+.req-overlay{
+  position:absolute; left:50%; bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  transform:translateX(-50%); width:min(720px,92vw); max-height:46vh;
+  overflow-y:auto; overflow-x:hidden; background:#0e1620f2; backdrop-filter:blur(6px);
+  border:1px solid var(--line); border-radius:14px; padding:.75rem; box-shadow:0 8px 28px rgba(0,0,0,.45);
+  z-index:500; display:none;
+}
 .req-title{font-weight:700;margin:.25rem 0 .5rem 0}
 .req-item{display:grid;grid-template-columns:48px 1fr auto;gap:.6rem;align-items:center;border:1px solid var(--line);background:#0d131b;border-radius:12px;padding:.6rem;margin:.5rem 0}
 .req-item .avatar{width:48px;height:48px;border-radius:10px;border:1px solid var(--line);object-fit:cover}
@@ -81,11 +109,6 @@ button,input,select{font-family:inherit}
 .req-compact{display:grid;gap:.5rem}
 .req-compact .head{display:flex;align-items:center;gap:.6rem}
 .req-compact .head img{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);object-fit:cover}
-
-/* Trofeos / medallas */
-.medals{display:flex;gap:.5rem;flex-wrap:wrap}
-.medal{display:flex;align-items:center;gap:.4rem;background:#111827;border:1px solid #233044;padding:.35rem .55rem;border-radius:10px;font-size:.85rem}
-.medal i{filter:drop-shadow(0 1px 0 rgba(0,0,0,.35))}
 
 /* Chat compacto */
 .chat-mini{order:98}
@@ -112,19 +135,15 @@ button,input,select{font-family:inherit}
 
 .container.layout-driver{grid-template-columns:1fr}
 .container.layout-driver #aside{display:block; order:1}
-.container.layout-driver .main{display:block; order:2} /* mapa abajo */
+.container.layout-driver .main{display:block; order:2}
 
-.container.layout-profile{grid-template-columns:1fr; place-items:center}
-.container.layout-profile #aside{display:block; max-width:860px; width:100%; margin:0 auto}
-.container.layout-profile .main{display:none} /* sin mapa en Perfil */
+.container.layout-profile{grid-template-columns:1fr}
+.container.layout-profile #aside{display:block}
+.container.layout-profile .main{display:none}
 
-/* === FIX: conductor sin hueco y mapa más arriba === */
-.container.layout-driver #aside .panel-body{min-height:auto;padding-bottom:.5rem;}
-.container.layout-driver #aside{margin-bottom:.75rem;}
-.container.layout-driver .main .panel-body{padding-top:.25rem;}
-
-/* Responsive */
+/* Responsive extras */
 @media (max-width:680px){
+  .gate-card{border-radius:12px;border:1px solid var(--line)} /* ancho completo ya por width:100% */
   .tabs{position:fixed;bottom:10px;left:0;right:0;justify-content:center;z-index:40}
   .tab{background:#131c28;border-color:#223043}
   #map{height:64vh;min-height:360px}
@@ -148,18 +167,15 @@ button,input,select{font-family:inherit}
     <!-- LOGIN -->
     <div class="card" style="background:#0d131b">
       <div class="grid">
-        <div class="field"><label class="label">Email</label><input id="inEmail" type="email" class="input" placeholder="tu@email.com" autocomplete="email" required></div>
-        <div class="field"><label class="label">Contraseña</label><input id="inPass" type="password" class="input" placeholder="••••••••" autocomplete="current-password" required></div>
-        <div class="row" style="gap:.6rem">
+        <div class="field"><label class="label">Email</label><input id="inEmail" type="email" class="input" placeholder="tu@email.com" autocomplete="email"></div>
+        <div class="field"><label class="label">Contraseña</label><input id="inPass" type="password" class="input" placeholder="••••••••" autocomplete="current-password"></div>
+        <div class="row" style="gap:.6rem;flex-wrap:wrap">
           <button class="btn primary" id="btnLogin" type="button">Entrar</button>
+          <button class="btn" id="btnShowReg" type="button">Crear cuenta</button>
         </div>
-        <div id="loginErr" class="err"></div>
+        <div id="loginErr" class="err" role="alert"></div>
       </div>
     </div>
-
-    <p class="help" style="margin:.5rem 0 0 0">
-      ¿No tenés cuenta? <span id="showReg" class="link">Crear una</span>
-    </p>
 
     <!-- REGISTRO -->
     <div id="regCard" class="card" style="display:none;margin-top:.6rem;background:#0d131b">
@@ -170,33 +186,33 @@ button,input,select{font-family:inherit}
           <label class="label" style="margin-top:.35rem">Foto de perfil (opcional)</label>
           <input id="regPhoto" type="file" accept="image/*" class="input" style="padding:.45rem"/>
         </div>
-        <div class="field" style="flex:1"><label class="label">Nombre</label><input id="regName" class="input" placeholder="Ana, Mauro…" required></div>
+        <div class="field" style="flex:1"><label class="label">Nombre</label><input id="regName" class="input" placeholder="Ana, Mauro…"></div>
       </div>
       <div class="grid">
-        <div class="field"><label class="label">Email</label><input id="regEmail" type="email" class="input" placeholder="tu@email.com" autocomplete="email" required></div>
-        <div class="field"><label class="label">Contraseña</label><input id="regPass" type="password" class="input" placeholder="mín. 6 caracteres" autocomplete="new-password" required></div>
-        <div class="field"><label class="label">Repetir contraseña</label><input id="regPass2" type="password" class="input" placeholder="repite la contraseña" autocomplete="new-password" required></div>
+        <div class="field"><label class="label">Email</label><input id="regEmail" type="email" class="input" placeholder="tu@email.com" autocomplete="email"></div>
+        <div class="field"><label class="label">Contraseña</label><input id="regPass" type="password" class="input" placeholder="mín. 6 caracteres" autocomplete="new-password"></div>
+        <div class="field"><label class="label">Repetir contraseña</label><input id="regPass2" type="password" class="input" placeholder="repite la contraseña" autocomplete="new-password"></div>
       </div>
-      <div class="row" style="margin-top:.6rem;gap:.6rem">
-        <button class="btn" id="btnCancelReg" type="button">Cancelar</button>
+      <div class="row" style="margin-top:.6rem;gap:.6rem;flex-wrap:wrap;padding-bottom:8px">
+        <button class="btn" id="btnCancelReg" type="button">Volver al login</button>
         <button class="btn primary" id="btnReg" type="button">Crear cuenta</button>
       </div>
-      <div id="regErr" class="err"></div>
+      <div id="regErr" class="err" role="alert"></div>
     </div>
 
     <p class="help" style="margin-top:.5rem">Iniciá sesión para continuar al mapa.</p>
-    <div id="fatal" class="err" style="display:none;margin-top:10px"></div>
+    <div id="fatal" class="err" style="display:none;margin-top:10px" role="alert"></div>
   </div>
 </div>
 
 <!-- ==================== APP ==================== -->
 <div class="app" id="app" style="display:none">
-  <header class="header" aria-hidden="true" id="appHeader">
+  <header class="header">
     <div class="brand"><span class="dot"></span><b>Taxi Ya</b><span class="chip" id="statusChip">offline</span></div>
     <nav class="tabs" id="tabs"></nav>
   </header>
 
-  <div class="container layout-passenger" id="container" aria-hidden="true">
+  <div class="container layout-passenger" id="container">
     <aside class="aside" id="aside">
       <div class="panel-head"><strong id="sideTitle">Panel</strong><span class="badge ok" id="authBadge">Conectado</span></div>
       <div class="panel-body" id="sideBody"></div>
@@ -263,7 +279,6 @@ button,input,select{font-family:inherit}
         <!-- Mapa -->
         <div class="map-wrap">
           <div id="map"></div>
-          <!-- Overlay de solicitudes para CONDUCTOR -->
           <div id="reqOverlay" class="req-overlay"></div>
         </div>
 
@@ -303,12 +318,11 @@ window.addEventListener('error', function(e){
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getAuth, setPersistence, browserLocalPersistence, browserSessionPersistence, inMemoryPersistence,
-  onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
-  updateProfile, sendPasswordResetEmail
+  onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore, doc, setDoc, getDoc, updateDoc, addDoc, collection,
-  serverTimestamp, onSnapshot, query, where, /*orderBy,*/ limit
+  serverTimestamp, onSnapshot, query, where, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
@@ -317,7 +331,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBu523IOGnIZGfAkdlLdVLcENwLgv5KU9o",
   authDomain: "taxi-ya-3be33.firebaseapp.com",
   projectId: "taxi-ya-3be33",
-  storageBucket: "taxi-ya-3be33.firebasestorage.app",
+  storageBucket: "taxi-ya-3be33.appspot.com",
   messagingSenderId: "31840475169",
   appId: "1:31840475169:web:1485e47b9ebea4a66c6b60",
   measurementId: "G-2RQRP1G2KB"
@@ -331,17 +345,18 @@ function km(a,b){
   if(!a||!b) return 0;
   const R=6371, dLat=(b.lat-a.lat)*Math.PI/180, dLon=(b.lng-a.lng)*Math.PI/180;
   const la1=a.lat*Math.PI/180, la2=b.lat*Math.PI/180;
-  const h=Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;
+  const h=Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(Math.PI*(b.lng-a.lng)/360)**2;
   return 2*R*Math.asin(Math.sqrt(h));
 }
 const bannedWords=['puta','puto','cagar','mierda','hdp','concha','pija','forro','insulto','boludo'];
-const mapAuthError=(err)=>{ const c=String(err?.code||''); const M={'auth/invalid-email':'Email inválido.','auth/missing-email':'Ingresá tu email.','auth/missing-password':'Ingresá tu contraseña.','auth/weak-password':'La contraseña es muy débil (mínimo 6 caracteres).','auth/email-already-in-use':'Ese email ya está registrado.','auth/user-not-found':'Usuario no encontrado.','auth/wrong-password':'Contraseña incorrecta.','auth/too-many-requests':'Demasiados intentos.','auth/network-request-failed':'Fallo de red.','auth/operation-not-allowed':'Habilitá Email/Password.','auth/unauthorized-domain':'Dominio no autorizado (agregá localhost).'}; return M[c] || err?.message || 'Error desconocido'; };
+const mapAuthError=(err)=>{ const c=String(err?.code||''); const M={'auth/invalid-email':'Email inválido.','auth/missing-email':'Ingresá tu email.','auth/missing-password':'Ingresá tu contraseña.','auth/weak-password':'La contraseña es muy débil (mínimo 6 caracteres).','auth/email-already-in-use':'Ese email ya está registrado.','auth/user-not-found':'Usuario no encontrado.','auth/wrong-password':'Contraseña incorrecta.','auth/too-many-requests':'Demasiados intentos. Probá más tarde.','auth/network-request-failed':'Fallo de red. Verificá tu conexión.','auth/operation-not-allowed':'Habilitá Email/Password en Firebase Console.','auth/unauthorized-domain':'Dominio no autorizado (agregá localhost).'}; return M[c] || err?.message || 'Error desconocido'; };
 async function setupPersistence(){ try{ await setPersistence(auth,browserLocalPersistence);}catch(_){ try{await setPersistence(auth,browserSessionPersistence);}catch(_2){await setPersistence(auth,inMemoryPersistence);} } }
+function setLoading(btn, on, txtIdle, txtBusy){ if(!btn) return; btn.disabled=!!on; btn.textContent=on?(txtBusy||'Procesando…'):(txtIdle||'Aceptar'); }
 
 /* -------- Estado global -------- */
 let appFB, auth, db, storage;
 let map, origenMarker, destinoMarker, meMarker, routing, driverMarker;
-let activeReqUnsub=null, chatUnsub=null, listUnsub=null, userUnsub=null, timerInt=null, driverUnsub=null, earningsUnsub=null, paxCountUnsub=null, drvCountUnsub=null;
+let activeReqUnsub=null, chatUnsub=null, listUnsub=null, userUnsub=null, timerInt=null, driverUnsub=null, earningsUnsub=null;
 let driverWatchId=null, followMe=true;
 let uiTab='pasajero', selectMode='origen';
 let driverOnline=false, driverPaused=false, driverSessionStart=null, driverTimer=null;
@@ -385,7 +400,7 @@ function updateRoleUI(){
     if(controlsCard) controlsCard.style.display='none';
     if(infoCard) infoCard.style.display='none';
     if(overlay) overlay.style.display = driverOnline ? 'block' : 'none';
-  }else{ // perfil
+  }else{
     setContainerMode('layout-profile');
     if(controlsCard) controlsCard.style.display='none';
     if(infoCard) infoCard.style.display='none';
@@ -397,27 +412,17 @@ function updateRoleUI(){
 }
 
 /* -------- Tabs y Panel -------- */
-function tabsForState(){
-  if(!state.fbUser) return [];
-  return [{id:'pasajero',label:'Pasajero'},{id:'conductor',label:'Conductor'},{id:'perfil',label:'Perfil'}];
-}
+function tabsForState(){ if(!state.fbUser) return []; return [{id:'pasajero',label:'Pasajero'},{id:'conductor',label:'Conductor'},{id:'perfil',label:'Perfil'}]; }
 function renderTabs(){
   const nav=$('#tabs'); if(!nav) return; nav.innerHTML='';
   for(const t of tabsForState()){
-    const b=document.createElement('button');
-    b.className='tab';
-    b.textContent=t.label;
-    b.setAttribute('aria-selected', uiTab===t.id ? 'true':'false');
-    b.onclick=function(){ uiTab=t.id; onTabChange(); };
+    const b=document.createElement('button'); b.className='tab'; b.textContent=t.label;
+    b.setAttribute('aria-selected', uiTab===t.id ? 'true':'false'); b.onclick=function(){ uiTab=t.id; onTabChange(); };
     nav.appendChild(b);
   }
   const sc=$('#statusChip'); if(sc) sc.textContent=state.fbUser ? ((state.profile && state.profile.name) || 'online') : 'offline';
 }
-function onTabChange(){
-  if(uiTab!=='conductor') unsubscribePendientes();
-  renderSide();
-  updateRoleUI();
-}
+function onTabChange(){ if(uiTab!=='conductor') unsubscribePendientes(); renderSide(); updateRoleUI(); }
 function renderSide(){
   const body=$('#sideBody'); const title=$('#sideTitle');
   title.textContent = (uiTab==='conductor'?'Conductor':(uiTab==='perfil'?'Perfil':'Pasajero'));
@@ -455,69 +460,36 @@ function cardConductor(){
   return el;
 }
 
-/* -------- Side: Perfil (subsecciones + trofeos) -------- */
+/* -------- Side: Perfil -------- */
 function cardPerfil(){
   const p=state.profile||{ratingSum:0,ratingCount:0};
   const avg=p.ratingCount?(p.ratingSum/p.ratingCount):0;
   let stars=''; for(let i=1;i<=5;i++) stars+= '<span style="color:#fcd34d;opacity:'+(avg>=i?1:.35)+'">★</span>';
   const avatar = (p.photoURL && p.photoURL.length)? p.photoURL : ('https://api.dicebear.com/9.x/initials/svg?seed=' + encodeURIComponent(p.name|| (state.fbUser?state.fbUser.email:'U')));
   const el=document.createElement('div'); el.className='grid';
-
   el.innerHTML=[
-    '<section class="card">',
-      '<h3 style="margin:.1rem 0 1rem 0">Cuenta</h3>',
-      '<div class="row wrap" style="gap:.75rem;align-items:flex-start">',
-        '<img loading="lazy" src="',avatar,'" alt="avatar" width="64" height="64" style="border-radius:12px;border:1px solid var(--line);object-fit:cover"/>',
-        '<div>',
-          '<div style="font-weight:600">', (p.name||'Usuario') ,'</div>',
-          '<div class="chip">', (state.fbUser?state.fbUser.email:'') ,'</div>',
-        '</div>',
-      '</div>',
+    '<section class="card"><h3 style="margin:.1rem 0 1rem 0">Cuenta</h3>',
+    '<div class="row wrap" style="gap:.75rem;align-items:flex-start">',
+    '<img loading="lazy" src="',avatar,'" alt="avatar" width="64" height="64" style="border-radius:12px;border:1px solid var(--line);object-fit:cover"/>',
+    '<div><div style="font-weight:600">',(p.name||'Usuario'),'</div>',
+    '<div class="chip">',(state.fbUser?state.fbUser.email:''),'</div></div></div></section>',
+    '<section class="card"><h3 style="margin:.1rem 0 1rem 0">Sesión</h3>',
+    '<div class="row" style="gap:.5rem;flex-wrap:wrap"><button class="btn" id="btnLogout" type="button">Cerrar sesión</button></div>',
     '</section>',
-    '<section class="card">',
-      '<h3 style="margin:.1rem 0 1rem 0">Seguridad</h3>',
-      '<div class="row wrap" style="gap:.5rem">',
-        '<span class="chip">Email verificado: ', (state.fbUser?.emailVerified?'Sí':'No') ,'</span>',
-        '<button class="btn" id="btnChangePass" type="button">Cambiar contraseña</button>',
-      '</div>',
-      '<p class="help" style="margin-top:.35rem">Por seguridad, la contraseña no se muestra. Te enviamos un correo para cambiarla.</p>',
-    '</section>',
-    '<section class="card">',
-      '<h3 style="margin:.1rem 0 1rem 0">Medallas</h3>',
-      '<div class="medals">',
-        '<div class="medal"><i>🏁</i> Novato</div>',
-        '<div class="medal" id="m5star"><i>🏆</i> 5★</div>',
-        '<div class="medal" id="m100"><i>🎖️</i> 100 viajes</div>',
-      '</div>',
-    '</section>',
-    '<section class="card">',
-      '<h3 style="margin:.1rem 0 1rem 0">Actividad</h3>',
-      '<div class="row" style="gap:.5rem;flex-wrap:wrap">',
-        '<span class="chip">Como pasajero: <b id="paxTrips">–</b></span>',
-        '<span class="chip">Como conductor: <b id="drvTrips">–</b></span>',
-        '<span class="chip">Calificación: ',stars,'</span>',
-      '</div>',
-    '</section>',
-    '<section class="card">',
-      '<h3 style="margin:.1rem 0 1rem 0">Sesión</h3>',
-      '<div class="row" style="gap:.5rem;flex-wrap:wrap">',
-        '<button class="btn" id="btnLogout" type="button">Cerrar sesión</button>',
-      '</div>',
-    '</section>'
+    '<section class="card"><h3 style="margin:.1rem 0 1rem 0">Preferencias</h3>',
+    '<div class="row wrap" style="gap:.5rem"><span class="chip">Tema: Oscuro</span>',
+    '<span class="chip">Idioma: ES</span><span class="chip">Notificaciones: On</span></div>',
+    '<p class="help" style="margin-top:.35rem">Ejemplo visual. Podés persistirlo en Firestore después.</p></section>',
+    '<section class="card"><h3 style="margin:.1rem 0 1rem 0">Calificación</h3>',
+    '<div class="row" style="gap:.35rem">',stars,'</div>',
+    '<div class="row" style="gap:.5rem;margin-top:.4rem"><div class="chip">',(p.ratingCount||0),
+    ' opiniones</div><div class="chip">',avg.toFixed(2),' / 5.00</div></div></section>'
   ].join('');
-
-  setTimeout(()=>{
-    const b=$('#btnLogout'); if(b){ b.addEventListener('click', ()=>signOut(auth)); }
-    const cp=$('#btnChangePass'); if(cp){ cp.addEventListener('click', async ()=>{
-      try{ await sendPasswordResetEmail(auth, state.fbUser.email); alert('Te enviamos un correo para cambiar la contraseña.'); }
-      catch(err){ alert('No se pudo enviar el correo: '+(err.message||err)); }
-    });}
-    watchActivityCounts(); // contadores
-  },0);
+  setTimeout(()=>{ const b=$('#btnLogout'); if(b){ b.addEventListener('click', ()=>signOut(auth)); } },0);
   return el;
 }
 
-/* -------- Conductor: estado/controles -------- */
+/* -------- Conductor: estado -------- */
 function updateDriverHeader(){
   const st=$('#drvStatus'); if(st) st.textContent = driverOnline ? (driverPaused?'Pausado':'Online') : 'Offline';
   const bStart=$('#btnDrvStart'), bPause=$('#btnDrvPause'), bFin=$('#btnDrvFinish');
@@ -661,7 +633,7 @@ function watchActiveRequest(id){
 }
 function ensureChatListener(reqId){
   if(chatUnsub) return;
-  chatUnsub=onSnapshot(query(collection(db,'requests',reqId,'messages')), function(qs){
+  chatUnsub=onSnapshot(query(collection(db,'requests',reqId,'messages'),orderBy('ts','asc'),limit(100)), function(qs){
     const log=$('#chatlog'); if(!log) return; log.innerHTML='';
     const mine=mySide();
     qs.forEach(function(d){ const m=d.data(); const who=(m.from===mine)?'me':''; log.insertAdjacentHTML('beforeend','<div class="msg '+who+'"><b>'+(m.from==='pax'?'Pasajero':'Conductor')+':</b> '+m.text+'</div>'); });
@@ -714,7 +686,7 @@ function renderActiveOverlayHtml(r){
   const name=r.pasajeroNombre||'Pasajero';
   const avatar = r.pasajeroFoto || ('https://api.dicebear.com/9.x/initials/svg?seed='+encodeURIComponent(name));
   const pagoTxt = r.pago==='mp'?'Mercado Pago':'Efectivo';
-  const btn = (r.status==='aceptado') ?
+  const btn = (r.status==='aceptado') ? 
       `<button class="btn primary" id="btnStartTrip" type="button">Empezar viaje</button>` :
       `<button class="btn primary" id="btnFinishTrip" type="button">Terminar viaje</button>`;
   return `
@@ -733,15 +705,12 @@ function renderActiveOverlayHtml(r){
       <div class="row" style="justify-content:flex-end">${btn}</div>
     </div>`;
 }
-
-/* Subcripción a pendientes: SIN orderBy (evita exigir índices) */
 function subscribePendientes(){
   renderPendingOverlaySkeleton();
   if(listUnsub) listUnsub();
-  const qRef=query(collection(db,'requests'),where('status','==','buscando'),limit(50));
+  const qRef=query(collection(db,'requests'),where('status','==','buscando'),orderBy('createdAt','desc'),limit(20));
   listUnsub=onSnapshot(qRef, async function(qs){
     const cont=$('#reqListO'); if(!cont) return; cont.innerHTML='';
-    if(qs.empty){ cont.innerHTML='<div class="help">No hay solicitudes por ahora.</div>'; return; }
     for(const docu of qs.docs){
       const r=docu.data(); const id=docu.id;
       let rating=0,count=0,name=r.pasajeroNombre||'Pasajero',avatar=r.pasajeroFoto||'';
@@ -757,27 +726,19 @@ function subscribePendientes(){
     cont.querySelectorAll('button[data-acc]').forEach(btn=>{
       btn.addEventListener('click', ()=> aceptarViaje(btn.getAttribute('data-acc')));
     });
-  }, function(err){
-    const cont=$('#reqListO'); if(cont) cont.innerHTML='<div class="help">No se pudo cargar la cola ('+(err.message||err)+')</div>';
   });
 }
 function unsubscribePendientes(){ if(listUnsub){ listUnsub(); listUnsub=null; } const cont=$('#reqListO'); if(cont) cont.innerHTML=''; }
 
 /* Aceptar / iniciar / finalizar */
-async function aceptarViaje(id){
+async function aceptarViaje(id){ 
   if(!driverOnline || driverPaused){ alert('Tenés que estar Online.'); return; }
   await updateDoc(doc(db,'requests',id),{status:'aceptado',conductorId:state.fbUser.uid,conductorNombre:(state.profile && state.profile.name)||state.fbUser.email});
   state.activeRequestId=id; watchActiveRequest(id);
-  const box=$('#reqOverlay'); if(box) box.innerHTML='<div class="req-title">Viaje aceptado</div>'+box.innerHTML;
 }
 async function iniciarTrayecto(){ if(!state.activeRequestId) { alert('Sin viaje activo'); return; } await updateDoc(doc(db,'requests',state.activeRequestId),{status:'en_curso'}); }
 async function finalizarTrayecto(){ if(!state.activeRequestId) { alert('Sin viaje activo'); return; } await updateDoc(doc(db,'requests',state.activeRequestId),{status:'finalizado'}); }
-
-/* Botones del overlay activo */
-document.addEventListener('click',(e)=>{
-  if(e.target && e.target.id==='btnStartTrip'){ iniciarTrayecto(); }
-  if(e.target && e.target.id==='btnFinishTrip'){ finalizarTrayecto(); }
-});
+document.addEventListener('click',(e)=>{ if(e.target && e.target.id==='btnStartTrip'){ iniciarTrayecto(); } if(e.target && e.target.id==='btnFinishTrip'){ finalizarTrayecto(); }});
 
 /* -------- Bloqueo de puntos -------- */
 function lockPoints(lock){
@@ -823,33 +784,53 @@ function startDriverFollower(requestId){
 }
 function stopDriverFollower(){ if(driverUnsub){ driverUnsub(); driverUnsub=null; } if(driverMarker){ map.removeLayer(driverMarker); driverMarker=null; } }
 
-/* -------- Ganancias y contadores -------- */
+/* -------- Ganancias -------- */
 function attachEarningsListener(){
   if(earningsUnsub) earningsUnsub();
   if(!state.fbUser) return;
   earningsUnsub=onSnapshot(query(collection(db,'requests'),where('conductorId','==',state.fbUser.uid),where('status','==','finalizado')), function(qs){
     let sum=0; qs.forEach(function(d){ sum += Number(d.data().precio||0); });
     const e=$('#drvEarn'); if(e) e.textContent=fmt(sum);
-  },()=>{ const e=$('#drvEarn'); if(e) e.textContent='—'; });
-}
-function watchActivityCounts(){
-  if(paxCountUnsub) paxCountUnsub(); if(drvCountUnsub) drvCountUnsub();
-  if(!state.fbUser) return;
-  paxCountUnsub=onSnapshot(query(collection(db,'requests'),where('pasajeroId','==',state.fbUser.uid),where('status','==','finalizado')), qs=>{
-    const el=$('#paxTrips'); if(el) el.textContent=String(qs.size||0);
-  },()=>{ const el=$('#paxTrips'); if(el) el.textContent='—'; });
-  drvCountUnsub=onSnapshot(query(collection(db,'requests'),where('conductorId','==',state.fbUser.uid),where('status','==','finalizado')), qs=>{
-    const el=$('#drvTrips'); if(el) el.textContent=String(qs.size||0);
-  },()=>{ const el=$('#drvTrips'); if(el) el.textContent='—'; });
+  });
 }
 
-/* -------- Auth state (acceso estrictamente con login) -------- */
+/* ================= AUTH: INICIO/REGISTRO ================= */
+async function doLogin(){
+  setText($('#loginErr'),'');
+  const email=$('#inEmail')?.value?.trim()||'';
+  const pass=$('#inPass')?.value||'';
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ setText($('#loginErr'),'Email inválido'); return; }
+  if(!pass){ setText($('#loginErr'),'Ingresá tu contraseña'); return; }
+  const btn=$('#btnLogin'); setLoading(btn,true,'Entrar','Entrando…');
+  try{ await setupPersistence(); await signInWithEmailAndPassword(auth,email,pass); }
+  catch(err){ setText($('#loginErr'), mapAuthError(err)); setLoading(btn,false,'Entrar'); }
+}
+async function doRegister(){
+  setText($('#regErr'),'');
+  const name=$('#regName')?.value?.trim()||'';
+  const email=$('#regEmail')?.value?.trim()||'';
+  const pass=$('#regPass')?.value||'';
+  const pass2=$('#regPass2')?.value||'';
+  const file=$('#regPhoto')?.files?.[0]||null;
+  if(!name){ setText($('#regErr'),'Ingresá tu nombre'); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ setText($('#regErr'),'Email inválido'); return; }
+  if(pass.length<6){ setText($('#regErr'),'La contraseña debe tener al menos 6 caracteres'); return; }
+  if(pass!==pass2){ setText($('#regErr'),'Las contraseñas no coinciden'); return; }
+  const btn=$('#btnReg'); setLoading(btn,true,'Crear cuenta','Creando…');
+  try{
+    await setupPersistence();
+    const cred=await createUserWithEmailAndPassword(auth,email,pass);
+    let photoURL='';
+    if(file){ try{ const path='avatars/'+cred.user.uid+'.jpg'; await uploadBytes(sRef(storage,path),file); photoURL=await getDownloadURL(sRef(storage,path)); }catch(upErr){ console.warn('Upload avatar falló:', upErr); } }
+    try{ await updateProfile(cred.user,{displayName:name,photoURL:photoURL||null}); }catch(_){}
+    await setDoc(doc(db,'users',cred.user.uid),{name,email,photoURL:photoURL||'',ratingSum:0,ratingCount:0,createdAt:serverTimestamp()});
+    $('#regCard').style.display='none'; clearRegForm();
+  }catch(err){ setText($('#regErr'), mapAuthError(err)); setLoading(btn,false,'Crear cuenta'); }
+}
+
+/* -------- Auth state -------- */
 onAuthStateChanged(auth, async (user)=>{
   state.fbUser=user||null;
-  const appRoot=document.getElementById('app');
-  const appHeader=document.getElementById('appHeader');
-  const container=document.getElementById('container');
-
   if(user){
     if(userUnsub) userUnsub();
     const uref=doc(db,'users',user.uid);
@@ -860,22 +841,15 @@ onAuthStateChanged(auth, async (user)=>{
       }else{
         state.profile=snap.data();
       }
-      document.getElementById('gate').style.display='none';
-      appRoot.style.display='grid';
-      appHeader.removeAttribute('aria-hidden');
-      container.removeAttribute('aria-hidden');
-
+      $('#gate').style.display='none';
+      $('#app').style.display='grid';
       if(!map) initMap();
       setTimeout(()=>{ if(map) map.invalidateSize(); },200);
       renderTabs(); renderSide(); updateRoleUI();
     });
   }else{
-    // Bloquea totalmente la app si no está logueado
-    appRoot.style.display='none';
-    appHeader.setAttribute('aria-hidden','true');
-    container.setAttribute('aria-hidden','true');
-    document.getElementById('gate').style.display='grid';
-
+    $('#app').style.display='none';
+    $('#gate').style.display='grid';
     state.profile=null; state.activeRequestId=null; state.activeRequest=null; lockPoints(false);
     setSearchingUI(false); stopDriverFollower(); stopDriverShare(); stopDriverTimer();
     driverOnline=false; driverPaused=false; updateDriverHeader();
@@ -883,8 +857,6 @@ onAuthStateChanged(auth, async (user)=>{
     if(chatUnsub){ chatUnsub(); chatUnsub=null; }
     if(listUnsub){ listUnsub(); listUnsub=null; }
     if(earningsUnsub){ earningsUnsub(); earningsUnsub=null; }
-    if(paxCountUnsub){ paxCountUnsub(); paxCountUnsub=null; }
-    if(drvCountUnsub){ drvCountUnsub(); drvCountUnsub=null; }
     if(userUnsub){ userUnsub(); userUnsub=null; }
   }
 });
@@ -893,38 +865,10 @@ onAuthStateChanged(auth, async (user)=>{
 function clearRegForm(){ const f=$('#regPhoto'); if(f) f.value=''; const p=$('#regPreview'); if(p) p.src=''; ['regName','regEmail','regPass','regPass2'].forEach(id=>{ const el=$('#'+id); if(el) el.value=''; }); setText($('#regErr'),''); }
 document.addEventListener('click', async (e)=>{
   const id = e.target?.id || '';
-  if(id==='showReg'){ $('#regCard').style.display='block'; return; }
-  if(id==='btnCancelReg'){ $('#regCard').style.display='none'; clearRegForm(); return; }
-  if(id==='btnLogin'){
-    setText($('#loginErr'),'');
-    const email=$('#inEmail')?.value?.trim()||''; const pass=$('#inPass')?.value||'';
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ setText($('#loginErr'),'Email inválido'); return; }
-    if(!pass){ setText($('#loginErr'),'Ingresá tu contraseña'); return; }
-    e.target.disabled=true; e.target.textContent='Entrando…';
-    try{ await setupPersistence(); await signInWithEmailAndPassword(auth,email,pass); }
-    catch(err){ setText($('#loginErr'), mapAuthError(err)); e.target.disabled=false; e.target.textContent='Entrar'; }
-    return;
-  }
-  if(id==='btnReg'){
-    setText($('#regErr'),'');
-    const name=$('#regName')?.value?.trim()||'', email=$('#regEmail')?.value?.trim()||'';
-    const pass=$('#regPass')?.value||'', pass2=$('#regPass2')?.value||''; const file=$('#regPhoto')?.files?.[0]||null;
-    if(!name){ setText($('#regErr'),'Ingresá tu nombre'); return; }
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ setText($('#regErr'),'Email inválido'); return; }
-    if(pass.length<6){ setText($('#regErr'),'La contraseña debe tener al menos 6 caracteres'); return; }
-    if(pass!==pass2){ setText($('#regErr'),'Las contraseñas no coinciden'); return; }
-    const btn=e.target; btn.disabled=true; btn.textContent='Creando…';
-    try{
-      await setupPersistence();
-      const cred=await createUserWithEmailAndPassword(auth,email,pass);
-      let photoURL='';
-      if(file){ try{ const path='avatars/'+cred.user.uid+'.jpg'; await uploadBytes(sRef(storage,path),file); photoURL=await getDownloadURL(sRef(storage,path)); }catch(upErr){ console.warn('Upload avatar falló:', upErr); } }
-      try{ await updateProfile(cred.user,{displayName:name,photoURL:photoURL||null}); }catch(_){}
-      await setDoc(doc(db,'users',cred.user.uid),{name,email,photoURL:photoURL||'',ratingSum:0,ratingCount:0,createdAt:serverTimestamp()});
-      $('#regCard').style.display='none'; clearRegForm();
-    }catch(err){ setText($('#regErr'), mapAuthError(err)); btn.disabled=false; btn.textContent='Crear cuenta'; }
-    return;
-  }
+  if(id==='btnShowReg'){ const c=$('#regCard'); c.style.display='block'; setTimeout(()=>c.scrollIntoView({behavior:'smooth',block:'start'}),50); return; }
+  if(id==='btnCancelReg'){ $('#regCard').style.display='none'; clearRegForm(); window.scrollTo({top:0,behavior:'smooth'}); return; }
+  if(id==='btnLogin'){ doLogin(); return; }
+  if(id==='btnReg'){ doRegister(); return; }
 
   /* Pasajero */
   if(id==='btnMiUbicacion'){ if(uiTab!=='pasajero') return; miUbicacionComoOrigen(); return; }
@@ -948,8 +892,8 @@ document.addEventListener('click', async (e)=>{
   const el=document.getElementById(id);
   if(el){ el.addEventListener('keydown', (ev)=>{
     if(ev.key==='Enter'){
-      if(id.startsWith('reg')) document.getElementById('btnReg').click();
-      else document.getElementById('btnLogin').click();
+      if(id.startsWith('reg')) doRegister();
+      else doLogin();
     }
   });}
 });
@@ -966,13 +910,9 @@ document.addEventListener('change',(e)=>{
 
 /* -------- Boot simple -------- */
 document.addEventListener('DOMContentLoaded', function(){
-  // Fuerza el gate por si el navegador restaura la UI antes del onAuthStateChanged
-  document.getElementById('app').style.display='none';
-  document.getElementById('gate').style.display='grid';
   const bad=(location.protocol!=='http:' && location.protocol!=='https:');
   const warn=document.getElementById('envWarn'); if(warn) warn.style.display = bad ? 'block':'none';
 });
 </script>
 </body>
 </html>
-
