@@ -1,4 +1,4 @@
-<!doctype html> 
+<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
@@ -16,53 +16,40 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
 
 <style>
-:root{
-  --bg:#0e1218; --panel:#121923; --ink:#0d1219; --muted:#4b5b6f; --line:#d8dee7;
-  --accent:#ffbf1a; --ok:#22c55e; --danger:#ef4444; --chip:#eef2f7; --card:#f7f9fc;
-}
+:root{ --bg:#0e1218; --panel:#121923; --ink:#0d1219; --muted:#4b5b6f; --line:#d8dee7; --accent:#ffbf1a; --ok:#22c55e; --danger:#ef4444; --chip:#eef2f7; --card:#f7f9fc; --celeste:#38bdf8;}
 *{box-sizing:border-box}
 html,body{height:100%}
-body{
-  margin:0;background:linear-gradient(180deg,#f3f6fb,#eef3f9 60%,#eaf1f9);
-  color:var(--ink);font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial
-}
+body{margin:0;background:linear-gradient(180deg,#f3f6fb,#eef3f9 60%,#eaf1f9);color:var(--ink);font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial}
 button,input,select{font-family:inherit}
 
-/* ===== AUTH ===== */
-#gate{
-  position:fixed; inset:0; display:grid; place-items:start center;
-  background:radial-gradient(1200px 800px at 50% -10%,#eaf1f9 0%, #eef3f9 60%, #f7f9fc 100%);
-  z-index:100; overflow-y:auto; -webkit-overflow-scrolling:touch;
-  padding:16px; min-height:100svh;
-}
-.gate-card{ width:min(720px,100%); background:#ffffff; border:1px solid #e5eaf1; border-radius:16px; padding:1rem; margin:12px 0 24px 0; box-shadow:0 6px 30px rgba(16,24,40,.06); }
-.gate-title{display:flex;align-items:center;gap:.6rem;margin:.25rem 0 1rem}
+/* AUTH */
+#gate{position:fixed; inset:0; display:grid; place-items:start center; background:radial-gradient(1200px 800px at 50% -10%,#eaf1f9 0%, #eef3f9 60%, #f7f9fc 100%); z-index:100; overflow-y:auto; padding:16px; min-height:100svh;}
+.gate-card{ width:min(720px,100%); background:#fff; border:1px solid #e5eaf1; border-radius:16px; padding:1rem; margin:12px 0 24px; box-shadow:0 6px 30px rgba(16,24,40,.06); }
+.gate-title{display:flex;align-items:center;gap:.6rem;margin:.25rem 0 .4rem}
 .gate-title .dot{width:.9rem;height:.9rem;border-radius:999px;background:var(--accent);box-shadow:0 0 16px rgba(255,191,26,.7)}
+.gate-tabs{display:flex;gap:.4rem;margin:.25rem 0 .6rem}
+.gate-tab{padding:.35rem .6rem;border:1px solid #e5eaf1;border-radius:999px;background:#fff;cursor:pointer}
+.gate-tab[aria-selected="true"]{background:var(--accent);border-color:#e0a600}
 .grid{display:grid;gap:.75rem}
-.field{display:grid;gap:.35rem; position:relative}
+.field{display:grid;gap:.35rem}
 .label{font-size:.9rem;color:#5b6b7f}
-.input, select.input{
-  width:100%; background:#ffffff; border:1px solid #d8dee7; color:var(--ink);
-  padding:.65rem .75rem; border-radius:12px; font-size:16px; line-height:1.2;
-}
-.btn{ display:inline-flex; align-items:center; gap:.5rem; border:1px solid #d8dee7; background:#ffffff; color:#0f172a;
-  padding:.65rem 1rem; border-radius:12px; cursor:pointer; transition:.2s; text-decoration:none; font-size:16px; }
+.input, select.input{ width:100%; background:#ffffff; border:1px solid #d8dee7; color:var(--ink); padding:.65rem .75rem; border-radius:12px; font-size:16px; line-height:1.2;}
+.btn{ display:inline-flex; align-items:center; gap:.5rem; border:1px solid #d8dee7; background:#ffffff; color:#0f172a; padding:.65rem 1rem; border-radius:12px; cursor:pointer; transition:.2s; text-decoration:none; font-size:16px; }
 .btn:hover{box-shadow:0 2px 10px rgba(16,24,40,.06)}
 .btn.primary{background:var(--accent);color:#111;border-color:#e0a600}
 .btn[disabled]{opacity:.6;cursor:not-allowed}
 .err{color:#b42318}
 .preview{width:72px;height:72px;border-radius:50%;border:1px solid #d8dee7;object-fit:cover;background:#f1f5f9}
 
-/* ===== APP ===== */
+/* APP */
 .app{min-height:100dvh;display:grid;grid-template-rows:auto 1fr}
 .header{display:flex;gap:.5rem;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid #e5eaf1;background:rgba(255,255,255,.7);backdrop-filter:blur(12px);position:sticky;top:0;z-index:20}
 .brand{display:flex;align-items:center;gap:.6rem}
 .brand .dot{width:.9rem;height:.9rem;border-radius:999px;background:var(--accent);box-shadow:0 0 16px rgba(255,191,26,.7)}
 .tabs{display:flex;gap:.35rem;flex-wrap:wrap}
-.tab{padding:.45rem .75rem;border:1px solid #d8dee7;border-radius:999px;background:#ffffff;color:#0f172a;opacity:.9;cursor:pointer;transition:.2s}
+.tab{padding:.45rem .75rem;border:1px solid #d8dee7;border-radius:999px;background:#ffffff;color:#0f172a;opacity:.9;cursor:pointer;transition:.2s;display:inline-flex;gap:.4rem;align-items:center}
 .tab[aria-selected="true"]{background:var(--accent);color:#111;opacity:1;border-color:#e0a600}
-
-/* ===== Layouts ===== */
+.badge{min-width:18px;height:18px;border-radius:999px;background:#ef4444;color:#fff;display:inline-grid;place-items:center;font-size:.72rem;padding:0 .35rem}
 .container{display:grid;gap:1rem;padding:1rem;max-width:1500px;margin:0 auto}
 .aside,.main{background:#ffffff;border:1px solid #e5eaf1;border-radius:16px;overflow:hidden}
 .panel-head{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid #e5eaf1;background:#f7f9fc}
@@ -72,61 +59,80 @@ button,input,select{font-family:inherit}
 .row.wrap{flex-wrap:wrap}
 .chip{background:#f3f6fb;border:1px solid #e5eaf1;padding:.35rem .6rem;border-radius:999px;font-size:.85rem;color:#334155}
 .help{color:#64748b;font-size:.86rem}
-
-/* Estado */
 .status-bar{order:50;display:none;align-items:center;gap:.6rem;background:#f3f6fb;border:1px solid #e5eaf1;padding:.55rem .75rem;border-radius:10px;font-weight:600}
-
-/* Mapa */
 .map-wrap{order:1;position:relative;display:grid;grid-template-columns:1fr;width:100%}
 #map{width:100%;min-width:100%;height:72vh;min-height:520px}
 .leaflet-container{background:#eef3f9}
 
-/* Dock (Conductor) */
+/* Driver */
 .dock{order:2; display:none; background:#ffffff; border:1px solid #e5eaf1; border-radius:16px; padding:.75rem; max-height:72vh; overflow:auto;}
 .dock .title{font-weight:800;margin:.2rem 0 .6rem 0}
 
-/* Chat compacto */
+/* Chat */
 .chat-mini{order:98}
+.chatlog{display:flex;flex-direction:column;gap:.25rem}
+.msg{display:inline-block;max-width:70%;background:#f3f6fb;border:1px solid #e5eaf1;padding:.45rem .6rem;border-radius:10px;margin:.05rem 0;font-size:.92rem}
+.msg.me{align-self:flex-end;background:#e9f5ff;border-color:#cfe0ff}
+.msg.other{align-self:flex-start}
 
-/* Origen/Destino lado a lado */
-.od-grid{ display:grid; gap:.75rem; grid-template-columns:1fr 1fr; }
-@media (max-width:900px){ .od-grid{ grid-template-columns:1fr; } }
+/* O/D */
+.od-grid{ display:grid; gap:.75rem; grid-template-columns:1fr auto 1fr; align-items:end; }
+@media (max-width:860px){ .od-grid{ grid-template-columns:1fr; } }
+.pick-stack{display:flex;align-items:center;gap:.4rem;justify-content:center}
+.pick-btn{height:42px;min-width:42px;border-radius:10px;border:1px solid #e5eaf1;background:#fff;font-size:22px;line-height:1;display:grid;place-items:center;cursor:pointer}
 
-/* Autosuggest debajo del input */
-.ac-results{
-  position:absolute;
-  z-index:50;
-  left:0;
-  top:0;             /* se ajusta por JS */
-  width:100%;
-  display:none;
-  background:#fff;
-  border:1px solid #e5eaf1;
-  border-radius:10px;
-  box-shadow:0 6px 24px rgba(16,24,40,.08);
-  overflow:hidden;
-}
-.ac-item{padding:.6rem .7rem;border-bottom:1px solid #eef2f7;cursor:pointer}
-.ac-item:last-child{border-bottom:0}
-.ac-title{font-weight:600}
-.ac-sub{font-size:.85rem;color:#64748b}
-.ac-select-map{background:#f7f9ff}
-.ac-mypos{background:#f6fff6}
+.pick-menu{position:absolute;z-index:60;background:#fff;border:1px solid #e5eaf1;border-radius:10px;box-shadow:0 6px 24px rgba(16,24,40,.08);padding:.4rem;display:none}
+.pick-menu button{display:block;width:100%;text-align:left;border:0;background:#fff;padding:.45rem .6rem;border-radius:8px;cursor:pointer}
+.pick-menu button:hover{background:#f7f9ff}
 
-/* Responsive */
-@media (max-width:980px){
-  .container.layout-driver{grid-template-columns:1fr}
-  #map{height:64vh;min-height:420px}
-}
-@media (max-width:680px){
-  .tabs{position:fixed;bottom:10px;left:0;right:0;justify-content:center;z-index:40}
-  .tab{background:#ffffff;border-color:#d8dee7}
-}
+.mk{width:18px;height:18px;transform:translate(-50%,-50%);border:2px solid #0b1220;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.mk-circle{border-radius:999px;background:var(--celeste)}
+.mk-square{border-radius:4px;background:var(--celeste)}
+
+/* Perfil */
+.pf-card{ background:#fff; border:1px solid #e5eaf1; border-radius:16px; padding:1rem; }
+.pf-grid{ display:grid; grid-template-columns:140px 1fr; gap:1rem; align-items:start; }
+@media (max-width:720px){ .pf-grid{ grid-template-columns:1fr; } }
+.pf-avatar{ width:120px;height:120px;border-radius:16px;border:1px solid #e5eaf1;object-fit:cover;background:#f1f5f9; }
+.pf-head{ display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
+.pf-name{ margin:.1rem 0 .25rem 0; font-size:1.35rem; font-weight:800; }
+.pf-email{ background:#f3f6fb;border:1px solid #e5eaf1;border-radius:999px;padding:.2rem .55rem;font-size:.9rem;color:#334155 }
+.stars{ display:inline-flex; gap:2px; vertical-align:middle }
+.star{ width:18px;height:18px; display:inline-block; mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 .587l3.668 7.43 8.2 1.192-5.934 5.787 1.401 8.168L12 18.896l-7.335 3.868 1.401-8.168L.132 9.209l8.2-1.192z"/></svg>') center/contain no-repeat; background:#cbd5e1; }
+.star.filled{ background:#fbbf24; }
+.pf-row{ display:grid; gap:.6rem; grid-template-columns:1fr 1fr; }
+@media (max-width:720px){ .pf-row{ grid-template-columns:1fr; } }
+.pf-actions{ display:flex; gap:.6rem; flex-wrap:wrap; }
+.pf-note{ color:#64748b;font-size:.86rem }
+.divider{height:1px;background:#e5eaf1;margin:.9rem 0}
+
+.subtabs{display:flex;gap:.35rem;margin:.25rem 0 .4rem}
+.subtab{padding:.4rem .75rem;border:1px solid #e5eaf1;border-radius:999px;background:#fff;cursor:pointer}
+.subtab[aria-selected="true"]{background:var(--accent);border-color:#e0a600}
+.subpanel{display:none}
+.subpanel[aria-hidden="false"]{display:block}
+
+/* Uploader */
+.doc-grid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:.75rem}
+@media (max-width:720px){ .doc-grid{grid-template-columns:1fr} }
+.doc{border:1px dashed #cbd5e1;border-radius:12px;padding:.75rem;background:#fafcff;transition:.15s}
+.doc.ok{border-style:solid;border-color:#b7e4c7;background:#f0fff4}
+.doc .status{font-size:.85rem;color:#475569}
+.doc .thumb{width:42px;height:42px;border-radius:8px;border:1px solid #d8dee7;object-fit:cover;background:#f8fafc}
+
+.search-overlay{position:fixed; inset:auto 16px 16px 16px; display:none; z-index:30}
+.radar .pulse{border-radius:999px}
+@keyframes pulse{0%{transform:scale(.2);opacity:.9}70%{opacity:.25}100%{transform:scale(1);opacity:0}}
+.driver-toolbar{display:none}
+
+/* Progress bar calificación */
+.progress{height:10px;background:#eef2f7;border:1px solid #e5eaf1;border-radius:999px;overflow:hidden}
+.progress > span{display:block;height:100%;background:#fbbf24}
 </style>
 </head>
 <body>
 
-<!-- =========== AUTH =========== -->
+<!-- AUTH -->
 <div id="gate" aria-hidden="false">
   <div class="gate-card">
     <div class="gate-title"><span class="dot"></span><b>Taxi Ya</b></div>
@@ -135,14 +141,19 @@ button,input,select{font-family:inherit}
       ⚠️ Abrí el sitio con <b>http://localhost</b> (no <code>file://</code>).
     </div>
 
+    <div class="gate-tabs">
+      <button id="tabLogin"  class="gate-tab" aria-selected="true">Iniciar sesión</button>
+      <button id="tabReg"    class="gate-tab" aria-selected="false">Crear cuenta</button>
+      <button id="btnWipe"   class="gate-tab" style="margin-left:auto;background:#fff3f3;border-color:#f3caca">Borrar datos locales</button>
+    </div>
+
     <!-- LOGIN -->
-    <div class="card">
+    <div id="loginCard" class="card">
       <div class="grid">
         <div class="field"><label class="label">Email</label><input id="inEmail" type="email" class="input" placeholder="tu@email.com" autocomplete="email"></div>
         <div class="field"><label class="label">Contraseña</label><input id="inPass" type="password" class="input" placeholder="••••••••" autocomplete="current-password"></div>
         <div class="row" style="gap:.6rem;flex-wrap:wrap">
           <button class="btn primary" id="btnLogin" type="button">Entrar</button>
-          <button class="btn" id="btnShowReg" type="button">Crear cuenta</button>
         </div>
         <div id="loginErr" class="err" role="alert"></div>
       </div>
@@ -175,96 +186,64 @@ button,input,select{font-family:inherit}
   </div>
 </div>
 
-<!-- ==================== APP ==================== -->
+<!-- APP -->
 <div class="app" id="app" style="display:none">
   <header class="header">
     <div class="brand"><span class="dot"></span><b>Taxi Ya</b><span class="chip" id="statusChip">offline</span></div>
     <nav class="tabs" id="tabs"></nav>
   </header>
 
-  <div class="container layout-passenger" id="container">
+  <div class="container" id="container">
     <main class="main">
-      <div class="panel-head"><strong id="mainTitle">Mapa</strong></div>
+      <div class="panel-head">
+        <strong id="mainTitle">Mapa</strong>
+        <div class="row" style="gap:.4rem">
+          <span class="chip" id="roleChip">Rol: <b>Pasajero</b></span>
+          <button class="btn" id="btnLogout" title="Cerrar sesión">Salir</button>
+        </div>
+      </div>
+
       <div class="panel-body">
-
-        <!-- Controles PASAJERO -->
-        <div class="card" id="controlsCard">
-          <div class="grid" style="gap:.9rem">
-            <div class="od-grid">
-              <!-- Campo ORIGEN -->
-              <div class="field">
-                <label class="label">Origen</label>
-                <input id="inOrigen" class="input" placeholder="Calle y número…" autocomplete="off">
-                <div id="acOrigen" class="ac-results"></div>
-              </div>
-              <!-- Campo DESTINO -->
-              <div class="field">
-                <label class="label">Destino</label>
-                <input id="inDestino" class="input" placeholder="Calle y número…" autocomplete="off">
-                <div id="acDestino" class="ac-results"></div>
-              </div>
+        <section id="passengerUI">
+          <div class="od-grid">
+            <div class="field">
+              <label class="label">Origen</label>
+              <input id="inOrigin" class="input" placeholder="Elegí un punto de partida" readonly>
             </div>
-
-            <div id="linkedPrefWrap" class="row wrap" style="gap:.75rem;display:none">
-              <div class="field">
-                <label class="label">Conductor preferido</label>
-                <select id="preferDriver" class="input" style="min-width:220px"></select>
-              </div>
+            <div class="pick-stack">
+              <button class="pick-btn" id="btnPickOrigin" title="Elegir Origen">⦿</button>
+              <button class="pick-btn" id="btnLocate" title="Usar mi ubicación">📍</button>
+              <button class="pick-btn" id="btnSwap" title="Intercambiar">⇄</button>
             </div>
-
-            <div class="row wrap" style="justify-content:space-between;gap:.75rem">
-              <div class="row" style="gap:.5rem"></div>
-              <div class="row" style="gap:.5rem;flex-wrap:wrap;justify-content:flex-start">
-                <div class="field">
-                  <label class="label">Método de pago</label>
-                  <select id="payMethod" class="input" style="min-width:160px">
-                    <option value="efectivo" selected>Efectivo</option>
-                    <option value="mp">Mercado Pago</option>
-                  </select>
-                </div>
-                <button class="btn" id="btnSwap" type="button">↔️ Intercambiar</button>
-                <button class="btn" id="btnLimpiar" type="button">Limpiar</button>
-                <button class="btn primary" id="btnSolicitar" type="button">Solicitar viaje</button>
-              </div>
+            <div class="field">
+              <label class="label">Destino</label>
+              <input id="inDest" class="input" placeholder="Elegí un destino" readonly>
             </div>
           </div>
-        </div>
 
-        <!-- Overlay Buscando -->
-        <div id="searchOverlay" class="search-overlay" style="display:none; place-items:center; gap:1rem; padding:1.25rem; background:#fff; border:1px solid #e5eaf1; border-radius:14px;">
-          <div class="search-title" style="font-weight:800;font-size:1.05rem">Buscando auto…</div>
-          <div class="radar" style="position:relative;width:180px;height:180px;border-radius:999px;display:grid;place-items:center;background:radial-gradient(circle at center, rgba(59,130,246,.08) 0%, rgba(59,130,246,.02) 60%, transparent 70%);border:1px solid #cfe0ff; overflow:hidden;">
-            <div class="pulse p1" style="position:absolute;inset:0;border-radius:999px;border:2px solid rgba(59,130,246,.25);opacity:.8;animation:pulse 2.2s linear infinite"></div>
-            <div class="pulse p2" style="position:absolute;inset:0;border-radius:999px;border:2px solid rgba(59,130,246,.25);opacity:.8;animation:pulse 2.2s linear .6s infinite"></div>
-            <div class="pulse p3" style="position:absolute;inset:0;border-radius:999px;border:2px solid rgba(59,130,246,.25);opacity:.8;animation:pulse 2.2s linear 1.2s infinite"></div>
-            <div class="car" style="position:relative; z-index:2; font-size:40px; line-height:1; filter: drop-shadow(0 2px 6px rgba(0,0,0,.15));">🚖</div>
-          </div>
-          <div class="wait" style="font-weight:600; display:flex; gap:.5rem; align-items:center; justify-content:center;">Espera: <span id="ovTimer">00:00</span></div>
-          <div class="search-actions"><button class="btn" id="btnCancelReqOverlay" type="button">Cancelar</button></div>
-          <div class="help">Avisando a conductores cercanos. No cierres la pestaña.</div>
-        </div>
-
-        <!-- Info PASAJERO -->
-        <div class="card" id="infoCard">
           <div class="row wrap" style="justify-content:space-between">
-            <div><div class="label">Origen</div><div id="origenTxt" class="chip">—</div></div>
-            <div><div class="label">Destino</div><div id="destinoTxt" class="chip">—</div></div>
-            <div><div class="label">Distancia (km)</div><div id="kmTxt" class="chip">0.00</div></div>
-            <div><div class="label">Duración (min)</div><div id="minTxt" class="chip">0</div></div>
-            <div><div class="label">Tarifa estimada</div><div id="fareTxt" class="chip">$ 0</div></div>
-            <div><div class="label">Surge</div><div id="surgeTxt" class="chip">x1.0</div></div>
+            <div class="row" style="gap:.5rem;flex-wrap:wrap">
+              <div class="field">
+                <label class="label">Método de pago</label>
+                <select id="payMethod" class="input" style="min-width:160px">
+                  <option value="efectivo" selected>Efectivo</option>
+                  <option value="mp">Mercado Pago</option>
+                </select>
+              </div>
+            </div>
+            <div class="row" style="gap:.5rem;flex-wrap:wrap">
+              <button class="btn" id="btnClear" type="button">Limpiar</button>
+              <button class="btn primary" id="btnRequest" disabled>Solicitar viaje</button>
+            </div>
           </div>
-          <p class="help" id="actividad">Elegí direcciones desde las barras o el mapa.</p>
-        </div>
 
-        <!-- Barra de estado -->
-        <div id="statusBar" class="status-bar">
-          <span id="statusText">BUSCANDO CONDUCTOR…</span>
-          <span class="chip" id="searchTimer">00:00</span>
-        </div>
+          <div id="quoteBar" class="status-bar" style="display:none"></div>
+          <div id="passengerStatus" class="status-bar"></div>
+        </section>
 
-        <!-- ===== Toolbar CONDUCTOR ===== -->
-        <div class="card" id="driverControls" style="display:none">
+        <section class="map-wrap"><div id="map"></div></section>
+
+        <section class="card driver-toolbar" id="driverToolbar">
           <div class="row wrap" style="justify-content:space-between;align-items:center">
             <div class="row" style="gap:.5rem">
               <button class="btn primary" id="btnDrvStart" type="button">Iniciar</button>
@@ -273,872 +252,685 @@ button,input,select{font-family:inherit}
               <button class="btn" id="btnDrvFinish" type="button">Finalizar</button>
               <button class="btn" id="btnUbicarme" type="button">Ubicarme</button>
             </div>
-            <div class="row" style="gap:.5rem">
+            <div class="row" id="drvStats" style="gap:.5rem">
               <span class="chip">⏱ <b id="drvTime">00:00:00</b></span>
               <span class="chip">💵 <b id="drvMoney">$ 0</b></span>
             </div>
           </div>
           <div class="help">“Comenzar viaje” aparece después de aceptar un viaje.</div>
-        </div>
+        </section>
 
-        <!-- Mapa + Dock -->
-        <div class="map-wrap">
-          <div id="map"></div>
-        </div>
+        <section class="dock" id="driverDock">
+          <div class="title">Solicitudes disponibles <span class="badge" id="rqCount">0</span></div>
+          <div id="rqList" class="grid"></div>
+        </section>
 
-        <!-- Chat compacto -->
-        <details id="chatMini" class="chat-mini" style="display:none">
-          <summary>💬 Chat del viaje (opcional)</summary>
-          <div class="chatbox" style="display:grid;grid-template-rows:1fr auto;height:180px;background:#ffffff;border:1px solid #e5eaf1;border-radius:12px;overflow:hidden;margin-top:.6rem">
-            <div id="chatlog" class="chatlog" style="overflow:auto;padding:.6rem"></div>
-            <div class="chatinput" style="display:flex;gap:.5rem;padding:.6rem;border-top:1px solid #e5eaf1">
-              <input id="chatInput" class="input" placeholder="Escribí un mensaje respetuoso…"/>
-              <button class="btn" id="chatSend" type="button">Enviar</button>
-            </div>
+        <section class="chat-mini" id="chatMini" style="display:none">
+          <div class="panel-head" style="border-radius:12px"><b>Estado</b></div>
+          <div class="panel-body" style="gap:.35rem">
+            <div class="chatlog" id="chatLog"></div>
           </div>
-          <div class="help">Visible en “aceptado / en curso”.</div>
-        </details>
-
+        </section>
       </div>
     </main>
 
-    <!-- DOCK DERECHA (Conductor) -->
-    <aside id="reqDock" class="dock">
-      <div class="title">Solicitudes cercanas</div>
-      <div id="reqListDock"></div>
-    </aside>
-  </div>
-
-  <!-- ===== PERFIL ===== -->
-  <div class="container layout-profile" id="profileContainer" style="display:none">
-    <main class="main">
+    <!-- PERFIL -->
+    <aside class="aside" id="profile" style="display:none">
       <div class="panel-head"><strong>Perfil</strong></div>
       <div class="panel-body">
-        <div class="card">
-          <div class="profile-wrap" style="display:grid;grid-template-columns:120px 1fr;gap:1rem;align-items:start">
-            <img id="pfPhoto" class="profile-photo" style="width:120px;height:120px;border-radius:16px;border:1px solid #e5eaf1;object-fit:cover;background:#f1f5f9" alt="foto"/>
+        <div class="pf-card">
+          <div class="pf-grid">
+            <img id="pfAvatar" class="pf-avatar" alt="avatar">
             <div>
-              <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
-                <h2 id="pfName" style="margin:.1rem 0 .25rem 0">—</h2>
-                <span id="pfStars">★★★★★</span>
-                <span id="pfRatingCount" class="chip">0 opiniones</span>
+              <div class="pf-head">
+                <div class="pf-name" id="pfName">—</div>
+                <span class="pf-email" id="pfEmail">—</span>
               </div>
-              <div class="row wrap" style="gap:.5rem">
-                <span class="chip" id="pfEmail">—</span>
+              <div>
+                <span class="stars" id="pfStars"></span>
+                <small class="pf-note">Promedio (demo)</small>
               </div>
-              <div class="row" style="height:1px;background:#e5eaf1;margin:.75rem 0"></div>
-              <div class="row" style="gap:.5rem;align-items:center"><div class="label">Teléfono <span class="chip" id="reqPhoneBadge" style="display:none;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);color:#157f3b">Requerido</span></div><input id="pfPhone" class="input" placeholder="+54 9 ..."></div>
-              <div class="row" style="gap:.5rem;align-items:center"><div class="label">Auto (opcional)</div><input id="pfCar" class="input" placeholder="Modelo y color"></div>
-              <div class="row" style="gap:.5rem;align-items:center"><div class="label">Patente</div><input id="pfPlate" class="input" placeholder="ABC123"></div>
-
-              <div class="row" style="height:1px;background:#e5eaf1;margin:.75rem 0"></div>
-              <h3 style="margin:.2rem 0 .6rem 0">Vincular cuentas (Pasajero ↔ Conductor)</h3>
-              <div class="row wrap" style="gap:.6rem">
-                <input id="linkEmail" class="input" placeholder="Email de la otra cuenta" style="min-width:260px">
-                <button id="btnLink" class="btn" type="button">Vincular</button>
+              <div class="pf-actions" style="margin-top:.5rem">
+                <button class="btn" id="btnSwitchRole">Cambiar a Conductor</button>
+                <button class="btn" id="btnEditName">Editar nombre</button>
               </div>
-              <div class="help">Al vincular, podrán elegirse como preferidos. Podés vincular más de una cuenta (ej.: familia/chofer).</div>
-              <div id="linkedList" class="row wrap" style="gap:.4rem;margin-top:.5rem"></div>
-
-              <div class="row" style="margin-top:.9rem">
-                <button id="btnSaveProfile" class="btn primary" type="button">Guardar perfil</button>
-              </div>
-              <div id="pfMsg" class="help"></div>
             </div>
           </div>
         </div>
+
+        <div class="subtabs">
+          <button class="subtab" data-sub="datos" aria-selected="true">Datos</button>
+          <button class="subtab" data-sub="conductor" aria-selected="false">Hacerme conductor</button>
+          <button class="subtab" data-sub="calif" aria-selected="false">Calificación</button>
+        </div>
+
+        <div class="subpanel" id="sub-datos" aria-hidden="false">
+          <div class="pf-card">
+            <div class="pf-row">
+              <div class="field"><label class="label">Nombre</label><input id="pfNameEdit" class="input" placeholder="Tu nombre"></div>
+              <div class="field"><label class="label">Teléfono</label><input id="pfPhoneEdit" class="input" placeholder="+54 9 ..."></div>
+            </div>
+            <div class="pf-actions" style="margin-top:.6rem">
+              <button class="btn primary" id="btnSaveProfile">Guardar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="subpanel" id="sub-conductor" aria-hidden="true">
+          <div class="pf-card">
+            <h3 style="margin:.2rem 0 .6rem 0">Documentación</h3>
+            <div class="doc-grid" id="docsGrid"></div>
+            <div class="pf-actions" style="margin-top:.6rem;gap:.6rem;flex-wrap:wrap">
+              <button class="btn primary" id="btnSendReview">Enviar a revisión</button>
+              <button class="btn" id="btnApproveDemo">Habilitarme como conductor (demo)</button>
+              <span class="help" id="driverDocHint">Subí todo para habilitar</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="subpanel" id="sub-calif" aria-hidden="true">
+          <div class="pf-card">
+            <h3 style="margin:.2rem 0 .6rem 0">Progreso & Trofeos</h3>
+            <div class="row wrap" id="trophies"></div>
+            <div class="divider"></div>
+            <div class="row" style="align-items:center;gap:1rem">
+              <div style="min-width:120px">Objetivo 5⭐</div>
+              <div class="progress" style="flex:1"><span id="progBar" style="width:0%"></span></div>
+              <div id="progPct" style="min-width:44px;text-align:right">0%</div>
+            </div>
+          </div>
+        </div>
+
       </div>
-    </main>
+    </aside>
   </div>
 </div>
 
-<!-- ===== AVISO ENTORNO + Guardia Auth ===== -->
-<script>
-document.addEventListener('DOMContentLoaded', function(){
-  var warn = document.getElementById('envWarn');
-  if(!warn) return;
-  warn.style.display = (location.protocol!=='http:' && location.protocol!=='https:') ? 'block' : 'none';
-});
-window.addEventListener('error', function(e){
-  var f = document.getElementById('fatal');
-  if(f){ f.style.display='block'; f.textContent='Error de carga: ' + (e.message || 'desconocido') + '. Mirá la consola.'; }
-});
-document.addEventListener('DOMContentLoaded', function(){
-  try {
-    if (!window.__HARD_AUTH_GUARD__) window.__HARD_AUTH_GUARD__ = setInterval(function(){
-      var app = document.getElementById('app');
-      var gate = document.getElementById('gate');
-      if (!window.__AUTH_SIGNED__) {
-        if (app) app.style.display = 'none';
-        if (gate) gate.style.display = 'grid';
+<!-- MENÚS flotantes -->
+<div id="menuOrigin" class="pick-menu">
+  <button data-action="map-origin">Elegir en mapa</button>
+  <button data-action="geo">Usar mi ubicación</button>
+  <button data-action="clear-origin">Limpiar origen</button>
+</div>
+<div id="menuDest" class="pick-menu">
+  <button data-action="map-dest">Elegir en mapa</button>
+  <button data-action="swap">Intercambiar O/D</button>
+  <button data-action="clear-dest">Limpiar destino</button>
+</div>
+
+<!-- Overlay -->
+<div id="searchOverlay" class="search-overlay" style="display:none; place-items:center; gap:1rem; padding:1.25rem; background:#fff; border:1px solid #e5eaf1; border-radius:14px;">
+  <div class="search-title" style="font-weight:800;font-size:1.05rem">Buscando auto…</div>
+  <div class="radar" style="position:relative;width:180px;height:180px;border-radius:999px;display:grid;place-items:center;background:radial-gradient(circle at center, rgba(59,130,246,.08) 0%, rgba(59,130,246,.02) 60%, transparent 70%);border:1px solid #cfe0ff; overflow:hidden;">
+    <div class="pulse p1" style="position:absolute;inset:0;border:2px solid rgba(59,130,246,.25);animation:pulse 2.2s linear infinite"></div>
+    <div class="pulse p2" style="position:absolute;inset:0;border:2px solid rgba(59,130,246,.25);animation:pulse 2.2s linear .6s infinite"></div>
+    <div class="pulse p3" style="position:absolute;inset:0;border:2px solid rgba(59,130,246,.25);animation:pulse 2.2s linear 1.2s infinite"></div>
+    <div class="car" style="position:relative; z-index:2; font-size:40px; line-height:1;">🚖</div>
+  </div>
+  <div class="wait" style="font-weight:600; display:flex; gap:.5rem; align-items:center; justify-content:center;">Espera: <span id="ovTimer">00:00</span></div>
+  <div class="search-actions"><button class="btn" id="btnCancelOverlay" type="button">Cancelar</button></div>
+  <div class="help">Avisando a conductores cercanos. No cierres la pestaña.</div>
+</div>
+
+<!-- Firebase (solo Firestore para requests) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, doc, onSnapshot, query, where, orderBy, serverTimestamp, runTransaction, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBu523IOGnIZGfAkdlLdVLcENwLgv5KU9o",
+    authDomain: "taxi-ya-3be33.firebaseapp.com",
+    projectId: "taxi-ya-3be33",
+    storageBucket: "taxi-ya-3be33.appspot.com",
+    messagingSenderId: "31840475169",
+    appId: "1:31840475169:web:1485e47b9ebea4a66c6b60",
+    measurementId: "G-2RQRP1G2KB"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.__fb = {
+    db,
+    api: {
+      addRequest: async (rq) => {
+        const ref = await addDoc(collection(db, "requests"), { ...rq, status:"open", createdAt: serverTimestamp() });
+        return ref.id;
+      },
+      listenOpenRequests: (cb) => {
+        const qOpen = query(collection(db, "requests"), where("status","==","open"), orderBy("createdAt","desc"));
+        return onSnapshot(qOpen, (snap)=> cb(snap.docs.map(d=>({id:d.id, ...d.data()})))); // lista
+      },
+      acceptRequestTxn: async (requestId, driverId) => {
+        const ref = doc(db, "requests", requestId);
+        await runTransaction(db, async (tx)=>{
+          const snap = await tx.get(ref);
+          if(!snap.exists()) throw new Error("La solicitud no existe");
+          const data = snap.data();
+          if(data.status !== "open") throw new Error("Ya fue tomada o cerrada");
+          tx.update(ref, { status:"taken", driverId, takenAt:serverTimestamp() });
+        });
+      },
+      finishRequest: async (requestId) => {
+        await updateDoc(doc(db, "requests", requestId), { status:"finished", finishedAt:serverTimestamp() });
+      },
+      listenRequest: (id, cb) => {
+        const ref = doc(db, "requests", id);
+        return onSnapshot(ref, (snap)=>{ if(snap.exists()) cb({id:snap.id, ...snap.data()}); });
+      },
+      getRequest: async (id) => {
+        const ref = doc(db, "requests", id);
+        const s = await getDoc(ref);
+        return s.exists()? {id:s.id, ...s.data()} : null;
       }
-    }, 500);
-  } catch(e){}
-});
+    }
+  };
 </script>
 
-<!-- ================= Firebase + App (Módulos) ================= -->
+<!-- APP lógica -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import {
-  getAuth, setPersistence, browserLocalPersistence, browserSessionPersistence, inMemoryPersistence,
-  onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import {
-  getFirestore, doc, setDoc, getDoc, updateDoc, addDoc, collection,
-  serverTimestamp, onSnapshot, query, where, orderBy, limit, getDocs, deleteField
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
-
-/* -------- Config -------- */
-const firebaseConfig = {
-  apiKey: "AIzaSyBu523IOGnIZGfAkdlLdVLcENwLgv5KU9o",
-  authDomain: "taxi-ya-3be33.firebaseapp.com",
-  projectId: "taxi-ya-3be33",
-  storageBucket: "taxi-ya-3be33.appspot.com",
-  messagingSenderId: "31840475169",
-  appId: "1:31840475169:web:1485e47b9ebea4a66c6b60",
-  measurementId: "G-2RQRP1G2KB"
+/* ===== Utils y storage local (auth local) ===== */
+const Storage = {
+  get(k, def){ try{ return JSON.parse(localStorage.getItem(k)) ?? def }catch{ return def } },
+  set(k,v){ localStorage.setItem(k, JSON.stringify(v)) },
+  setRaw(k, raw){ localStorage.setItem(k, raw) }
 };
-
-/* -------- Helpers -------- */
-const $ = (sel)=>document.querySelector(sel);
-const setText=(el,v)=>{ if(el) el.textContent=v; };
-const fmt=(n)=> new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n);
-function km(a,b){
-  if(!a||!b) return 0;
-  const R=6371, dLat=(b.lat-a.lat)*Math.PI/180, dLon=(b.lng-a.lng)*Math.PI/180;
-  const la1=a.lat*Math.PI/180, la2=b.lat*Math.PI/180;
-  const h=Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(Math.PI*(b.lng-a.lng)/360)**2;
-  return 2*R*Math.asin(Math.sqrt(h));
-}
-const bannedWords=['puta','puto','cagar','mierda','hdp','concha','pija','forro','insulto','boludo'];
-const mapAuthError=(err)=>{ const c=String(err?.code||''); const M={'auth/invalid-email':'Email inválido.','auth/missing-email':'Ingresá tu email.','auth/missing-password':'Ingresá tu contraseña.','auth/weak-password':'La contraseña es muy débil (mínimo 6 caracteres).','auth/email-already-in-use':'Ese email ya está registrado.','auth/user-not-found':'Usuario no encontrado.','auth/wrong-password':'Contraseña incorrecta.','auth/too-many-requests':'Demasiados intentos. Probá más tarde.','auth/network-request-failed':'Fallo de red. Verificá tu conexión.','auth/operation-not-allowed':'Habilitá Email/Password en Firebase Console.','auth/unauthorized-domain':'Dominio no autorizado (agregá localhost).'}; return M[c] || err?.message || 'Error desconocido'; };
-async function setupPersistence(){ try{ await setPersistence(auth,browserLocalPersistence);}catch(_){ try{await setPersistence(auth,browserSessionPersistence);}catch(_2){await setPersistence(auth,inMemoryPersistence);} } }
-function setLoading(btn, on, txtIdle, txtBusy){ if(!btn) return; btn.disabled=!!on; btn.textContent=on?(txtBusy||'Procesando…'):(txtIdle||'Aceptar'); }
-function withTimeout(promise, ms, label){ return Promise.race([ promise, new Promise((_,rej)=>setTimeout(()=>rej(new Error((label||'Operación')+' tardó demasiado')), ms)) ]); }
-function starsHTML(avg){ let s=''; for(let i=1;i<=5;i++){ s+=`<span style="opacity:${avg>=i?1:.35}">★</span>`; } return s; }
-function placeBoxFor(inputEl, boxEl){
-  const top = inputEl.offsetTop + inputEl.offsetHeight + 6;
-  boxEl.style.top = top + 'px';
-  boxEl.style.left = inputEl.offsetLeft + 'px';
-  boxEl.style.width = inputEl.offsetWidth + 'px';
-}
-
-/* -------- Estado global -------- */
-let appFB, auth, db, storage;
-let map, origenMarker, destinoMarker, meMarker, routing, driverMarker, previewA, previewB;
-let driverRouting=null;
-let activeReqUnsub=null, chatUnsub=null, pendientesUnsub=null, timerInt=null, earningsUnsub=null;
-let driverWatchId=null;
-let uiTab='pasajero';
-let driverOnline=false, driverPaused=false;
-let driverSessionStart=null;
-let driverAccumMs=0;
-let driverTimer=null;
-let driverEarnings=0;
-let myLastPos=null;
-let linkedMap = {};
-let driverRouteMode=null;
-let pickingByMap=null;
-
-const state = {
-  fbUser:null, profile:null, pointsLocked:false,
-  surge:1.0,
-  pricing:Object.freeze({ base:800, perKm:350, perMin:120, serviceFee:150, minimum:1200 }),
-  origen:null, destino:null, routeKm:0, routeMin:0,
-  activeRequestId:null, activeRequest:null, requestCreatedAt:null
-};
-
-/* -------- Firebase init -------- */
-try{
-  appFB = initializeApp(firebaseConfig);
-  auth = getAuth(appFB);
-  db = getFirestore(appFB);
-  storage = getStorage(appFB);
-}catch(e){
-  const fatal=$('#fatal'); if(fatal){ fatal.style.display='block'; fatal.textContent='No se pudo inicializar Firebase: '+(e.message||e); }
-}
-
-/* =================== UI por ROL =================== */
-function setContainerMode(mode){
-  const c=$('#container');
-  const p=$('#profileContainer');
-  c.style.display = (mode==='layout-profile') ? 'none' : 'grid';
-  p.style.display = (mode==='layout-profile') ? 'grid' : 'none';
-  c.classList.remove('layout-passenger','layout-driver','layout-profile');
-  c.classList.add(mode);
-  setTimeout(()=>{ if(map) map.invalidateSize(); },150);
-}
-function updateRoleUI(){
-  const controlsCard=$('#controlsCard'), infoCard=$('#infoCard');
-  const statusBar=$('#statusBar'), chatMini=$('#chatMini');
-  const drvControls=$('#driverControls');
-
-  if(uiTab==='pasajero'){
-    setContainerMode('layout-passenger');
-    controlsCard.style.display='block';
-    infoCard.style.display='block';
-    drvControls.style.display='none';
-    $('#reqDock').style.display='none';
-  }else if(uiTab==='conductor'){
-    setContainerMode('layout-driver');
-    controlsCard.style.display='none';
-    infoCard.style.display='none';
-    drvControls.style.display='block';
-    $('#reqDock').style.display='block';
-    subscribePendientes();
-  }else{
-    setContainerMode('layout-profile');
-    controlsCard.style.display='none';
-    infoCard.style.display='none';
-    statusBar.style.display='none';
-    chatMini.style.display='none';
-    drvControls.style.display='none';
-    $('#reqDock').style.display='none';
-    renderProfile();
-  }
-  setTimeout(()=>{ if(map) map.invalidateSize(); },150);
-}
-
-/* -------- Tabs -------- */
-function tabsForState(){ if(!state.fbUser) return []; return [{id:'pasajero',label:'Pasajero'},{id:'conductor',label:'Conductor'},{id:'perfil',label:'Perfil'}]; }
-function renderTabs(){
-  const nav=$('#tabs'); nav.innerHTML='';
-  for(const t of tabsForState()){
-    const b=document.createElement('button'); b.className='tab'; b.textContent=t.label;
-    b.setAttribute('aria-selected', uiTab===t.id ? 'true':'false');
-    b.onclick=function(){ uiTab=t.id; handleTabChange(); };
-    nav.appendChild(b);
-  }
-  const sc=$('#statusChip'); if(sc) sc.textContent=state.fbUser ? ((state.profile && state.profile.name) || 'online') : 'offline';
-}
-
-/* -------- Conductor: Timer + Ganancias -------- */
-function fmtTime(ms){ const s=Math.floor(ms/1000), hh=String(Math.floor(s/3600)).padStart(2,'0'); const mm=String(Math.floor((s%3600)/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); return `${hh}:${mm}:${ss}`; }
-function updateDriverTimerUI(){
-  const base=driverAccumMs + (driverOnline && !driverPaused && driverSessionStart ? (Date.now()-driverSessionStart) : 0);
-  setText($('#drvTime'), fmtTime(base));
-  setText($('#drvMoney'), fmt(driverEarnings));
-}
-function startDriverTimer(){ if(driverTimer) clearInterval(driverTimer); driverTimer=setInterval(updateDriverTimerUI, 500); }
-function stopDriverTimer(){ if(driverTimer){ clearInterval(driverTimer); driverTimer=null; } updateDriverTimerUI(); }
-function resetDriverSession(){ driverAccumMs=0; driverSessionStart=null; driverEarnings=0; updateDriverTimerUI(); }
-function subscribeEarnings(){
-  if(earningsUnsub) earningsUnsub();
-  const qRef=query(collection(db,'viajes'), where('conductorId','==',state.fbUser?.uid||''), where('status','==','finalizado'), orderBy('createdAt','desc'), limit(200));
-  earningsUnsub = onSnapshot(qRef, (qs)=>{
-    let sum=0; const since = driverSessionStart ? new Date(Math.min(driverSessionStart, Date.now())) : new Date();
-    qs.forEach(d=>{ const r=d.data(); const ts=r.createdAt?.toDate?.() || r.createdAt || null; if(!ts) return; if(ts >= since) sum += Number(r.precio||0); });
-    driverEarnings = sum; updateDriverTimerUI();
-  });
-}
-function unsubscribeEarnings(){ if(earningsUnsub){ earningsUnsub(); earningsUnsub=null; } }
-
-/* -------- Conductor: estado -------- */
-function driverStart(){
-  if(driverOnline && !driverPaused) return;
-  if(!driverOnline){
-    resetDriverSession(); driverOnline=true; driverPaused=false; driverSessionStart=Date.now();
-    startDriverTimer(); subscribeEarnings();
-  }else{
-    driverPaused=false; driverSessionStart=Date.now(); startDriverTimer();
-  }
-  startDriverShare(); updateRoleUI();
-}
-function driverPauseToggle(){
-  if(!driverOnline) return;
-  if(!driverPaused){ driverAccumMs += (Date.now()-driverSessionStart); driverSessionStart=null; driverPaused=true; stopDriverShare(); stopDriverTimer(); }
-  else { driverPaused=false; driverSessionStart=Date.now(); startDriverShare(); startDriverTimer(); }
-  updateRoleUI();
-}
-function driverFinish(){
-  if(!driverOnline) return;
-  if(!driverPaused && driverSessionStart){ driverAccumMs += (Date.now()-driverSessionStart); }
-  driverOnline=false;
-  driverPaused=false;
-  driverSessionStart=null;
-  stopDriverShare();
-  stopDriverTimer();
-  unsubscribeEarnings();
-  updateRoleUI();
-}
-
-/* ======= compartir ubicación conductor ======= */
-function startDriverShare(){
-  if(!navigator.geolocation){ alert('Geolocalización no disponible'); return; }
-  if(driverWatchId!=null) return;
-  driverWatchId = navigator.geolocation.watchPosition(async (pos)=>{
-    myLastPos={lat:pos.coords.latitude,lng:pos.coords.longitude};
-    // marcador propio (conductor)
-    if(driverMarker) try{map.removeLayer(driverMarker);}catch(_){}
-    driverMarker=L.circleMarker([myLastPos.lat,myLastPos.lng],{radius:7,color:'#f59e0b'}).addTo(map).bindPopup('Yo (conductor)');
-
-    // si tengo viaje aceptado/curso, actualizo ubicación en el doc
-    if(state.activeRequestId && uiTab==='conductor'){
-      try{
-        await updateDoc(doc(db,'viajes',state.activeRequestId),{
-          conductorLat: myLastPos.lat,
-          conductorLng: myLastPos.lng,
-          conductorLastTs: serverTimestamp()
-        });
-      }catch(_){}
-      drawDriverRoute();
-    }
-  }, (_)=>{}, {enableHighAccuracy:true, maximumAge:2000, timeout:8000});
-}
-function stopDriverShare(){
-  if(driverWatchId!=null){
-    try{ navigator.geolocation.clearWatch(driverWatchId); }catch(_){}
-    driverWatchId=null;
-  }
-}
-
-/* ===================== MAPA & RUTAS ===================== */
-function initMap(){
-  map=L.map('map',{zoomControl:true,preferCanvas:true}).setView([-34.6037,-58.3816],12);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
-    maxZoom:19, attribution:'© OpenStreetMap, © CARTO'
-  }).addTo(map);
-
-  // click en mapa para elegir segun barra activa
-  map.on('click', function(e){
-    if(state.pointsLocked) return;
-    if(!pickingByMap) return;
-    const p={lat:e.latlng.lat,lng:e.latlng.lng};
-    if(pickingByMap==='origen'){ setOrigen(p,true); $('#inOrigen').value=p.lat.toFixed(5)+', '+p.lng.toFixed(5); }
-    else{ setDestino(p,true); $('#inDestino').value=p.lat.toFixed(5)+', '+p.lng.toFixed(5); }
-    pickingByMap=null;
-  });
-
-  setTimeout(()=>{ if(map) map.invalidateSize(); },250);
-  window.addEventListener('resize', ()=>{ if(map) map.invalidateSize(); });
-}
-
-function ensureRouting(){
-  if(routing) return routing;
-  routing=L.Routing.control({
-    waypoints:[],
-    router:L.Routing.osrmv1({serviceUrl:'https://router.project-osrm.org/route/v1',profile:'driving'}),
-    lineOptions:{addWaypoints:false,extendToWaypoints:true,missingRouteTolerance:20,styles:[{color:'#2563eb',opacity:0.9,weight:5}]},
-    show:false, collapsible:true, fitSelectedRoutes:true
-  }).on('routesfound',function(e){
-    const r=e.routes && e.routes[0]; if(!r) return;
-    const kmv=(r.summary.totalDistance||0)/1000;
-    const minv=Math.round((r.summary.totalTime||0)/60);
-    state.routeKm=kmv; state.routeMin=minv;
-    setText($('#kmTxt'), kmv.toFixed(2)); setText($('#minTxt'), String(minv));
-    updateFareUI();
-    try{ map.fitBounds(r.bounds,{padding:[30,30]}); }catch(_){}
-    const act=$('#actividad'); if(act) act.textContent='Ruta: '+kmv.toFixed(2)+' km • ~'+minv+' min';
-  }).on('routingerror',function(){ updateInfoHaversine(); }).addTo(map);
-  return routing;
-}
-function ensureDriverRouting(){
-  if(driverRouting) return driverRouting;
-  driverRouting=L.Routing.control({
-    waypoints:[],
-    router:L.Routing.osrmv1({serviceUrl:'https://router.project-osrm.org/route/v1',profile:'driving'}),
-    lineOptions:{addWaypoints:false,extendToWaypoints:true,missingRouteTolerance:20,styles:[{color:'#f59e0b',opacity:0.95,weight:6}]},
-    show:false, collapsible:true, fitSelectedRoutes:true
-  }).addTo(map);
-  return driverRouting;
-}
-function clearDriverRoute(){ if(driverRouting){ try{driverRouting.setWaypoints([]);}catch(_){ } } driverRouteMode=null; }
-
-function setOrigen(p,recalc){
-  if(origenMarker) map.removeLayer(origenMarker);
-  origenMarker=L.marker([p.lat,p.lng],{draggable:!state.pointsLocked}).addTo(map).bindPopup('Origen');
-  origenMarker.on('dragend',function(){ if(state.pointsLocked) return; const ll=origenMarker.getLatLng(); setOrigen({lat:ll.lat,lng:ll.lng},true); });
-  state.origen=p; setText($('#origenTxt'), p.lat.toFixed(4)+', '+p.lng.toFixed(4));
-  if(recalc) recalcRoute();
-}
-function setDestino(p,recalc){
-  if(destinoMarker) map.removeLayer(destinoMarker);
-  destinoMarker=L.marker([p.lat,p.lng],{draggable:!state.pointsLocked}).addTo(map).bindPopup('Destino');
-  destinoMarker.on('dragend',function(){ if(state.pointsLocked) return; const ll=destinoMarker.getLatLng(); setDestino({lat:ll.lat,lng:ll.lng},true); });
-  state.destino=p; setText($('#destinoTxt'), p.lat.toFixed(4)+', '+p.lng.toFixed(4));
-  if(recalc) recalcRoute();
-}
-function recalcRoute(){
-  if(!(state.origen&&state.destino)){ updateInfoHaversine(); return; }
-  ensureRouting().setWaypoints([L.latLng(state.origen.lat,state.origen.lng),L.latLng(state.destino.lat,state.destino.lng)]);
-}
-function calcFare(distKm,durMin){
-  const p=state.pricing; const bruto=p.base+(distKm*p.perKm)+(durMin*p.perMin)+p.serviceFee;
-  const surged=bruto*(state.surge||1.0); return Math.max(p.minimum,Math.round(surged));
-}
-function updateFareUI(){ const f=calcFare(state.routeKm||0,state.routeMin||0); $('#fareTxt').textContent=fmt(f); $('#surgeTxt').textContent='x'+(state.surge||1).toFixed(1); }
-function updateInfoHaversine(){
-  const d=km(state.origen,state.destino); state.routeKm=d; state.routeMin=Math.round((d/25)*60);
-  setText($('#kmTxt'), d.toFixed(2)); setText($('#minTxt'), String(state.routeMin)); updateFareUI();
-}
-
-/* ===================== AUTOCOMPLETE (2 barras) ===================== */
-const inOrigen = document.getElementById('inOrigen');
-const inDestino = document.getElementById('inDestino');
-const boxOrigen = document.getElementById('acOrigen');
-const boxDestino = document.getElementById('acDestino');
-
-function debounce(fn,ms){ let t=null; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(null,a),ms||350); }; }
-
-/* ========= AUTOCOMPLETE: lo que faltaba desde aquí ========= */
-async function geocodeSearch(q){
-  const url='https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&q='+encodeURIComponent(q);
-  const r=await fetch(url,{headers:{'Accept-Language':'es-AR,es;q=0.9'}});
-  return r.ok? r.json() : [];
-}
-function renderAC(list, type){
-  const input = (type==='origen')?inOrigen:inDestino;
-  const box   = (type==='origen')?boxOrigen:boxDestino;
-  if(!box||!input) return;
-
-  let html = `
-    <div class="ac-item ac-mypos" data-type="${type}" data-mypos="1">🧭 <b>Usar mi ubicación</b></div>
-    <div class="ac-item ac-select-map" data-type="${type}" data-map="1">📍 <b>Seleccionar en el mapa</b></div>
-  `;
-  if(list && list.length){
-    for(const it of list){
-      const parts=it.display_name.split(','), t=parts.slice(0,2).join(', '), s=parts.slice(2).join(', ').trim();
-      html += `
-        <div class="ac-item" data-type="${type}" data-lat="${it.lat}" data-lon="${it.lon}" data-name="${encodeURIComponent(it.display_name)}">
-          <div class="ac-title">${t}</div>
-          <div class="ac-sub">${s}</div>
-        </div>`;
-    }
-  }
-  box.innerHTML = html;
-  placeBoxFor(input, box);
-  box.style.display='block';
-
-  box.querySelectorAll('.ac-item').forEach(node=>{
-    node.addEventListener('click', function(){
-      const tp=this.getAttribute('data-type');
-      const fromMap  = this.getAttribute('data-map')==='1';
-      const useMyPos = this.getAttribute('data-mypos')==='1';
-
-      if(useMyPos){
-        if(!navigator.geolocation){ alert('Geolocalización no disponible'); return; }
-        navigator.geolocation.getCurrentPosition((pos)=>{
-          if(state.pointsLocked) return;
-          const p={lat:pos.coords.latitude,lng:pos.coords.longitude};
-          myLastPos=p;
-          if(meMarker) map.removeLayer(meMarker);
-          meMarker=L.circleMarker([p.lat,p.lng],{radius:7,color:'#16a34a'}).addTo(map).bindPopup('Mi ubicación');
-          map.setView([p.lat,p.lng],15);
-          if(tp==='origen'){ setOrigen(p,true); inOrigen.value=p.lat.toFixed(5)+', '+p.lng.toFixed(5); }
-          else{ setDestino(p,true); inDestino.value=p.lat.toFixed(5)+', '+p.lng.toFixed(5); }
-          box.style.display='none';
-        }, ()=>alert('No se pudo obtener ubicación'), {enableHighAccuracy:true,timeout:8000});
-        return;
-      }
-
-      if(fromMap){
-        pickingByMap = tp;
-        $('#actividad').textContent = `Hacé click en el mapa para establecer ${tp}.`;
-        box.style.display='none';
-        return;
-      }
-
-      const lat=parseFloat(this.getAttribute('data-lat'));
-      const lon=parseFloat(this.getAttribute('data-lon'));
-      const name=decodeURIComponent(this.getAttribute('data-name'));
-      const p={lat:lat,lng:lon};
-
-      if(tp==='origen'){ setOrigen(p,true); inOrigen.value=name; }
-      else{ setDestino(p,true); inDestino.value=name; }
-
-      box.style.display='none';
-      try{ map.setView([lat,lon],15); }catch(_){}
-    });
-  });
-}
-
-if(inOrigen){
-  inOrigen.addEventListener('input', debounce(async function(e){
-    if(state.pointsLocked) return;
-    const q=(e.target.value||'').trim();
-    if(q.length<2){ boxOrigen.style.display='none'; boxOrigen.innerHTML=''; return; }
-    try{ renderAC(await geocodeSearch(q),'origen'); }catch(_){ boxOrigen.style.display='none'; }
-  },320));
-}
-if(inDestino){
-  inDestino.addEventListener('input', debounce(async function(e){
-    if(state.pointsLocked) return;
-    const q=(e.target.value||'').trim();
-    if(q.length<2){ boxDestino.style.display='none'; boxDestino.innerHTML=''; return; }
-    try{ renderAC(await geocodeSearch(q),'destino'); }catch(_){ boxDestino.style.display='none'; }
-  },320));
-}
-// cerrar menú si clic afuera
-document.addEventListener('click', function(e){
-  if(boxOrigen && boxOrigen.style.display!=='none' && !boxOrigen.contains(e.target) && e.target!==inOrigen){ boxOrigen.style.display='none'; }
-  if(boxDestino && boxDestino.style.display!=='none' && !boxDestino.contains(e.target) && e.target!==inDestino){ boxDestino.style.display='none'; }
-});
-// reacomodar en resize
-window.addEventListener('resize', ()=>{
-  if(boxOrigen && boxOrigen.style.display!=='none') placeBoxFor(inOrigen, boxOrigen);
-  if(boxDestino && boxDestino.style.display!=='none') placeBoxFor(inDestino, boxDestino);
-});
-
-/* ===================== VIAJES ===================== */
-function lockPoints(on){
-  state.pointsLocked=!!on;
-  try{ origenMarker?.dragging[on?'disable':'enable'](); }catch(_){}
-  try{ destinoMarker?.dragging[on?'disable':'enable'](); }catch(_){}
-}
-
-async function solicitarViaje(){
-  if(!(state.origen&&state.destino)){ alert('Elegí origen y destino'); return; }
-  if(!state.profile?.phone){ alert('Completá tu teléfono en Perfil para solicitar viajes.'); uiTab='perfil'; handleTabChange(); return; }
-  const distKm=state.routeKm||km(state.origen,state.destino), precio=calcFare(distKm,state.routeMin||0);
-  const pago = (document.getElementById('payMethod')?.value)||'efectivo';
-  const preferId = ($('#preferDriver')?.value)||'';
-  const ref=await addDoc(collection(db,'viajes'),{
-    status:'buscando', pasajeroId:state.fbUser.uid,
-    pasajeroNombre:(state.profile && state.profile.name) || state.fbUser.email,
-    pasajeroFoto:(state.profile && state.profile.photoURL) || '',
-    origen:state.origen, destino:state.destino, km:distKm, min:state.routeMin||0, precio, surge:state.surge||1.0,
-    pago, preferConductorId: preferId || null, createdAt:serverTimestamp()
-  });
-  state.activeRequestId=ref.id; lockPoints(true); setSearchingUI(true); watchActiveRequest(ref.id);
-}
-async function cancelarSolicitud(){
-  if(!state.activeRequestId){ setSearchingUI(false); return; }
-  await updateDoc(doc(db,'viajes',state.activeRequestId),{status:'cancelado'});
-}
-
-function setSearchingUI(on){
-  const t=$('#searchTimer'), t2=$('#ovTimer'), ov=$('#searchOverlay');
-  if(on){
-    if(!state.requestCreatedAt) state.requestCreatedAt=Date.now();
-    if(timerInt) clearInterval(timerInt);
-    timerInt=setInterval(function(){
-      const s=Math.floor((Date.now()-state.requestCreatedAt)/1000);
-      const mm=String(Math.floor(s/60)).padStart(2,'0');
-      const ss=String(s%60).padStart(2,'0');
-      if(t) t.textContent=mm+':'+ss;
-      if(t2) t2.textContent=mm+':'+ss;
-    },500);
-    ov.style.display='grid';
-  }else{
-    if(timerInt) clearInterval(timerInt);
-    timerInt=null; state.requestCreatedAt=null;
-    if(t) t.textContent='00:00'; if(t2) t2.textContent='00:00';
-    ov.style.display='none';
-  }
-}
-
-let followUnsub=null;
-function startDriverFollower(reqId){
-  stopDriverFollower();
-  followUnsub = onSnapshot(doc(db,'viajes',reqId), (s)=>{
-    const r=s.data(); if(!r) return;
-    if(typeof r.conductorLat==='number' && typeof r.conductorLng==='number'){
-      const p={lat:r.conductorLat, lng:r.conductorLng};
-      if(driverMarker) try{map.removeLayer(driverMarker);}catch(_){}
-      driverMarker=L.circleMarker([p.lat,p.lng],{radius:7,color:'#f59e0b'}).addTo(map).bindPopup('Conductor');
-    }
-    drawDriverRoute();
-  });
-}
-function stopDriverFollower(){ if(followUnsub){ followUnsub(); followUnsub=null; } }
-
-function drawDriverRoute(){
-  const r=state.activeRequest; if(!r) return;
-  const way=[];
-  if(driverRouteMode==='to_pickup'){ if(myLastPos && r.origen){ way.push(L.latLng(myLastPos.lat,myLastPos.lng)); way.push(L.latLng(r.origen.lat,r.origen.lng)); } }
-  else if(driverRouteMode==='to_dropoff'){ if(r.origen && r.destino){ way.push(L.latLng(r.origen.lat,r.origen.lng)); way.push(L.latLng(r.destino.lat,r.destino.lng)); } }
-  if(way.length===2){ ensureDriverRouting().setWaypoints(way); }
-}
-
-function mySide(){ const r=state.activeRequest; if(!r||!state.fbUser) return 'pax'; if(r.pasajeroId===state.fbUser.uid) return 'pax'; if(r.conductorId===state.fbUser.uid) return 'drv'; return 'pax'; }
-async function sendChat(){
-  if(!state.activeRequestId) { alert('Sin viaje activo'); return; }
-  const input=$('#chatInput'); const text=(input && input.value)||''; if(!text.trim()) return;
-  const s=text.trim();
-  await addDoc(collection(db,'viajes',state.activeRequestId,'mensajes'),{from:mySide(),text:s,ts:serverTimestamp()});
-  if(input) input.value='';
-}
-function ensureChatListener(reqId){
-  if(chatUnsub) return;
-  chatUnsub=onSnapshot(query(collection(db,'viajes',reqId,'mensajes'),orderBy('ts','asc'),limit(100)), function(qs){
-    const log=$('#chatlog'); if(!log) return; log.innerHTML='';
-    const mine=mySide();
-    qs.forEach(function(d){ const m=d.data(); const who=(m.from===mine)?'me':''; log.insertAdjacentHTML('beforeend','<div class="msg '+who+'" style="display:inline-block;background:#f3f6fb;border:1px solid #e5eaf1;padding:.45rem .6rem;border-radius:10px;margin:.25rem 0;font-size:.92rem"><b>'+(m.from==='pax'?'Pasajero':'Conductor')+':</b> '+m.text+'</div>'); });
-    log.scrollTop=log.scrollHeight;
-  });
-}
-
-function watchActiveRequest(id){
-  if(activeReqUnsub) activeReqUnsub();
-  activeReqUnsub=onSnapshot(doc(db,'viajes',id), function(snap){
-    if(!snap.exists()) return;
-    const r=snap.data(); state.activeRequest={id:snap.id, ...r};
-    const act=$('#actividad'); if(act) act.textContent='#'+id.slice(0,6)+' — '+r.status.toUpperCase()+' — '+fmt(r.precio)+' ('+(r.km||0).toFixed(2)+' km, '+(r.min||0)+' min)';
-    const bar=$('#statusBar'), txt=$('#statusText'); if(bar){ bar.style.display='flex'; }
-
-    const btnBegin = $('#btnDrvBegin');
-    if(r.status==='buscando'){
-      if(txt) txt.textContent='BUSCANDO CONDUCTOR…';
-      setSearchingUI(true); $('#chatMini').style.display='none'; clearDriverRoute();
-      if(btnBegin) btnBegin.style.display='none';
-    }
-    if(r.status==='aceptado'){
-      if(txt) txt.textContent='CONDUCTOR ACEPTÓ — EN CAMINO';
-      setSearchingUI(false); $('#chatMini').style.display='block'; startDriverFollower(id);
-      driverRouteMode='to_pickup'; drawDriverRoute();
-      if(btnBegin) btnBegin.style.display = (uiTab==='conductor') ? 'inline-flex' : 'none';
-    }
-    if(r.status==='en_curso'){
-      if(txt) txt.textContent='VIAJE EN CURSO';
-      setSearchingUI(false); $('#chatMini').style.display='block'; startDriverFollower(id);
-      driverRouteMode='to_dropoff'; drawDriverRoute();
-      if(btnBegin) btnBegin.style.display='none';
-    }
-    if(r.status==='finalizado' || r.status==='cancelado'){
-      $('#chatMini').style.display='none'; state.activeRequestId=null; state.activeRequest=null; lockPoints(false);
-      setSearchingUI(false); stopDriverFollower(); if(chatUnsub){ chatUnsub(); chatUnsub=null; }
-      clearDriverRoute();
-      alert(r.status==='finalizado'?'¡Viaje finalizado!':'Solicitud cancelada');
-    }
-    if(r.status!=='finalizado' && r.status!=='cancelado'){ ensureChatListener(id); }
-  });
-}
-
-/* ===== Dock Conductor: solicitudes ===== */
-function renderReqList(items){
-  const list=$('#reqListDock'); if(!list) return;
-  if(!items.length){ list.innerHTML='<div class="help">Sin solicitudes por ahora.</div>'; return; }
-  list.innerHTML='';
-  for(const it of items){
-    const distKm = (myLastPos && it.origen)? km({lat:myLastPos.lat,lng:myLastPos.lng},{lat:it.origen.lat,lng:it.origen.lng}) : null;
-    const near = distKm!=null ? `${distKm.toFixed(1)} km` : '—';
-    const idShort = it.id.slice(0,6);
-    const isPreferred = it.preferConductorId && it.preferConductorId===state.fbUser.uid;
-    const html = `
-      <div class="req-item" data-id="${it.id}" style="display:grid;grid-template-columns:48px 1fr auto;gap:.6rem;align-items:center;border:1px solid #e5eaf1;background:#f9fbff;border-radius:12px;padding:.6rem;margin:.55rem 0">
-        <div style="width:48px;height:48px;border-radius:10px;border:1px solid #e5eaf1;background:#f1f5f9;display:grid;place-items:center">🚖</div>
-        <div>
-          <div><b>#${idShort}</b> • ${it.pasajeroNombre||'Pasajero'} ${isPreferred?'<span class="chip" style="margin-left:.35rem;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);color:#157f3b">Vinculado</span>':''}</div>
-          <div class="help">Dist: ${(it.km||0).toFixed(1)} km • ${it.min||0} min • <b>${fmt(it.precio||0)}</b> • Cerca: ${near}</div>
-        </div>
-        <div class="row" style="gap:.4rem">
-          <button class="btn primary" data-act="aceptar">Aceptar</button>
-        </div>
-      </div>`;
-    list.insertAdjacentHTML('beforeend', html);
-  }
-  list.querySelectorAll('.req-item [data-act="aceptar"]').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
-      const id=btn.closest('.req-item').getAttribute('data-id');
-      await acceptRequest(id);
-    });
-  });
-}
-function subscribePendientes(){
-  if(pendientesUnsub) pendientesUnsub();
-  const qRef=query(collection(db,'viajes'), where('status','==','buscando'), orderBy('createdAt','desc'), limit(30));
-  pendientesUnsub = onSnapshot(qRef, (qs)=>{
-    let arr=[]; qs.forEach(d=>arr.push({id:d.id, ...d.data()}));
-    // ordenar por preferencia y cercanía
-    arr.sort((a,b)=>{
-      const pa = a.preferConductorId===state.fbUser?.uid ? -1 : 0;
-      const pb = b.preferConductorId===state.fbUser?.uid ? -1 : 0;
-      if(pa!==pb) return pa-pb;
-      const da = a.origen ? km(myLastPos||{}, a.origen) : 9e9;
-      const dbb = b.origen ? km(myLastPos||{}, b.origen) : 9e9;
-      return da - dbb;
-    });
-    renderReqList(arr);
-  });
-}
-
-async function acceptRequest(id){
-  if(!driverOnline){ alert('Primero ponete "Iniciar" como conductor para aceptar.'); uiTab='conductor'; handleTabChange(); return; }
-  if(!state.profile?.phone){ alert('Completá tu teléfono en Perfil para operar como conductor.'); uiTab='perfil'; handleTabChange(); return; }
-  const snap=await getDoc(doc(db,'viajes',id));
-  if(!snap.exists()){ alert('La solicitud ya no está disponible.'); return; }
-  const r=snap.data();
-  if(r.status!=='buscando'){ alert('Otro conductor la tomó antes.'); return; }
-  await updateDoc(doc(db,'viajes',id),{
-    status:'aceptado',
-    conductorId: state.fbUser.uid,
-    conductorNombre: (state.profile?.name)||state.fbUser.email,
-    conductorFoto: (state.profile?.photoURL)||'',
-    aceptadoAt: serverTimestamp()
-  });
-  state.activeRequestId=id;
-  state.activeRequest={id, ...r, status:'aceptado', conductorId:state.fbUser.uid};
-  uiTab='conductor'; handleTabChange();
-  watchActiveRequest(id);
-  lockPoints(true);
-  driverRouteMode='to_pickup';
-  drawDriverRoute();
-}
-
-/* ===================== PERFIL ===================== */
-async function renderProfile(){
-  if(!state.fbUser) return;
-  const snap = await getDoc(doc(db,'users',state.fbUser.uid));
-  if(snap.exists()){
-    state.profile = {...snap.data(), uid:state.fbUser.uid};
-  }else{
-    state.profile = { uid: state.fbUser.uid, name: state.fbUser.displayName||'', email: state.fbUser.email||'', photoURL: state.fbUser.photoURL||'', stars:5, ratingCount:0, linkedWith:{} };
-    await setDoc(doc(db,'users',state.fbUser.uid), state.profile, {merge:true});
-  }
-  // UI
-  $('#pfName').textContent = state.profile.name || '—';
-  $('#pfEmail').textContent = state.profile.email || state.fbUser.email || '—';
-  $('#pfPhoto').src = state.profile.photoURL || '';
-  $('#pfStars').innerHTML = starsHTML(5);
-  $('#pfRatingCount').textContent = (state.profile.ratingCount||0)+' opiniones';
-  $('#statusChip').textContent = state.profile.name || 'online';
-  $('#pfPhone').value = state.profile.phone || '';
-  $('#pfCar').value = state.profile.car || '';
-  $('#pfPlate').value = state.profile.plate || '';
-  $('#reqPhoneBadge').style.display = state.profile.phone ? 'none' : 'inline-flex';
-}
-async function saveProfile(){
-  const up = {
-    phone: $('#pfPhone').value.trim(),
-    car: $('#pfCar').value.trim(),
-    plate: $('#pfPlate').value.trim()
-  };
-  await updateDoc(doc(db,'users',state.fbUser.uid), up);
-  state.profile = {...state.profile, ...up};
-  $('#pfMsg').textContent='Perfil guardado ✅';
-  setTimeout(()=>$('#pfMsg').textContent='', 2500);
-}
-
-/* ===================== UI wiring ===================== */
-function handleTabChange(){ renderTabs(); updateRoleUI(); setTimeout(()=>{ if(map) map.invalidateSize(); },150); }
-function limpiar(){
-  if(state.pointsLocked){ alert('No se puede limpiar con un viaje activo. Cancelá primero.'); return; }
-  [origenMarker,destinoMarker,meMarker,driverMarker,previewA,previewB].forEach(m=>{ if(m){ try{map.removeLayer(m);}catch(_){}}});
-  origenMarker=destinoMarker=meMarker=driverMarker=previewA=previewB=null;
-  if(routing){ routing.setWaypoints([]); } state.routeKm=0; state.routeMin=0;
-  setText($('#origenTxt'),'—'); setText($('#destinoTxt'),'—'); setText($('#kmTxt'),'0.00'); setText($('#minTxt'),'0'); setText($('#fareTxt'), fmt(0));
-  clearDriverRoute(); $('#inOrigen').value=''; $('#inDestino').value='';
-  const a=$('#actividad'); if(a) a.textContent='Elegí direcciones desde las barras o el mapa.';
-  setTimeout(()=>{ if(map) map.invalidateSize(); },120);
-}
-
-function wireUI(){
-  $('#btnSwap')?.addEventListener('click', ()=>{
-    const a=state.origen, b=state.destino;
-    state.origen=b; state.destino=a;
-    if(b) setOrigen(b,false);
-    if(a) setDestino(a,false);
-    if(b||a) recalcRoute();
-    const o=$('#inOrigen'), d=$('#inDestino'); const ot=o.value; o.value=d.value; d.value=ot;
-  });
-  $('#btnLimpiar')?.addEventListener('click', limpiar);
-  $('#btnSolicitar')?.addEventListener('click', solicitarViaje);
-  $('#btnCancelReqOverlay')?.addEventListener('click', cancelarSolicitud);
-  $('#chatSend')?.addEventListener('click', sendChat);
-
-  // Conductor
-  $('#btnDrvStart')?.addEventListener('click', driverStart);
-  $('#btnDrvPause')?.addEventListener('click', driverPauseToggle);
-  $('#btnDrvBegin')?.addEventListener('click', async ()=>{
-    if(!state.activeRequestId){ alert('No hay viaje aceptado.'); return; }
-    await updateDoc(doc(db,'viajes',state.activeRequestId), {status:'en_curso', inicioAt: serverTimestamp()});
-    driverRouteMode='to_dropoff'; drawDriverRoute();
-  });
-  $('#btnDrvFinish')?.addEventListener('click', async ()=>{
-    if(!state.activeRequestId){ return; }
-    await updateDoc(doc(db,'viajes',state.activeRequestId), {status:'finalizado', finAt: serverTimestamp()});
-  });
-  $('#btnUbicarme')?.addEventListener('click', ()=>{
-    if(myLastPos) map.setView([myLastPos.lat,myLastPos.lng],15);
-    else alert('Aún no tengo tu ubicación.');
-  });
-
-  // Perfil
-  $('#btnSaveProfile')?.addEventListener('click', saveProfile);
-}
-
-/* ===================== AUTH obligatoria ===================== */
-async function doLogin(){
-  const email=$('#inEmail').value.trim();
-  const pass=$('#inPass').value;
-  if(!email||!pass){ $('#loginErr').textContent='Completá email y contraseña'; return; }
-  setLoading($('#btnLogin'), true, 'Entrar', 'Entrando…');
+const $  = s=>document.querySelector(s);
+const $$ = s=>Array.from(document.querySelectorAll(s));
+async function compressDataURL(dataUrl, maxSide=256, quality=0.7){
   try{
-    await setupPersistence();
-    await withTimeout(signInWithEmailAndPassword(auth, email, pass), 15000, 'Login');
-    $('#loginErr').textContent='';
-  }catch(e){
-    $('#loginErr').textContent = mapAuthError(e);
-  }finally{
-    setLoading($('#btnLogin'), false, 'Entrar');
-  }
+    const img = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=dataUrl });
+    const scale = Math.min(1, maxSide/Math.max(img.width,img.height));
+    const w = Math.max(1, Math.round(img.width*scale));
+    const h = Math.max(1, Math.round(img.height*scale));
+    const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    return canvas.toDataURL('image/jpeg', quality);
+  }catch{ return dataUrl }
 }
-function showReg(on){ $('#regCard').style.display = on?'block':'none'; }
-async function doRegister(){
+async function blobToDataURL(blob){ return await new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); }) }
+
+/* ===== Claves ===== */
+const USERS_KEY='taxi_users', SESSION_KEY='taxi_session', DOCS_KEY=uid=>`taxi_driver_docs_${uid}`, PHOTO_KEY=uid=>`taxi_photo_${uid}`;
+const DRIVER_STATUS = uid=>`taxi_driver_status_${uid}`; // 'none'|'pending'|'approved'
+
+/* ===== Estado ===== */
+let currentUser=null, role='passenger';
+function uid(){ return Math.random().toString(36).slice(2)+Date.now().toString(36) }
+function isDriverApproved(){ const st = localStorage.getItem(DRIVER_STATUS(currentUser?.uid||''))||'none'; return st==='approved' }
+function setDriverStatus(v){ localStorage.setItem(DRIVER_STATUS(currentUser.uid), v) }
+
+/* ===== Auth local ===== */
+function signIn(email, pass){
+  const users = Storage.get(USERS_KEY, []);
+  const u = users.find(x=>x.email===email && x.pass===pass);
+  if(!u) throw new Error('Email o contraseña incorrectos.');
+  localStorage.setItem(SESSION_KEY, u.uid);
+  return u;
+}
+async function signUp({name,email,pass,photoDataUrl}){
+  const users = Storage.get(USERS_KEY, []);
+  if(users.some(x=>x.email===email)){ throw new Error('Ese email ya está registrado.') }
+  const id = uid();
+  const user = {uid:id, name:name||'Sin nombre', email, pass, phone:'', photoKey: PHOTO_KEY(id)};
+  users.push(user); Storage.set(USERS_KEY, users);
+  if(photoDataUrl){ const tiny = await compressDataURL(photoDataUrl,256,.7); Storage.setRaw(PHOTO_KEY(id), tiny) }
+  localStorage.setItem(SESSION_KEY, id);
+  return user;
+}
+function getSessionUser(){
+  const id=localStorage.getItem(SESSION_KEY); if(!id) return null;
+  const users=Storage.get(USERS_KEY,[]); return users.find(u=>u.uid===id)||null;
+}
+function updateUser(partial){
+  const users=Storage.get(USERS_KEY,[]);
+  const i=users.findIndex(u=>u.uid===currentUser.uid);
+  if(i>=0){ users[i]={...users[i],...partial}; Storage.set(USERS_KEY,users); currentUser=users[i] }
+}
+function logout(){ localStorage.removeItem(SESSION_KEY); location.reload() }
+
+/* ===== UI básicos ===== */
+const tabsEl=$('#tabs'), roleChip=$('#roleChip'), statusChip=$('#statusChip'), mainTitle=$('#mainTitle');
+const passengerUI=$('#passengerUI'), driverDock=$('#driverDock'), driverToolbar=$('#driverToolbar');
+
+function renderTabs(){
+  tabsEl.innerHTML='';
+  const baseTabs=[{id:'tab-pass', label:'Pasajero', onClick:()=>setRole('passenger')}];
+  if(isDriverApproved()) baseTabs.push({id:'tab-driver', label:'Conductor', onClick:()=>setRole('driver'), badge:()=>`<span class="badge" id="rqBadge">0</span>`});
+  baseTabs.push({id:'tab-profile', label:'Perfil', onClick:()=>showProfile()});
+  baseTabs.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='tab'; b.id=t.id; b.innerHTML=t.label+(t.badge?` ${t.badge()}`:'');
+    b.setAttribute('aria-selected', (t.id=== (role==='passenger'?'tab-pass':role==='driver'?'tab-driver':'tab-profile'))?'true':'false');
+    b.onclick=()=>{ t.onClick(); highlightTab(t.id) };
+    tabsEl.appendChild(b);
+  });
+}
+function highlightTab(id){ $$('#tabs .tab').forEach(b=>b.setAttribute('aria-selected', b.id===id?'true':'false')) }
+
+let __unsubOpen=null;
+function setRole(newRole){
+  if(newRole==='driver' && !isDriverApproved()){ alert('Aún no estás habilitado como conductor. Ve a Perfil → Hacerme conductor.'); return; }
+  role=newRole;
+  roleChip.innerHTML=`Rol: <b>${role==='passenger'?'Pasajero':'Conductor'}</b>`;
+  mainTitle.textContent= role==='passenger'?'Mapa':'Panel de conductor';
+  if(role==='passenger'){
+    passengerUI.style.display='block'; driverDock.style.display='none'; driverToolbar.style.display='none';
+    if(__unsubOpen){__unsubOpen();__unsubOpen=null;}
+  } else {
+    passengerUI.style.display='none'; driverDock.style.display='block'; driverToolbar.style.display='block';
+    startDriverListener();
+  }
+  $('.main').style.display='block'; $('#profile').style.display='none';
+  renderTabs();
+}
+
+/* ===== Mapa / Ruta ===== */
+let map, routing, originMarker, destMarker;
+let originLatLng=null, destLatLng=null;
+let lastQuote=null;
+
+const PRICING={ base:300, perKm:250, perMin:50, minimum:1200, surge:1.0 };
+const fmtMoney=n=>'$ '+(Math.round(n)).toLocaleString('es-AR');
+
+function initMap(){
+  map=L.map('map').setView([-31.5375,-68.5364],13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+  map.on('click',e=>{ if(pendingPick==='origin') setOrigin(e.latlng); else if(pendingPick==='dest') setDest(e.latlng); pendingPick=null; closeMenus(); });
+  statusChip.textContent='online';
+}
+const mkDiv=cls=>L.divIcon({className:'', html:`<div class="mk ${cls}"></div>`, iconSize:[18,18], iconAnchor:[9,9]});
+function setOrigin(latlng){
+  originLatLng=latlng;
+  if(!originMarker) originMarker=L.marker(latlng,{icon:mkDiv('mk-circle')}).addTo(map);
+  originMarker.setLatLng(latlng);
+  $('#inOrigin').value=`${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
+  tryFit(); checkRequestButton(); planRouteAndQuote();
+}
+function setDest(latlng){
+  destLatLng=latlng;
+  if(!destMarker) destMarker=L.marker(latlng,{icon:mkDiv('mk-square')}).addTo(map);
+  destMarker.setLatLng(latlng);
+  $('#inDest').value=`${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
+  tryFit(); checkRequestButton(); planRouteAndQuote();
+}
+function tryFit(){
+  if(originLatLng&&destLatLng){ const g=L.featureGroup([originMarker,destMarker]); map.fitBounds(g.getBounds().pad(0.3)); }
+  else if(originLatLng){ map.setView(originLatLng,15) }
+  else if(destLatLng){ map.setView(destLatLng,15) }
+}
+function clearRoute(){ if(routing){ map.removeControl(routing); routing=null } lastQuote=null; showQuote(null); }
+function drawRoute(a,b){
+  clearRoute();
+  routing=L.Routing.control({
+    waypoints:[L.latLng(a.lat,a.lng),L.latLng(b.lat,b.lng)],
+    router:L.Routing.osrmv1({serviceUrl:'https://router.project-osrm.org/route/v1'}),
+    addWaypoints:false, draggableWaypoints:false, fitSelectedRoutes:true, show:false,
+    createMarker:()=>null,
+    lineOptions:{styles:[{color:'#38bdf8',opacity:0.9,weight:5}]}
+  }).addTo(map);
+  routing.on('routesfound',e=>{
+    const r=e.routes[0];
+    const meters=r.summary.totalDistance||0, seconds=r.summary.totalTime||0;
+    const fare=estimateFare(meters,seconds);
+    lastQuote={meters,seconds,fare}; showQuote(lastQuote); checkRequestButton();
+  });
+}
+function planRouteAndQuote(){ if(originLatLng&&destLatLng) drawRoute(originLatLng,destLatLng); }
+function estimateFare(meters,seconds){
+  const km=meters/1000, mins=Math.ceil(seconds/60);
+  let total=PRICING.base + PRICING.perKm*km + PRICING.perMin*mins;
+  total*=PRICING.surge; if(total<PRICING.minimum) total=PRICING.minimum; return total;
+}
+function showQuote(q){
+  const bar=$('#quoteBar');
+  if(!q){ bar.style.display='none'; bar.textContent=''; return; }
+  const distKm=(q.meters/1000).toFixed(2), mins=Math.round(q.seconds/60);
+  bar.style.display='flex';
+  bar.innerHTML=`Distancia: <b>${distKm} km</b> · Tiempo: <b>${mins} min</b> · Estimado: <b>${fmtMoney(q.fare)}</b>`;
+}
+
+/* Fallback quote */
+function fallbackQuote(a,b){
+  const R=6371e3; const toRad=d=>d*Math.PI/180;
+  const dLat=toRad(b.lat-a.lat), dLng=toRad(b.lng-a.lng);
+  const s1=toRad(a.lat), s2=toRad(b.lat);
+  const A=Math.sin(dLat/2)**2 + Math.cos(s1)*Math.cos(s2)*Math.sin(dLng/2)**2;
+  const c=2*Math.atan2(Math.sqrt(A), Math.sqrt(1-A));
+  const meters=R*c; const avgKmh=30; const seconds=Math.max(300,(meters/1000)/(avgKmh/60)*60);
+  return {meters,seconds,fare:estimateFare(meters,seconds)};
+}
+
+/* Menús O/D */
+let pendingPick=null; const menuOrigin=$('#menuOrigin'), menuDest=$('#menuDest']);
+function openMenu(menu, anchor){ const r=anchor.getBoundingClientRect(); menu.style.left=(r.left+window.scrollX)+'px'; menu.style.top=(r.bottom+6+window.scrollY)+'px'; menu.style.display='block'; setTimeout(()=>document.addEventListener('click',onDocClick,{once:true}),0) }
+function onDocClick(e){ if(!menuOrigin.contains(e.target)&&!menuDest.contains(e.target)) closeMenus() }
+function closeMenus(){ menuOrigin.style.display='none'; menuDest.style.display='none' }
+$('#btnPickOrigin').addEventListener('click',e=>openMenu(menuOrigin,e.currentTarget));
+$('#inOrigin').addEventListener('click',e=>openMenu(menuOrigin,e.currentTarget));
+$('#inDest').addEventListener('click',e=>openMenu(menuDest,e.currentTarget));
+menuOrigin.addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON') return;
+  const a=e.target.dataset.action;
+  if(a==='map-origin'){ pendingPick='origin'; }
+  if(a==='geo'){ doLocate((latlng)=>setOrigin(latlng)); }
+  if(a==='clear-origin'){ originLatLng=null; if(originMarker){ map.removeLayer(originMarker); originMarker=null } $('#inOrigin').value=''; clearRoute(); checkRequestButton(); }
+  closeMenus();
+});
+menuDest.addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON') return;
+  const a=e.target.dataset.action;
+  if(a==='map-dest'){ pendingPick='dest'; }
+  if(a==='swap'){ swapOD(); }
+  if(a==='clear-dest'){ destLatLng=null; if(destMarker){ map.removeLayer(destMarker); destMarker=null } $('#inDest').value=''; clearRoute(); checkRequestButton(); }
+  closeMenus();
+});
+
+/* Botonera pasajero */
+$('#btnLocate').addEventListener('click',()=>doLocate((latlng)=>setOrigin(latlng)));
+$('#btnSwap').addEventListener('click',()=>swapOD());
+$('#btnClear').addEventListener('click',()=>{
+  originLatLng=null; destLatLng=null;
+  if(originMarker){ map.removeLayer(originMarker); originMarker=null }
+  if(destMarker){ map.removeLayer(destMarker); destMarker=null }
+  $('#inOrigin').value=''; $('#inDest').value='';
+  clearRoute(); checkRequestButton();
+});
+
+/* Geo */
+function doLocate(cb){
+  if(!navigator.geolocation){ alert('Geolocalización no disponible'); return; }
+  statusChip.textContent='localizando…';
+  navigator.geolocation.getCurrentPosition(
+    pos=>{ statusChip.textContent='online'; cb(L.latLng(pos.coords.latitude,pos.coords.longitude)); },
+    err=>{ statusChip.textContent='offline'; alert('No pudimos obtener tu ubicación'); }
+  );
+}
+
+/* Swap */
+function swapOD(){
+  if(!originLatLng && !destLatLng) return;
+  const tmp=originLatLng; originLatLng=destLatLng; destLatLng=tmp;
+  if(originLatLng){ setOrigin(originLatLng) } else { if(originMarker){ map.removeLayer(originMarker); originMarker=null } $('#inOrigin').value='' }
+  if(destLatLng){ setDest(destLatLng) } else { if(destMarker){ map.removeLayer(destMarker); destMarker=null } $('#inDest').value='' }
+  planRouteAndQuote();
+}
+
+/* Solicitud */
+const btnRequest=$('#btnRequest'), passengerStatus=$('#passengerStatus');
+function checkRequestButton(){ btnRequest.disabled=!(originLatLng && destLatLng); }
+let overlayTimer=null, overlaySecs=0, activeRequestId=null;
+
+btnRequest.addEventListener('click', async ()=>{
+  if(!currentUser){ alert('Inicia sesión'); return; }
+  if(!(originLatLng&&destLatLng)){ alert('Elegí origen y destino'); return; }
+  if(!lastQuote && originLatLng && destLatLng){ lastQuote = fallbackQuote(originLatLng, destLatLng); showQuote(lastQuote); }
+  try{
+    btnRequest.disabled=true;
+    const rq = {
+      userId: currentUser.uid,
+      userName: currentUser.name,
+      payMethod: $('#payMethod').value,
+      origin: {lat:originLatLng.lat, lng:originLatLng.lng},
+      dest:   {lat:destLatLng.lat,   lng:destLatLng.lng},
+      meters: lastQuote?.meters||0,
+      seconds:lastQuote?.seconds||0,
+      fare:   Math.round(lastQuote?.fare||0)
+    };
+    activeRequestId = await window.__fb.api.addRequest(rq);
+    showOverlay(true);
+    listenTaken(activeRequestId);
+    addMsg('Sistema','Solicitud enviada',false);
+  }catch(err){ alert('Error creando solicitud: '+err.message); }
+  finally{ btnRequest.disabled=false; }
+});
+
+function showOverlay(on){
+  const ov=$('#searchOverlay'); const t=$('#ovTimer');
+  if(on){ ov.style.display='grid'; overlaySecs=0; t.textContent='00:00'; overlayTimer=setInterval(()=>{ overlaySecs++; t.textContent=fmtMMSS(overlaySecs)}, 1000); }
+  else{ ov.style.display='none'; if(overlayTimer) clearInterval(overlayTimer); }
+}
+function fmtMMSS(s){ const m=String(Math.floor(s/60)).padStart(2,'0'), ss=String(s%60).padStart(2,'0'); return `${m}:${ss}` }
+$('#btnCancelOverlay').addEventListener('click', ()=> showOverlay(false));
+function listenTaken(id){
+  window.__fb.api.listenRequest(id, (r)=>{
+    if(r.status==='taken'){ showOverlay(false); passengerStatus.style.display='flex'; passengerStatus.innerHTML=`✅ Conductor asignado. <b>Prepará ${fmtMoney(r.fare)}</b>`; addMsg('Sistema','Conductor asignado'); }
+    if(r.status==='finished'){ passengerStatus.style.display='flex'; passengerStatus.innerHTML=`🧾 Viaje finalizado. Total: <b>${fmtMoney(r.fare)}</b>`; addMsg('Sistema','Viaje finalizado'); }
+  });
+}
+
+/* Driver */
+function startDriverListener(){
+  const listEl=$('#rqList'), badge=$('#rqBadge'), count=$('#rqCount');
+  if(__unsubOpen) __unsubOpen();
+  __unsubOpen = window.__fb.api.listenOpenRequests((list)=>{
+    count.textContent=String(list.length); if(badge) badge.textContent=String(list.length);
+    listEl.innerHTML='';
+    list.forEach(rq=>{
+      const card=document.createElement('div'); card.className='card';
+      const km=(rq.meters/1000).toFixed(2), mins=Math.round((rq.seconds||0)/60);
+      card.innerHTML=`
+        <div class="row wrap" style="justify-content:space-between">
+          <div>
+            <div><b>${rq.userName||'Pasajero'}</b></div>
+            <div class="help">Dist: ${km} km · Tiempo: ${mins} min</div>
+            <div class="help">Estimado: ${fmtMoney(rq.fare||0)} — Pago: ${rq.payMethod||'-'}</div>
+          </div>
+          <div class="row">
+            <button class="btn primary" data-acc="${rq.id}">Aceptar</button>
+          </div>
+        </div>`;
+      listEl.appendChild(card);
+    });
+  });
+  $('#rqList').onclick=async (e)=>{
+    const id=e.target?.dataset?.acc; if(!id) return;
+    try{
+      await window.__fb.api.acceptRequestTxn(id, currentUser.uid);
+      $('#btnDrvBegin').style.display='inline-flex';
+      addMsg('Sistema','Solicitud aceptada',true);
+      alert('Solicitud aceptada. Podés comenzar el viaje.');
+      activeRequestId=id;
+    }
+    catch(err){ alert('No se pudo aceptar: '+err.message) }
+  };
+}
+
+/* Driver toolbar demo: tiempo y $$ */
+let drvTimer=null, drvSecs=0, drvMoney=0, drvRunning=false;
+const elDrvTime=$('#drvTime'), elDrvMoney=$('#drvMoney');
+function updateDrvUI(){
+  const hh=String(Math.floor(drvSecs/3600)).padStart(2,'0');
+  const mm=String(Math.floor((drvSecs%3600)/60)).padStart(2,'0');
+  const ss=String(drvSecs%60).padStart(2,'0');
+  elDrvTime.textContent=`${hh}:${mm}:${ss}`;
+  elDrvMoney.textContent=fmtMoney(drvMoney);
+}
+$('#btnDrvStart').addEventListener('click',()=>{
+  if(drvRunning) return;
+  drvRunning=true;
+  drvTimer=setInterval(()=>{ drvSecs++; if(drvSecs%60===0) drvMoney+=200; updateDrvUI(); },1000);
+});
+$('#btnDrvPause').addEventListener('click',()=>{
+  drvRunning=false; if(drvTimer){ clearInterval(drvTimer); drvTimer=null; }
+});
+$('#btnUbicarme').addEventListener('click',()=> doLocate(ll=> map.setView(ll,15)));
+$('#btnDrvBegin').addEventListener('click',()=>{
+  addMsg('Sistema','Iniciaste el viaje',true);
+  $('#btnDrvBegin').style.display='none';
+  if(!drvRunning) $('#btnDrvStart').click();
+});
+$('#btnDrvFinish').addEventListener('click', async ()=>{
+  if(activeRequestId){ try{ await window.__fb.api.finishRequest(activeRequestId); }catch{} }
+  drvRunning=false; if(drvTimer){ clearInterval(drvTimer); drvTimer=null; }
+  drvSecs=0; drvMoney=0; updateDrvUI();
+  addMsg('Sistema','Finalizaste el viaje',true);
+  alert('Viaje finalizado.');
+});
+
+/* Chat mini */
+function addMsg(who, text, me=false){
+  const log=$('#chatLog'), div=document.createElement('div');
+  div.className='msg '+(me?'me':'other'); div.innerHTML=`<b>${who}:</b> ${text}`;
+  log.appendChild(div); log.scrollTop=log.scrollHeight; $('#chatMini').style.display='block';
+}
+
+/* Perfil */
+function showProfile(){ $('.main').style.display='none'; $('#profile').style.display='block'; highlightTab('tab-profile'); renderProfile(); }
+function renderStars(avg=4.6){
+  const el=$('#pfStars'); el.innerHTML='';
+  for(let i=1;i<=5;i++){ const s=document.createElement('span'); s.className='star'+(i<=Math.round(avg)?' filled':''); el.appendChild(s) }
+}
+function renderProfile(){
+  $('#pfName').textContent=currentUser.name||'—'; $('#pfEmail').textContent=currentUser.email||'—';
+  $('#pfNameEdit').value=currentUser.name||''; $('#pfPhoneEdit').value=currentUser.phone||'';
+  const photo=localStorage.getItem(PHOTO_KEY(currentUser.uid)); $('#pfAvatar').src=photo||'';
+  renderStars(4.6); renderDocs(); renderTrophies(); driverDocProgress();
+  $('#btnSwitchRole').textContent= isDriverApproved() ? 'Ir a Conductor' : 'Cambiar a Conductor';
+}
+$('#btnEditName').addEventListener('click', ()=>{ $('#pfNameEdit').focus() });
+$('#btnSaveProfile').addEventListener('click', ()=>{ updateUser({name:$('#pfNameEdit').value.trim(), phone:$('#pfPhoneEdit').value.trim()}); renderProfile(); renderTabs(); alert('Perfil actualizado'); });
+$('#btnSwitchRole').addEventListener('click', ()=> setRole('driver'));
+
+/* Subtabs */
+const subButtons=$$('.subtab'); const subPanels={datos:$('#sub-datos'), conductor:$('#sub-conductor'), calif:$('#sub-calif')};
+subButtons.forEach(b=> b.addEventListener('click', ()=>{ const key=b.dataset.sub; subButtons.forEach(x=>x.setAttribute('aria-selected', x===b?'true':'false')); Object.entries(subPanels).forEach(([k,el])=> el.setAttribute('aria-hidden', k===key?'false':'true')); }));
+
+/* Docs */
+const DOCS=['DNI frente','DNI dorso','Licencia conducir','Cédula verde','Seguro vigente','Foto vehículo'];
+function renderDocs(){
+  const grid=$('#docsGrid'); grid.innerHTML='';
+  const st = Storage.get(DOCS_KEY(currentUser.uid), {});
+  DOCS.forEach(name=>{
+    const info=st[name];
+    const row=document.createElement('div'); row.className='doc '+(info?'ok':'');
+    const when = info ? new Date(info.at) : null;
+    const whenTxt = info ? `✔️ Subido · ${when.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} · ${when.toLocaleDateString()}` : 'Pendiente';
+    const thumb = info?.data || '';
+    row.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem">
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <img class="thumb" src="${thumb}" alt="prev"/>
+          <div>
+            <div style="font-weight:800">${name}</div>
+            <div class="status">${whenTxt}</div>
+          </div>
+        </div>
+        <label class="btn"> Subir<input type="file" accept="image/*" style="display:none" /></label>
+      </div>`;
+    const input=row.querySelector('input');
+    input.addEventListener('change', async ev=>{
+      const f=ev.target.files[0]; if(!f) return;
+      const base64 = await blobToDataURL(f);
+      const tiny=await compressDataURL(base64,512,.75);
+      const newSt=Storage.get(DOCS_KEY(currentUser.uid), {}); newSt[name]={data:tiny, at:Date.now()};
+      Storage.set(DOCS_KEY(currentUser.uid),newSt);
+      row.classList.add('ok'); row.querySelector('.thumb').src=tiny;
+      row.querySelector('.status').textContent=`✔️ Subido · ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} · ${new Date().toLocaleDateString()}`;
+      driverDocProgress();
+    });
+    grid.appendChild(row);
+  });
+}
+
+/* Progreso de documentos y habilitación */
+function driverDocProgress(){
+  const st = Storage.get(DOCS_KEY(currentUser.uid), {});
+  const uploaded = DOCS.filter(n=> !!st[n]).length;
+  const hint=$('#driverDocHint');
+  const btnSend=$('#btnSendReview');
+  const allReady = uploaded===DOCS.length;
+  hint.textContent = allReady ? '✅ Todo listo. Enviá a revisión.' : `Faltan ${DOCS.length-uploaded} documentos.`;
+  btnSend.disabled = !allReady;
+}
+$('#btnSendReview').addEventListener('click', ()=>{
+  setDriverStatus('pending');
+  alert('Enviado a revisión. (Demo: usá “Habilitarme como conductor” para aprobarte)');
+});
+$('#btnApproveDemo').addEventListener('click', ()=>{
+  setDriverStatus('approved');
+  alert('¡Aprobado como conductor (demo)!');
+  renderTabs(); // aparece pestaña Conductor
+});
+
+/* Trofeos / calificación (demo) */
+function renderTrophies(){
+  const box=$('#trophies'); box.innerHTML='';
+  const starsAvg=4.6; // demo
+  const trofeos=[
+    {name:'Bronce 4.0⭐', need:4.0, emoji:'🥉'},
+    {name:'Plata 4.5⭐',  need:4.5, emoji:'🥈'},
+    {name:'Oro 4.8⭐',    need:4.8, emoji:'🥇'},
+    {name:'Elite 5.0⭐',  need:5.0, emoji:'🏆'}
+  ];
+  trofeos.forEach(t=>{
+    const ok = starsAvg>=t.need;
+    const chip=document.createElement('span');
+    chip.className='chip'; chip.style.borderColor=ok?'#b7e4c7':'#e5eaf1'; chip.style.background=ok?'#f0fff4':'#f3f6fb';
+    chip.textContent=`${t.emoji} ${t.name}`; box.appendChild(chip);
+  });
+  const pct=Math.min(100, Math.round((starsAvg/5)*100));
+  $('#progBar').style.width=pct+'%'; $('#progPct').textContent=pct+'%';
+}
+
+/* ====== AUTH UI (gate) ====== */
+function showLogin(){ $('#loginCard').style.display='block'; $('#regCard').style.display='none'; $('#tabLogin').setAttribute('aria-selected','true'); $('#tabReg').setAttribute('aria-selected','false'); }
+function showReg(){ $('#loginCard').style.display='none'; $('#regCard').style.display='block'; $('#tabLogin').setAttribute('aria-selected','false'); $('#tabReg').setAttribute('aria-selected','true'); }
+
+$('#tabLogin').addEventListener('click', showLogin);
+$('#tabReg').addEventListener('click', showReg);
+$('#btnCancelReg').addEventListener('click', showLogin);
+
+$('#btnWipe').addEventListener('click', ()=>{
+  if(confirm('Esto borrará usuarios locales, sesión y documentos (solo local). ¿Continuar?')){
+    localStorage.clear(); location.reload();
+  }
+});
+
+$('#btnLogin').addEventListener('click', ()=>{
+  $('#loginErr').textContent='';
+  try{
+    const u=signIn($('#inEmail').value.trim(), $('#inPass').value);
+    enterApp(u);
+  }catch(e){ $('#loginErr').textContent=e.message||'Error al iniciar sesión'; }
+});
+
+let regPhotoDataUrl=null;
+$('#regPhoto').addEventListener('change', async (ev)=>{
+  const f=ev.target.files?.[0]; if(!f) return;
+  const base64 = await blobToDataURL(f);
+  const tiny = await compressDataURL(base64,256,.8);
+  $('#regPreview').src=tiny; regPhotoDataUrl=tiny;
+});
+$('#btnReg').addEventListener('click', async ()=>{
+  $('#regErr').textContent='';
   const name=$('#regName').value.trim();
   const email=$('#regEmail').value.trim();
-  const p1=$('#regPass').value;
-  const p2=$('#regPass2').value;
-  const file=$('#regPhoto').files?.[0]||null;
-  if(!email||!p1||!p2){ $('#regErr').textContent='Completá todos los campos.'; return; }
+  const p1=$('#regPass').value; const p2=$('#regPass2').value;
+  if(!email || !p1){ $('#regErr').textContent='Completá email y contraseña.'; return; }
+  if(p1.length<6){ $('#regErr').textContent='La contraseña debe tener al menos 6 caracteres.'; return; }
   if(p1!==p2){ $('#regErr').textContent='Las contraseñas no coinciden.'; return; }
-  setLoading($('#btnReg'), true, 'Crear cuenta', 'Creando…');
   try{
-    await setupPersistence();
-    const cred = await withTimeout(createUserWithEmailAndPassword(auth,email,p1), 20000, 'Registro');
-    let photoURL='';
-    if(file){
-      const r = sRef(storage, `users/${cred.user.uid}/photo_${Date.now()}.jpg`);
-      await uploadBytes(r, file);
-      photoURL = await getDownloadURL(r);
-      await updateProfile(cred.user,{ displayName:name||'', photoURL });
-    }else if(name){
-      await updateProfile(cred.user,{ displayName:name });
-    }
-    await setDoc(doc(db,'users',cred.user.uid),{
-      name: name || email, email, photoURL: photoURL || '', createdAt: serverTimestamp(), linkedWith:{}
-    },{merge:true});
-    $('#regErr').textContent='';
-    showReg(false);
-  }catch(e){
-    $('#regErr').textContent = mapAuthError(e);
-  }finally{
-    setLoading($('#btnReg'), false, 'Crear cuenta');
-  }
-}
-
-/* ===================== Boot ===================== */
-function bootAfterLogin(){
-  $('#gate').style.display='none';
-  $('#app').style.display='grid';
-  window.__AUTH_SIGNED__ = true;
-  renderTabs(); updateRoleUI();
-  if(!map) initMap();
-  wireUI();
-}
-$('#btnLogin')?.addEventListener('click', doLogin);
-$('#btnShowReg')?.addEventListener('click', ()=>showReg(true));
-$('#btnCancelReg')?.addEventListener('click', ()=>showReg(false));
-$('#btnReg')?.addEventListener('click', doRegister);
-
-onAuthStateChanged(getAuth(), async (u)=>{
-  state.fbUser = u || null;
-  if(!u){
-    // bloquear app si no está autenticado (obligatorio)
-    $('#gate').style.display='grid';
-    $('#app').style.display='none';
-    window.__AUTH_SIGNED__ = false;
-    return;
-  }
-  await renderProfile();
-  bootAfterLogin();
+    const u = await signUp({name,email,pass:p1,photoDataUrl:regPhotoDataUrl});
+    enterApp(u);
+  }catch(e){ $('#regErr').textContent=e.message||'No se pudo crear la cuenta'; }
 });
 
-/* Ajustes finales */
-window.addEventListener('load', ()=>{ renderTabs(); if(map) map.invalidateSize(); });
-/* ===================== FIN DEL SCRIPT ===================== */
+/* Entrar a la app */
+function enterApp(u){
+  currentUser = u || getSessionUser();
+  if(!currentUser){ $('#fatal').style.display='block'; $('#fatal').textContent='No hay sesión.'; return; }
+  $('#gate').style.display='none'; $('#app').style.display='grid';
+  $('#btnLogout').addEventListener('click', logout);
+  renderTabs(); setRole('passenger'); initMap(); addMsg('Sistema','Sesión iniciada');
+}
+
+/* ===== Inicio ===== */
+window.addEventListener('load', ()=>{
+  if(location.protocol==='file:'){ $('#envWarn').style.display='block'; }
+  const session = getSessionUser();
+  if(session){ enterApp(session); } else { $('#gate').style.display='grid'; }
+});
 </script>
 </body>
 </html>
